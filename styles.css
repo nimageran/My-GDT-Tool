@@ -1,0 +1,26 @@
+/* A technical, monospaced font for data */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap');
+
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* The Blueprint Background Pattern */
+.blueprint-grid {
+    background-color: #f8fafc;
+    background-image: 
+        linear-gradient(rgba(148, 163, 184, 0.2) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.2) 1px, transparent 1px);
+    background-size: 25px 25px;
+}
+
+/* Active Tab Styles */
+.cat-active {
+    background-color: #3b82f6; /* Blue 500 */
+    color: white !important;
+}
+
+.sym-active {
+    background-color: #eff6ff; /* Blue 50 */
+    border-left: 4px solid #3b82f6;
+    color: #1d4ed8; /* Blue 700 */
+    font-weight: 700;
+}

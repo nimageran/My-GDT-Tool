@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GD&T Professional Analyst</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-100 h-screen flex flex-col overflow-hidden font-sans">
+
+    <header class="bg-slate-900 text-white shrink-0 flex items-center justify-between px-6 py-3 shadow-md z-40 relative">
+        <div class="flex items-center gap-4">
+            <h1 class="text-xl font-black tracking-wider text-yellow-500">ASME<span class="text-white">Y14.5</span></h1>
+            <span class="text-xs text-slate-400 border-l border-slate-700 pl-4 hidden md:block">Professional Analyst Tool</span>
+        </div>
+        <nav id="categoryNav" class="flex space-x-1 overflow-x-auto"></nav>
+    </header>
+
+    <nav id="symbolToolbar" class="bg-white border-b border-slate-200 px-6 py-2 flex items-center gap-4 shadow-sm z-30 overflow-x-auto h-16 shrink-0">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest shrink-0 border-r border-slate-200 pr-4 mr-2" id="toolbarLabel">SELECT TOOL</span>
+        <div id="symbolList" class="flex items-center gap-3"></div>
+    </nav>
+
+    <div class="flex-1 flex overflow-hidden relative">
+        
+        <section id="controlsPanel" class="w-[26rem] bg-white border-r border-slate-200 flex flex-col z-20 relative shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out">
+            
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-between">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm uppercase tracking-wide">
+                    <i class="fa-solid fa-sliders text-blue-500"></i> 
+                    Controls
+                </h3>
+                <button id="toggleControlsBtn" class="text-slate-400 hover:text-blue-600 transition-colors" title="Collapse Panel">
+                    <i class="fa-solid fa-angles-left"></i>
+                </button>
+            </div>
+            
+            <div id="controlsContent" class="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/30">
+                <p class="text-slate-400 italic text-sm mt-4">Select a feature from the top toolbar.</p>
+            </div>
+        </section>
+
+        <main class="flex-1 flex flex-col bg-slate-100 relative overflow-hidden">
+             <button id="expandControlsBtn" class="absolute top-4 left-4 z-50 bg-white p-2 rounded shadow border border-slate-200 text-slate-600 hover:text-blue-600 hidden">
+                <i class="fa-solid fa-sliders"></i>
+             </button>
+
+             <div id="canvas-container" class="flex-1 relative blueprint-grid overflow-hidden flex items-center justify-center shadow-inner">
+                <svg id="mainCanvas" viewBox="0 0 1000 800" class="w-full h-full"></svg>
+            </div>
+        </main>
+
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
