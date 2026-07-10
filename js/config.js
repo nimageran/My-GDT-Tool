@@ -41,7 +41,7 @@ export const GDT_HIERARCHY = {
             },
             surface_profile: { 
                 name: "Surface Profile", 
-                iconChar: "⌭", 
+                iconChar: "⌓", 
                 filePath: './modules/profile/surface_profile.js' 
             }
         }
@@ -107,6 +107,41 @@ export const GDT_HIERARCHY = {
                 name: "Total Runout", 
                 iconChar: "⌰", 
                 filePath: './modules/runout/total_runout.js' 
+            }
+        }
+    },
+
+    // CATEGORY 6: DECODE — reverse-engineering hard drawing callouts.
+    // Registered once; future modules OVERWRITE their placeholder file.
+    // Config never needs editing again (see DECODER_SPEC.md §7).
+    DECODE: {
+        label: "Decode",
+        icon: "fa-magnifying-glass",
+        symbols: {
+            welding: {
+                name: "Welding Symbol",
+                iconChar: "▷",
+                filePath: './modules/decode/welding.js'
+            },
+            hole_callouts: {
+                name: "Holes & Patterns",
+                iconChar: "⌀",
+                filePath: './modules/decode/hole_callouts.js'
+            },
+            surface_finish: {
+                name: "Surface Finish",
+                iconChar: "√",
+                filePath: './modules/decode/surface_finish.js'
+            },
+            composite_frames: {
+                name: "Composite & Datums",
+                iconChar: "▣",
+                filePath: './modules/decode/composite_frames.js'
+            },
+            fits: {
+                name: "Fits (H7/g6)",
+                iconChar: "⌗",
+                filePath: './modules/decode/fits.js'
             }
         }
     }
