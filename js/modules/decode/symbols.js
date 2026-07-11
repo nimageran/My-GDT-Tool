@@ -207,3 +207,46 @@ export function contourMark(x, y, w, type, opts = {}) {
 //   - Hole callout symbols: counterbore, spotface, countersink, depth (Y14.5)
 //   - Surface texture marks (ISO 1302)
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// HOLE CALLOUT SYMBOLS (ASME Y14.5-2018 dimensioning symbols)
+// Appended for hole_callouts.js. Glyphs are TEXT-LIKE: anchored at the left
+// end of their baseline (x, y), drawn UPWARD (negative local y), so they can
+// be composed inline with dimension text. No flip option needed.
+// ---------------------------------------------------------------------------
+
+/** Relative advance widths (multiplier of h) for inline composition. */
+export const HOLE_W = { dia: 1.1, cbore: 1.2, csink: 1.15, depth: 0.85 };
+
+/** Diameter: circle with a 60-degree slash through it. */
+export function diaSymbol(x, y, h) {
+    const g = el('g', { transform: `translate(${x},${y})` });
+    g.appendChild(el('circle', { ...HSTROKE, cx: 0.5 * h, cy: -0.38 * h, r: 0.36 * h }));
+    g.appendChild(el('line', { ...HSTROKE, x1: 0.16 * h, y1: -0.02 * h, x2: 0.84 * h, y2: -0.74 * h }));
+    return g;
+}
+
+/** Counterbore / spotface: open-TOP rectangle. */
+export function cboreSymbol(x, y, h) {
+    const g = el('g', { transform: `translate(${x},${y})` });
+    g.appendChild(el('path', { ...HSTROKE, d: `M0 ${-0.72 * h} L0 0 L${1.05 * h} 0 L${1.05 * h} ${-0.72 * h}` }));
+    return g;
+}
+
+/** Countersink: open-top "V" (90-degree included as drawn). */
+export function csinkSymbol(x, y, h) {
+    const g = el('g', { transform: `translate(${x},${y})` });
+    g.appendChild(el('path', { ...HSTROKE, d: `M0 ${-0.72 * h} L${0.5 * h} 0 L${1.0 * h} ${-0.72 * h}` }));
+    return g;
+}
+
+/** Depth: downward arrow with a horizontal bar at the bottom. */
+export function depthSymbol(x, y, h) {
+    const g = el('g', { transform: `translate(${x},${y})` });
+    g.appendChild(el('line', { ...HSTROKE, x1: 0.38 * h, y1: -0.85 * h, x2: 0.38 * h, y2: -0.14 * h }));
+    g.appendChild(el('path', { ...HSTROKE, d: `M${0.2 * h} ${-0.36 * h} L${0.38 * h} ${-0.12 * h} L${0.56 * h} ${-0.36 * h}` }));
+    g.appendChild(el('line', { ...HSTROKE, x1: 0, y1: 0, x2: 0.76 * h, y2: 0 }));
+    return g;
+}
+
+const HSTROKE = { stroke: '#0f172a', 'stroke-width': 2, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
