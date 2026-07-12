@@ -250,3 +250,76 @@ export function depthSymbol(x, y, h) {
 }
 
 const HSTROKE = { stroke: '#0f172a', 'stroke-width': 2, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
+
+// ---------------------------------------------------------------------------
+// GD&T CHARACTERISTIC GLYPHS & MODIFIERS (ASME Y14.5-2018, Table 3-1 shapes)
+// Appended for composite_frames.js. gdtChar() draws any of the 14
+// characteristics CENTERED at (x, y) with overall size h. circledMod()
+// draws the circled modifier letters (M, L, P, F, T, U, S...).
+// Note: concentricity & symmetry were REMOVED in Y14.5-2018 but appear on
+// legacy drawings, so they remain decodable here.
+// ---------------------------------------------------------------------------
+
+function arrowTip(x1, y1, x2, y2) {
+    // small manual arrowhead at (x2,y2), pointing along (x1,y1)->(x2,y2)
+    const a = Math.atan2(y2 - y1, x2 - x1), L = 7, W = 0.45;
+    const p1 = [x2 - L * Math.cos(a - W), y2 - L * Math.sin(a - W)];
+    const p2 = [x2 - L * Math.cos(a + W), y2 - L * Math.sin(a + W)];
+    return el('path', { d: `M${p1[0]} ${p1[1]} L${x2} ${y2} L${p2[0]} ${p2[1]}`, ...GSTROKE });
+}
+
+const GSTROKE = { stroke: '#0f172a', 'stroke-width': 2, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
+
+export function gdtChar(key, x, y, h) {
+    const g = el('g', { transform: `translate(${x},${y})` });
+    const p = d => g.appendChild(el('path', { d, ...GSTROKE }));
+    const ln = (x1, y1, x2, y2) => g.appendChild(el('line', { x1: x1 * h, y1: y1 * h, x2: x2 * h, y2: y2 * h, ...GSTROKE }));
+    const circ = r => g.appendChild(el('circle', { cx: 0, cy: 0, r: r * h, ...GSTROKE }));
+
+    switch (key) {
+        case 'straightness': ln(-0.42, 0, 0.42, 0); break;
+        case 'flatness':
+            p(`M${-0.42 * h} ${0.26 * h} L${-0.12 * h} ${-0.26 * h} L${0.42 * h} ${-0.26 * h} L${0.12 * h} ${0.26 * h} Z`); break;
+        case 'circularity': circ(0.34); break;
+        case 'cylindricity':
+            circ(0.28);
+            ln(-0.46, 0.42, -0.16, -0.42); ln(0.16, 0.42, 0.46, -0.42); break;
+        case 'profileLine':
+            p(`M${-0.38 * h} ${0.16 * h} A ${0.38 * h} ${0.38 * h} 0 0 1 ${0.38 * h} ${0.16 * h}`); break;
+        case 'profileSurface':
+            p(`M${-0.38 * h} ${0.16 * h} A ${0.38 * h} ${0.38 * h} 0 0 1 ${0.38 * h} ${0.16 * h} Z`); break;
+        case 'angularity':
+            ln(-0.42, 0.3, 0.44, 0.3); ln(-0.42, 0.3, 0.34, -0.36); break;
+        case 'perpendicularity':
+            ln(-0.38, 0.32, 0.38, 0.32); ln(0, 0.32, 0, -0.38); break;
+        case 'parallelism':
+            ln(-0.3, 0.4, 0.1, -0.4); ln(-0.1, 0.4, 0.3, -0.4); break;
+        case 'position':
+            circ(0.28); ln(-0.46, 0, 0.46, 0); ln(0, -0.46, 0, 0.46); break;
+        case 'concentricity': circ(0.18); circ(0.36); break;
+        case 'symmetry':
+            ln(-0.42, 0, 0.42, 0); ln(-0.26, -0.2, 0.26, -0.2); ln(-0.26, 0.2, 0.26, 0.2); break;
+        case 'circularRunout':
+            ln(-0.24, 0.36, 0.22, -0.32);
+            g.appendChild(arrowTip(-0.24 * h, 0.36 * h, 0.24 * h, -0.36 * h)); break;
+        case 'totalRunout':
+            ln(-0.4, 0.36, 0.44, 0.36);
+            ln(-0.4, 0.36, 0.02, -0.32); g.appendChild(arrowTip(-0.4 * h, 0.36 * h, 0.04 * h, -0.36 * h));
+            ln(0.02, 0.36, 0.44, -0.32); g.appendChild(arrowTip(0.02 * h, 0.36 * h, 0.46 * h, -0.36 * h)); break;
+    }
+    return g;
+}
+
+/** Circled modifier letter (M, L, P, F, T, U, ...) centered at (x, y). */
+export function circledMod(x, y, r, letter) {
+    const g = el('g');
+    g.appendChild(el('circle', { cx: x, cy: y, r, ...GSTROKE, 'stroke-width': 1.8 }));
+    const t = el('text', {
+        x, y: y + 0.5, 'font-size': r * 1.25, fill: '#0f172a', 'font-weight': '700',
+        'font-family': 'ui-sans-serif, system-ui, sans-serif',
+        'text-anchor': 'middle', 'dominant-baseline': 'central'
+    });
+    t.textContent = letter;
+    g.appendChild(t);
+    return g;
+}
