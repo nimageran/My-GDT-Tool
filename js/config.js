@@ -46,12 +46,9 @@ export const GDT_HIERARCHY = {
         icon: "fa-expand",
         symbols: {
             bonus: { name: "Bonus Tolerance (MMC / LMC)", iconChar: "Ⓜ", filePath: './modules/location/position.js' },
-            virtual_condition: { name: "Virtual & Resultant Condition", iconChar: "◌", planned: true,
-                summary: "The worst-case boundaries a mating part must clear. Compute virtual and resultant condition for holes and pins at MMC or LMC, and see which one matters for assembly and which for wall thickness." },
-            rule1: { name: "Rule #1 Envelope", iconChar: "▭", planned: true,
-                summary: "Perfect form at MMC: see why a bent pin fails a ring gauge even when every two-point size measurement is in tolerance, and when the independency symbol lifts the rule." },
-            datum_shift: { name: "Datum Shift (MMB)", iconChar: "⇄", planned: true,
-                summary: "The extra movement a pattern gets when a datum feature of size is referenced at MMB, and why a functional gauge allows it but a CMM report often ignores it." }
+            virtual_condition: { name: "Virtual & Resultant Condition", iconChar: "◌", filePath: './modules/material/virtual_condition.js' },
+            rule1: { name: "Rule #1 Envelope", iconChar: "▭", filePath: './modules/material/rule1.js' },
+            datum_shift: { name: "Datum Shift (MMB)", iconChar: "⇄", filePath: './modules/material/datum_shift.js' }
         }
     },
 
