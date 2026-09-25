@@ -115,8 +115,7 @@ export const GDT_HIERARCHY = {
         icon: "fa-microscope",
         symbols: {
             cmm_position: { name: "CMM Position Calculator", iconChar: "⌖", filePath: './modules/inspection/cmm_position.js', desc: "Check hole positions from a CMM report, with bonus." },
-            methods: { name: "Measurement Methods", iconChar: "⏚", planned: true,
-                summary: "How each characteristic is actually checked (surface plate and indicator, V-blocks, CMM, functional gauge) and where each method can mislead." },
+            methods: { name: "Measurement Methods", iconChar: "⏚", filePath: './modules/inspection/methods.js', desc: "How each callout is actually checked, and where each method can mislead." },
             functional_gauge: { name: "Functional Gauge Designer", iconChar: "⊞", planned: true,
                 summary: "Size gauge pins at virtual condition and lay out a go gauge for a hole pattern, including datum pins at MMB." }
         }

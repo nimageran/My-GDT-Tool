@@ -479,6 +479,29 @@ export const EXPLAIN = {
         tool: 'Rebuild the symbol; the profile on the right shows what Ra or Rz actually measures.'
     },
 
+    methods: {
+        title: 'Measurement Methods',
+        terms: [
+            ['Surface plate', 'A very flat granite table. The part rests on it and it acts as the datum.'],
+            ['FIM', 'Full indicator movement: highest minus lowest dial reading during a check.'],
+            ['Functional gauge', 'A fixture with pins at virtual condition: if the part fits on it, the pattern passes.'],
+            ['Best fit', 'A CMM alignment that matches the part to the model as closely as possible. Only right without datums.']
+        ],
+        simple: [
+            'Every callout has a **usual way to check it**: hand tools, the **surface plate**, a **gauge**, or the **CMM**.',
+            'The method must check **what the frame asks**, not just what is easy: sweeping the top of a part on the plate is **parallelism**, not flatness.',
+            'Always **set up the datums in frame order** (A, then B, then C) before measuring.',
+            'Most false rejects come from the **method**: wrong alignment, **no bonus**, a tool too coarse, or a **dirty or hot** part.',
+            'Use **What to check** when you have a callout, or **Equipment I have** to see what your tools can do.'
+        ],
+        example: [
+            'A part has a flatness 0.05 callout on its top face.',
+            'An operator rests it on the plate and sweeps the top: 0.09 mm, rejected.',
+            'The page shows that setup measures parallelism. Set the face up on three jacks, level it, and sweep again: 0.03 mm. The part is good.'
+        ],
+        tool: 'Pick "What to check" or "Equipment I have", then search or filter by shop floor, gauge or lab.'
+    },
+
     cmm_position: {
         title: 'CMM Position Calculator',
         terms: [
