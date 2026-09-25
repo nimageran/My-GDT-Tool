@@ -546,6 +546,143 @@ const EXPLAIN = {
             'If one part is tapped instead: only about Ø0.5 each (0.5 + 0.5 = 1.0).'
         ],
         tool: 'Pick a screw and the joint type; red in the section shows where the parts would clash.'
+    },
+
+    read_checklist: {
+        title: 'How to read a drawing',
+        terms: [
+            ['Title block', 'The box in the bottom-right corner with the part number, revision, material and default tolerances.'],
+            ['Revision (REV)', 'The version of the drawing: A, B, C... Each change raises the letter.'],
+            ['Notes', 'Rules written as text that apply to the whole part.'],
+            ['Datum', 'A face or feature the part is held and measured from, shown as a letter in a box.']
+        ],
+        simple: [
+            'Read a drawing in **the same order every time**, so nothing is missed.',
+            'Start with the **title block**: part number, **revision**, units, standard and view layout.',
+            'Then look at the **views** until you can picture the part in 3D.',
+            'Then read the **default tolerances** and **every note**, because they apply everywhere.',
+            'Only then read the **datums**, the dimensions and the GD&T frames.',
+            'Last, check the **revision block** to see what changed recently.'
+        ],
+        example: [
+            'You get a drawing for part 10-4217 and your work order says REV B.',
+            'Step 1 already stops you: the drawing is REV C.',
+            'The revision block says the holes changed from Ø9 to Ø10.',
+            'Making REV B parts would have scrapped the whole batch.',
+            'You ask for the right work order before cutting any metal.'
+        ],
+        tool: 'Press Next to walk through the sample drawing; the lit-up area is where to look.'
+    },
+
+    title_block: {
+        title: 'Title block',
+        terms: [
+            ['Title block', 'The box in the bottom-right corner of a drawing, with its key facts.'],
+            ['Revision', 'The version letter of the drawing.'],
+            ['Temper', 'The heat-treat state of a metal, like T6 in 6061-T6.'],
+            ['"Unless otherwise specified"', 'The default rule, used when nothing else is written.']
+        ],
+        simple: [
+            'The **title block** is the ID card of the drawing.',
+            'It says **what the part is** (number, name, revision), **what it is made of** (material, finish) and **how to read it** (units, standard, projection).',
+            'It also gives the **default tolerance** for dimensions that have none written.',
+            'Check the **part number** and **revision** first, every time.',
+            'Layouts differ between companies, but the fields are almost always the same.'
+        ],
+        example: [
+            'The title block says material AL 6061-T6 and finish CLEAR ANODIZE.',
+            'The supplier sends 6061-T4 bar: the temper is wrong, so it is rejected.',
+            'The default tolerance line "X.X ±0.2" means a dimension of 40.0 may be 39.8 to 40.2.'
+        ],
+        tool: 'Click any box of the title block to see what it means, what to check and what to watch out for.'
+    },
+
+    projection: {
+        title: 'First angle vs third angle',
+        terms: [
+            ['Projection', 'How the views of a part are placed on the sheet around the front view.'],
+            ['Third angle', 'Each view sits on the same side you look from. Used in the US and Canada.'],
+            ['First angle', 'Each view sits on the opposite side. Used in Europe and much of Asia.']
+        ],
+        simple: [
+            'A drawing shows a part from several directions, called **views**.',
+            'In **third angle**, the top view is **above** the front view and the right view is **to the right**.',
+            'In **first angle**, it is the other way: the top view is **below** and the right view is **to the left**.',
+            'The **cone symbol** in the title block tells you which: **circles on the left means third angle**.',
+            'Mixing them up gives a **mirror-image** part.'
+        ],
+        example: [
+            'A German supplier sends a drawing with the cone on the left and circles on the right: first angle.',
+            'The view to the left of the front view is therefore the view from the right side.',
+            'A slot you see in it is on the right end of the part, not the left.'
+        ],
+        tool: 'Switch between third and first angle and watch the views jump sides.'
+    },
+
+    lines_views: {
+        title: 'Lines & views',
+        terms: [
+            ['Hidden line', 'A dashed line: an edge behind material.'],
+            ['Center line', 'A long-short dash line through the middle of a hole or round shape.'],
+            ['Section view', 'A view of the part cut open, with hatching on the cut material.'],
+            ['Detail view', 'A small area drawn again larger.']
+        ],
+        simple: [
+            'Every line has a meaning, shown by its **thickness** and **dash pattern**.',
+            '**Thick solid** lines are edges you can see; **dashed** lines are edges hidden behind material.',
+            '**Center lines** mark the middle of holes and round parts.',
+            'A **section view** shows the part cut open; the **hatching** marks solid material.',
+            'Always find a feature in **every view**: the views line up with each other.'
+        ],
+        example: [
+            'A block shows a circle in the front view.',
+            'In the top view, two dashed lines line up with the circle and run the full depth.',
+            'So it is a hole that goes all the way through.'
+        ],
+        tool: 'Search or filter the list; each card shows what the line or view looks like.'
+    },
+
+    general_tolerances: {
+        title: 'General tolerances',
+        terms: [
+            ['General tolerance', 'The tolerance a dimension gets when none is written next to it.'],
+            ['Decimal places', 'The number of digits after the point: 25.0 has one, 25.00 has two.'],
+            ['ISO 2768', 'A standard table of general tolerances, picked with a class letter: f, m, c or v.']
+        ],
+        simple: [
+            'Every dimension has a tolerance, even if **none is written** next to it.',
+            'Most US drawings take it from the **title block**, by the number of **decimal places**.',
+            'Many European drawings say **ISO 2768-m** instead: the tolerance then depends on the **size** and the **class**.',
+            'A tolerance written on the dimension **always wins**.',
+            '**Boxed (basic) dimensions** never use the general tolerance.'
+        ],
+        example: [
+            'The title block says "X.X ±0.2" and a length is written 40.0.',
+            'The part is good from 39.8 to 40.2.',
+            'On an ISO 2768-m drawing, the same 40 mm length is ±0.3, so 39.7 to 40.3.'
+        ],
+        tool: 'Choose title block or ISO 2768, type the dimension, and read the good range.'
+    },
+
+    drawing_notes: {
+        title: 'Notes & abbreviations',
+        terms: [
+            ['UOS', 'Unless otherwise specified: the default, unless something else is written.'],
+            ['TYP', 'Typical: applies to all the matching features.'],
+            ['REF', 'Reference: for information only, not inspected.']
+        ],
+        simple: [
+            'Drawings use **short words** to save space, like **TYP**, **REF** and **THRU**.',
+            'The **notes** block lists rules for the **whole part**, like edge breaks, coatings and default finish.',
+            'A note counts **as much as a dimension**.',
+            'Read **all the notes before starting** work, not after.'
+        ],
+        example: [
+            'Note 3 says "DIMENSIONS APPLY AFTER ANODIZE".',
+            'A Ø10.00 +0.02 hole must be machined a little bigger, because anodize makes it smaller.',
+            'Machining it to 10.01 before coating could make it undersize after.'
+        ],
+        tool: 'Search for any short word or note; filter by abbreviations or common notes.'
     }
 };
 

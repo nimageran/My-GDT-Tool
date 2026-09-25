@@ -67,17 +67,25 @@ export const GDT_HIERARCHY = {
         }
     },
 
-    // TAB 4: reverse-engineering hard callouts (see decode/DECODER_SPEC.md)
+    // TAB 4: reading a drawing, from the basics of the sheet to hard callouts
+    // (decoders follow decode/DECODER_SPEC.md)
     DECODE: {
-        label: "Decode Drawings",
+        label: "Read Drawings",
         icon: "fa-magnifying-glass",
         symbols: {
-            symbol_finder: { name: "Symbol Finder", iconChar: "⌕", filePath: './modules/decode/symbol_finder.js' },
-            composite_frames: { name: "Feature Control Frames", iconChar: "▣", filePath: './modules/decode/composite_frames.js' },
-            hole_callouts: { name: "Holes, Threads & Patterns", iconChar: "⌀", filePath: './modules/decode/hole_callouts.js' },
-            welding: { name: "Welding Symbols", iconChar: "▷", filePath: './modules/decode/welding.js' },
-            surface_finish: { name: "Surface Finish", iconChar: "√", filePath: './modules/decode/surface_finish.js' },
-            frame_checker: { name: "Frame Legality Checker", iconChar: "✓", filePath: './modules/decode/frame_checker.js' }
+            read_checklist: { group: "Drawing basics", name: "How to Read a Drawing", iconChar: "☰", filePath: './modules/drawing/read_checklist.js' },
+            title_block: { group: "Drawing basics", name: "Title Block", iconChar: "▤", filePath: './modules/drawing/title_block.js' },
+            projection: { group: "Drawing basics", name: "First vs Third Angle", iconChar: "◎", filePath: './modules/drawing/projection.js' },
+            lines_views: { group: "Drawing basics", name: "Lines & Views", iconChar: "┅", filePath: './modules/drawing/lines_views.js' },
+            general_tolerances: { group: "Drawing basics", name: "General Tolerances", iconChar: "±", filePath: './modules/drawing/general_tolerances.js' },
+            drawing_notes: { group: "Drawing basics", name: "Notes & Abbreviations", iconChar: "✎", filePath: './modules/drawing/drawing_notes.js' },
+
+            symbol_finder: { group: "Decode callouts", name: "Symbol Finder", iconChar: "⌕", filePath: './modules/decode/symbol_finder.js' },
+            composite_frames: { group: "Decode callouts", name: "Feature Control Frames", iconChar: "▣", filePath: './modules/decode/composite_frames.js' },
+            hole_callouts: { group: "Decode callouts", name: "Holes, Threads & Patterns", iconChar: "⌀", filePath: './modules/decode/hole_callouts.js' },
+            welding: { group: "Decode callouts", name: "Welding Symbols", iconChar: "▷", filePath: './modules/decode/welding.js' },
+            surface_finish: { group: "Decode callouts", name: "Surface Finish", iconChar: "√", filePath: './modules/decode/surface_finish.js' },
+            frame_checker: { group: "Decode callouts", name: "Frame Legality Checker", iconChar: "✓", filePath: './modules/decode/frame_checker.js' }
         }
     },
 
