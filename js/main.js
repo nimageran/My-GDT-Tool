@@ -134,14 +134,6 @@ function setupSidebarToggle() {
     toggleControlsBtn.onclick = toggleSidebar;
     expandControlsBtn.onclick = toggleSidebar;
     explainBtn.onclick = () => openExplain(activeSymbolKey);
-
-    // The tools' own "Explain / Guide" buttons open the same shared panel
-    controlsContent.addEventListener('click', (e) => {
-        if (e.target.closest('#btn-guide') && hasExplanation(activeSymbolKey)) {
-            e.stopPropagation();
-            openExplain(activeSymbolKey);
-        }
-    }, true);
 }
 
 // Glossary underlines in the sidebar's explanatory text (notes, warnings,

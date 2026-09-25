@@ -253,13 +253,6 @@ function drawScanningProbes() {
     drawProbeTip(x1, y1, theta1);
     drawProbeTip(x2, y2, theta2);
     
-    // 3. Label "Opposed Elements"
-    const txt = createSVG('text', {
-        x: x1 + 10, y: y1 - 10, 
-        fill: '#ef4444', 'font-size': '12', 'font-family': 'monospace'
-    });
-    txt.textContent = "SCANNING...";
-    group.appendChild(txt);
 
     svgContainer.appendChild(group);
 }
@@ -391,9 +384,6 @@ function renderControls() {
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400">A</div>
             </div>
             
-            <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
-            </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">

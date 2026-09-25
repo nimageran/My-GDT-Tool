@@ -107,9 +107,8 @@ function drawDatumA() {
     }
     
     // Label
-    const textStyle = { fill: '#1e293b', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-weight': '900', 'font-size': '20' };
-    const label = createSVG('text', { x: 60, y: center.y - 15, ...textStyle });
-    label.textContent = "DATUM PLANE A";
+    const label = createSVG('text', { x: 60, y: center.y + 34, fill: COLORS.muted, stroke: 'none', 'font-family': 'Inter, ui-sans-serif, system-ui, sans-serif', 'font-size': '13' });
+    label.textContent = 'Datum plane A';
     group.appendChild(label);
     
     svgContainer.appendChild(group);
@@ -382,9 +381,6 @@ function renderControls() {
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400">A</div>
             </div>
             
-            <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
-            </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">

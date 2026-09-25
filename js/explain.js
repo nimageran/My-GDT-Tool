@@ -209,7 +209,7 @@ export const EXPLAIN = {
             'The spread is 0.35 mm, so parallelism passes.',
             'Whether 20.10 to 20.45 is the right height is judged by the size tolerance.'
         ],
-        tool: 'Change the tilt and the tolerance.'
+        tool: 'Drag an end of the top face (or use the sliders) to add tilt and waviness, and watch the dial reading.'
     },
 
     position: {

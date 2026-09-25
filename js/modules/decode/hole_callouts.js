@@ -9,6 +9,7 @@
 // ============================================================================
 
 import { el, diaSymbol, cboreSymbol, csinkSymbol, depthSymbol, HOLE_W } from './symbols.js';
+import { backdrop } from '../../theme.js';
 import { takeFocus } from '../../focus.js';
 
 // --------------------------------------------------------------------------
@@ -80,14 +81,16 @@ export function draw(canvas) {
     defs.appendChild(pat);
     canvas.appendChild(defs);
 
+    const headings = [];
     [[260, 'WHAT IT COMMANDS'], [640, 'IN PLAIN ENGLISH']].forEach(([y, label]) => {
         canvas.appendChild(el('line', { x1: 0, y1: y, x2: 1000, y2: y, stroke: '#e2e8f0', 'stroke-width': 1 }));
-        canvas.appendChild(txt(label, 40, y + 20, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
+        headings.push(txt(label, 40, y + 20, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
     });
-    canvas.appendChild(txt('CALLOUT', 40, 24, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
+    headings.push(txt('CALLOUT', 40, 24, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
 
     zones = { symbol: el('g'), preview: el('g'), sentence: el('g') };
     Object.values(zones).forEach(z => canvas.appendChild(z));
+    headings.forEach(h => { canvas.appendChild(h); backdrop(h); });   // on top, so leaders pass behind
     update();
 }
 

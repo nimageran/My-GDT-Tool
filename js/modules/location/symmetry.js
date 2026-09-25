@@ -1,7 +1,7 @@
 // js/modules/location/symmetry.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
-import { COLORS, resultsCard } from '../../theme.js';
+import { COLORS, resultsCard, halo } from '../../theme.js';
 
 const f4 = v => `${v.toFixed(4)}"`;
 
@@ -97,22 +97,21 @@ function drawDatumPlane() {
     }));
 
     // Datum Identifier
-    const textStyle = { 
-        fill: '#1e293b', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-weight': '900', 'font-size': '20' 
+    const textStyle = {
+        fill: '#1e293b', stroke: 'none', 'font-family': 'Inter, ui-sans-serif, system-ui, sans-serif', 'font-weight': '700', 'font-size': '14'
     };
-    
-    // Top Label
-    const labelTop = createSVG('text', { x: center.x + 15, y: 40, ...textStyle });
-    labelTop.textContent = "DATUM CENTER PLANE A";
 
-    // Bottom Anchor Symbol
-    const bottomY = 750;
-    group.appendChild(createSVG('line', { x1: center.x - 20, y1: bottomY, x2: center.x + 20, y2: bottomY }));
-    group.appendChild(createSVG('line', { x1: center.x, y1: bottomY, x2: center.x, y2: bottomY - 20 }));
-    const labelBot = createSVG('text', { x: center.x - 5, y: bottomY - 25, ...textStyle });
+    // Label, beside the plane
+    const labelTop = createSVG('text', { x: center.x + 40, y: 660, ...textStyle });
+    labelTop.textContent = "Datum centre plane A";
+
+    // Boxed datum letter on the plane
+    const bottomY = 700;
+    group.appendChild(createSVG('rect', { x: center.x - 15, y: bottomY, width: 30, height: 30, fill: '#fff', 'stroke-width': 2 }));
+    const labelBot = createSVG('text', { x: center.x, y: bottomY + 21, 'text-anchor': 'middle', ...textStyle, 'font-size': '17' });
     labelBot.textContent = "A";
 
-    group.appendChild(labelTop);
+    group.appendChild(halo(labelTop));
     group.appendChild(labelBot);
     svgContainer.appendChild(group);
 }
@@ -149,10 +148,11 @@ function drawToleranceZone() {
     arrowGroup.appendChild(createSVG('line', { x1: x1, y1: dimY, x2: x2, y2: dimY, 'marker-end': 'url(#arrow)', 'marker-start': 'url(#arrow)' }));
     
     const label = createSVG('text', {
-        x: center.x, y: dimY - 10,
-        fill: '#2563eb', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'middle'
+        x: x2 + 10, y: dimY + 5,
+        fill: '#2563eb', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'start'
     });
-    label.textContent = `Tol Zone: ${toleranceWidth.toFixed(3)}"`;
+    label.textContent = `${toleranceWidth.toFixed(3)}" zone`;
+    halo(label);
 
     group.appendChild(arrowGroup);
     group.appendChild(label);
@@ -202,9 +202,10 @@ function drawSlotFeature() {
         stroke: '#1e293b', 'stroke-width': 2, 'marker-end': 'url(#arrow)', 'marker-start': 'url(#arrow)' 
     }));
     const widthText = createSVG('text', {
-        x: centerX, y: dimY - 10,
+        x: centerX + halfSlot / 2, y: dimY - 10,
         fill: '#1e293b', 'font-family': 'sans-serif', 'font-size': '16', 'font-weight': 'bold', 'text-anchor': 'middle'
     });
+    halo(widthText);
     widthText.textContent = `${slotWidth.toFixed(3)}"`;
     
     group.appendChild(widthText);
@@ -229,10 +230,11 @@ function drawMedianAnalysis() {
 
     // Label for Median Plane
     const label = createSVG('text', {
-        x: centerX, y: 170,
-        fill: planeColor, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'middle'
+        x: centerX + 14, y: 640,
+        fill: planeColor, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'start'
     });
     label.textContent = "DERIVED MEDIAN PLANE";
+    halo(label);
     group.appendChild(label);
 
     // 2. Visualizing "Opposed Points" averaging
@@ -330,9 +332,6 @@ function renderControls() {
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400 flex-1 text-center">A</div>
             </div>
             
-             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
-            </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
