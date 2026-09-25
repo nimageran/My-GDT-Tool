@@ -20,7 +20,7 @@ Tabs are grouped by what you're trying to do. **Search** (header, or press `/`) 
 | Tab | What it covers | Built | Planned |
 |---|---|---|---|
 | **Characteristics** | The 14 geometric characteristics as interactive tolerance zones, grouped Form / Profile / Orientation / Location / Runout | All 14 (concentricity and symmetry flagged as removed in 2018) | |
-| **Material Condition** | Modifiers and the boundaries they create | Bonus tolerance (MMC / LMC / RFS) | Virtual & resultant condition, Rule #1 envelope, datum shift (MMB) |
+| **Material Condition** | Modifiers and the boundaries they create | Bonus tolerance (MMC / LMC / RFS), Rule #1 envelope (and independency), virtual & resultant condition (will the pin always fit the hole?), datum shift (MMB) | |
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D) | Datum targets |
 | **Read Drawings** | Reading a drawing, from the sheet itself to hard callouts | *Drawing basics:* how to read a drawing (step-by-step on a sample sheet), title block, first vs third angle projection, lines & views, general tolerances (title block and ISO 2768), notes & abbreviations. *Decode callouts:* Symbol Finder (visual index of ~80 drawing symbols), feature control frames, frame legality checker, holes/threads/patterns, welding symbols, surface finish (ISO 1302 and US legacy) | |
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
@@ -43,6 +43,7 @@ js/search.js               Search everything (header button, / or Ctrl+K); resul
 js/focus.js                Hand-off of that item to the tool (setFocus / takeFocus)
 js/legibility.js           Keeps canvas text readable when the canvas is scaled down
 js/modules/<area>/*.js     One file per tool
+js/modules/material/       Rule #1, virtual condition, datum shift
 js/modules/decode/         Decoders, symbols.js geometry library, DECODER_SPEC.md
 js/modules/drawing/        Drawing basics; sheet.js (line styles, title block, dims) and dictionary.js (searchable card pages)
 ```

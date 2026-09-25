@@ -548,6 +548,74 @@ export const EXPLAIN = {
         tool: 'Pick a screw and the joint type; red in the section shows where the parts would clash.'
     },
 
+    rule1: {
+        title: 'Rule #1 (the envelope rule)',
+        terms: [
+            ['Envelope', 'A perfect shape at the MMC size: a perfect ring for a pin, a perfect pin for a hole.'],
+            ['Two-point size', 'The size a caliper or micrometer measures between two points. It cannot see a bend.'],
+            ['Independency (Ⓘ)', 'Size and shape are checked separately. The default on ISO drawings.']
+        ],
+        simple: [
+            'Under ASME, a pin or hole must have **perfect form at MMC**: this is **Rule #1**.',
+            'So a pin made at its **largest size must be perfectly straight**; as it gets smaller, it may **bend by the difference**.',
+            'A **caliper cannot see a bend**, so a bent pin can measure fine at every point and still not fit a **ring gauge at MMC**.',
+            'The check is: **size + bend ≤ MMC** for a pin, **size − bend ≥ MMC** for a hole.',
+            '**ISO drawings do not use Rule #1** (independency); they need **Ⓔ** after the size to ask for it.'
+        ],
+        example: [
+            'A pin is Ø10 ±0.1, so its MMC is Ø10.1.',
+            'It is made at Ø10.1 with a 0.05 bend: every caliper reading is 10.1, which is in tolerance.',
+            'But 10.1 + 0.05 = 10.15 will not go into the Ø10.1 ring gauge, so it fails.',
+            'The same bend on a pin made at Ø9.9 is fine: 9.9 + 0.05 = 9.95.'
+        ],
+        tool: 'Move the size and bend sliders, switch pin or hole, or turn Rule #1 off (independency) to compare.'
+    },
+
+    virtual_condition: {
+        title: 'Virtual & resultant condition',
+        terms: [
+            ['Virtual condition (VC)', 'The worst-case boundary from the size at MMC plus the geometric tolerance. For a hole: MMC − tolerance. For a pin: MMC + tolerance.'],
+            ['Resultant condition (RC)', 'The other extreme: the feature at LMC with all its bonus used.'],
+            ['Boundary', 'A perfect circle (or cylinder) the feature never crosses, whatever its size and position.']
+        ],
+        simple: [
+            'A hole can be small **and** off position at the same time, so it leaves **less space than its size says**.',
+            'The **smallest space a hole ever leaves** is its **virtual condition**: MMC − position tolerance (at Ⓜ).',
+            'The **most space a pin ever takes** is its virtual condition: MMC + position tolerance.',
+            'If the **pin\'s boundary is not bigger than the hole\'s**, the parts **always assemble**.',
+            'The **resultant condition** is the other extreme; use it for the **thinnest wall**.'
+        ],
+        example: [
+            'Hole Ø10 +0.1/0 with position Ø0.2 Ⓜ: it never leaves less than 10.0 − 0.2 = Ø9.8.',
+            'Pin Ø9.6 +0/−0.1 with position Ø0.1 Ⓜ: it never takes more than 9.6 + 0.1 = Ø9.7.',
+            '9.8 − 9.7 = 0.1, so the parts always go together.',
+            'A fixed gauge pin of Ø9.8 checks the hole.'
+        ],
+        tool: 'Enter the hole and the pin, pick Ⓜ, RFS or Ⓛ, and see both boundaries and the worst-case gap.'
+    },
+
+    datum_shift: {
+        title: 'Datum shift (MMB)',
+        terms: [
+            ['MMB', 'Maximum material boundary: the fixed size of the gauge pin (or hole) that holds a datum feature referenced with Ⓜ.'],
+            ['Datum shift', 'The part sliding on that gauge pin because the datum hole is bigger than the pin.'],
+            ['RMB', 'No modifier on the datum: the part is held on the datum feature\'s own axis, with no play.']
+        ],
+        simple: [
+            'When a frame says **B Ⓜ**, datum hole B is held on a **gauge pin at its MMB size**.',
+            'If B is made **bigger**, the part can **slide on the pin**: half the difference in any direction.',
+            'The **whole pattern of zones moves together** with the pin, like one gauge.',
+            'So it rescues holes that are **all off the same way**, but **not holes off in opposite directions**.',
+            'Many **CMM reports ignore datum shift**, so a part a gauge accepts may be rejected on paper.'
+        ],
+        example: [
+            'Four holes are all about 0.12 off to the right; allowed position Ø0.2, so each measures about Ø0.24 and fails.',
+            'Datum hole B is Ø10.08 on a Ø10.00 pin: the part may slide 0.04.',
+            'Sliding it right cuts every hole to about Ø0.16: the part passes.'
+        ],
+        tool: 'Change B\'s size, switch B Ⓜ and B (RMB), edit the hole offsets, or try the presets.'
+    },
+
     fits: {
         title: 'ISO fits (H7/g6)',
         terms: [

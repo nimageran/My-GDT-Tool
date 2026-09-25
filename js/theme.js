@@ -224,6 +224,7 @@ export function callout(label, labelX, labelY, targetX, targetY, opts = {}) {
  * diameter: prefix the tolerance with the diameter symbol
  * modifier: 'M' | 'L' | ['M', 'P'] | null, circled letters after the tolerance
  * projected: projected zone height shown after a P modifier, e.g. '10'
+ * datums: letters, or { letter, mod: 'M' | 'L' } for a datum referenced at MMB / LMB
  * Returns { g, width, height }.
  */
 export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diameter = false, modifier = null, projected = null, h = 34 }) {
@@ -248,8 +249,12 @@ export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diam
             }
             if (projected) g.appendChild(text(projected, left + 6, cy, { size: 16, weight: 600, mono: true, baseline: 'central', fill: COLORS.ink }));
         } },
-        ...datums.map(d => ({ w: h, draw: (cx, cy) =>
-            g.appendChild(text(d, cx, cy, { size: 17, weight: 700, anchor: 'middle', baseline: 'central', fill: COLORS.ink })) }))
+        ...datums.map(d => typeof d === 'string'
+            ? { w: h, draw: (cx, cy) => g.appendChild(text(d, cx, cy, { size: 17, weight: 700, anchor: 'middle', baseline: 'central', fill: COLORS.ink })) }
+            : { w: h * 1.7, draw: (cx, cy) => {
+                g.appendChild(text(d.letter, cx - h * 0.33, cy, { size: 17, weight: 700, anchor: 'middle', baseline: 'central', fill: COLORS.ink }));
+                g.appendChild(circledMod(cx + h * 0.3, cy, 9.5, d.mod));
+            } })
     ];
     const width = cells.reduce((s, c) => s + c.w, 0);
     g.appendChild(createSVG('rect', { x, y, width, height: h, fill: COLORS.card, stroke: COLORS.ink, 'stroke-width': 2 }));
