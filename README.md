@@ -22,7 +22,7 @@ Tabs are grouped by what you're trying to do. Tools marked *planned* appear grey
 | **Characteristics** | The 14 geometric characteristics as interactive tolerance zones, grouped Form / Profile / Orientation / Location / Runout | All 14 (concentricity and symmetry flagged as removed in 2018) | |
 | **Material Condition** | Modifiers and the boundaries they create | Bonus tolerance (MMC / LMC / RFS) | Virtual & resultant condition, Rule #1 envelope, datum shift (MMB) |
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D) | Datum targets |
-| **Decode Drawings** | Reading hard callouts | Symbol Finder (visual index of ~80 drawing symbols), feature control frames, holes/threads/patterns, welding symbols | Surface finish, frame legality checker |
+| **Decode Drawings** | Reading hard callouts | Symbol Finder (visual index of ~80 drawing symbols), feature control frames, holes/threads/patterns, welding symbols, surface finish (ISO 1302 and US legacy) | Frame legality checker |
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas | ISO fits |
 | **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
