@@ -1,263 +1,258 @@
 // js/modules/orientation/parallelism.js
-import { createSVG } from '../../drawing_utils.js';
+// Parallelism of a top face to datum A (the face the part sits on). The zone
+// is two planes parallel to A, the tolerance apart; it may float up or down,
+// so tilt and waviness count, the height itself does not (size checks that).
+// Like a dial indicator swept across the top: reading = highest − lowest.
 
-// ==========================================
-// 1. THE VISUALIZATION
-// ==========================================
+import { createSVG, readTolerance } from '../../drawing_utils.js';
+import {
+    COLORS, text, wrapText, addDefs, zoneBand, zoneEdge, nominalLine, datumGround,
+    datumFeatureSymbol, featureControlFrame, legend, resultsStrip
+} from '../../theme.js';
+
+// --- STATE (inches) ---
+const state = {
+    tolerance: 0.010,
+    tilt: 0.004,           // rise from the left end to the right end
+    wave: 0.003,           // peak-to-valley of the waviness
+    scale: 6000            // requested vertical exaggeration, px per inch
+};
+
+// --- DRAWING GEOMETRY (px) ---
+const BASE_Y = 540;        // datum A
+const TOP_Y = 330;         // nominal top face
+const X1 = 170, X2 = 690;  // part left / right
+const MAX_DEV_PX = 70;     // keep the exaggerated surface on the stage
+const MAX_ZONE_PX = 150;
+const FCF_X = 740, LEADER_Y = 200;
+const MAX_TILT = 0.03, MAX_WAVE = 0.03;
+const N = 104;             // measured points across the face
+
+let svgContainer = null;
+let controlsContainer = null;
+let drag = null;           // 'left' | 'right' while dragging an end
+
 export function draw(svg) {
-    // A. Setup the Scene (Side View of a Block)
-    
-    // 1. The Datum (Bottom Surface)
-    const floorY = 600;
-    svg.appendChild(createSVG('line', {
-        x1: 100, y1: floorY, x2: 900, y2: floorY,
-        stroke: '#1e293b', 'stroke-width': 4
-    }));
-
-    // Datum Symbol (The Triangle and Box)
-    // Vertical leg
-    svg.appendChild(createSVG('line', {
-        x1: 200, y1: floorY, x2: 200, y2: floorY + 40, stroke: '#1e293b', 'stroke-width': 2
-    }));
-    // The Box
-    svg.appendChild(createSVG('rect', {
-        x: 185, y: floorY + 40, width: 30, height: 30, fill: 'white', stroke: '#1e293b', 'stroke-width': 2
-    }));
-    // The Text "A"
-    const datumLabel = createSVG('text', { x: 200, y: floorY + 62, 'text-anchor': 'middle', 'font-weight': 'bold', 'font-family': 'sans-serif' });
-    datumLabel.textContent = "A";
-    svg.appendChild(datumLabel);
-    // The Triangle (Filled)
-    const tri = createSVG('polygon', {
-        points: `200,${floorY} 195,${floorY+10} 205,${floorY+10}`,
-        fill: '#1e293b'
-    });
-    svg.appendChild(tri);
-
-
-    // 2. The Tolerance Zone (Two Floating Planes)
-    // We group them so we can move/scale them easily
-    const zoneGroup = createSVG('g', { id: 'tolZoneGroup' });
-    
-    // Top Plane of Zone
-    zoneGroup.appendChild(createSVG('line', {
-        id: 'zoneTop', x1: 150, y1: 250, x2: 850, y2: 250,
-        stroke: '#3b82f6', 'stroke-width': 2, 'stroke-dasharray': '10,5'
-    }));
-    // Bottom Plane of Zone
-    zoneGroup.appendChild(createSVG('line', {
-        id: 'zoneBot', x1: 150, y1: 350, x2: 850, y2: 350,
-        stroke: '#3b82f6', 'stroke-width': 2, 'stroke-dasharray': '10,5'
-    }));
-    // Filled Area (Transparent Blue)
-    zoneGroup.appendChild(createSVG('rect', {
-        id: 'zoneFill', x: 150, y: 250, width: 700, height: 100,
-        fill: 'rgba(59, 130, 246, 0.1)', stroke: 'none'
-    }));
-    
-    svg.appendChild(zoneGroup);
-
-
-    // 3. The Actual Surface (Dynamic Path)
-    const surfacePath = createSVG('path', {
-        id: 'actualSurfacePath',
-        d: '', // Will be calculated in update()
-        fill: 'none', stroke: '#1e293b', 'stroke-width': 6, 'stroke-linecap': 'round'
-    });
-    svg.appendChild(surfacePath);
-
-
-    // 4. Result Banner (Floating UI)
-    const bannerGroup = createSVG('g', { id: 'resultBanner', transform: 'translate(50, 50)' });
-    
-    bannerGroup.appendChild(createSVG('rect', {
-        width: 320, height: 110, rx: 8, fill: 'rgba(255,255,255,0.95)', stroke: '#cbd5e1', 'stroke-width': 2,
-        filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))'
-    }));
-    
-    const title = createSVG('text', { x: 20, y: 30, 'font-size': 11, 'font-weight': 'bold', fill: '#64748b', 'text-transform': 'uppercase' });
-    title.textContent = "Measured: dial high − low";
-    bannerGroup.appendChild(title);
-
-    const val = createSVG('text', { id: 'bannerVal', x: 20, y: 65, 'font-size': 32, 'font-weight': '900', fill: '#1e293b', 'font-family': 'monospace' });
-    val.textContent = "0.000";
-    bannerGroup.appendChild(val);
-
-    const status = createSVG('text', { id: 'bannerStatus', x: 20, y: 90, 'font-size': 13, 'font-weight': 'bold', fill: '#64748b' });
-    status.textContent = "--";
-    bannerGroup.appendChild(status);
-
-    svg.appendChild(bannerGroup);
-    
-    // Trigger update to render default state
-    setTimeout(update, 50);
+    svgContainer = svg;
+    setupInteractions(svg);
+    renderScene();
 }
 
-
-// ==========================================
-// 2. THE CONTROLS
-// ==========================================
 export function loadControls(container) {
-    container.innerHTML = `
-        <div class="col-span-3 border-b border-slate-200 pb-4 mb-2">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Specification</h4>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="text-[10px] font-bold text-slate-500">PARALLELISM TOLERANCE</label>
-                    <input type="number" id="tolInput" value="0.50" step="0.01" class="w-full border-2 border-slate-300 rounded p-2 font-mono font-bold text-lg text-center">
-                </div>
-                <div class="flex items-center text-xs text-slate-500 italic">
-                    The surface must lie between two parallel planes 0.50mm apart.
-                </div>
-            </div>
-        </div>
-
-        <div class="col-span-3">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Simulate the part</h4>
-            
-            <div class="space-y-4">
-                <div>
-                    <div class="flex justify-between">
-                        <label class="text-xs font-bold text-slate-700">Surface Tilt (Slope)</label>
-                        <span id="tiltVal" class="text-xs font-mono text-slate-500">0.00</span>
-                    </div>
-                    <input type="range" min="-2.0" max="2.0" step="0.05" value="0.0" id="tiltSlider" class="w-full accent-blue-600">
-                </div>
-
-                <div>
-                    <div class="flex justify-between">
-                        <label class="text-xs font-bold text-slate-700">Surface Waviness (Form Error)</label>
-                        <span id="waveVal" class="text-xs font-mono text-slate-500">0.00</span>
-                    </div>
-                    <input type="range" min="0" max="1.0" step="0.05" value="0.0" id="waveSlider" class="w-full accent-purple-600">
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Attach Listeners
-    document.getElementById('tolInput').addEventListener('input', update);
-    document.getElementById('tiltSlider').addEventListener('input', update);
-    document.getElementById('waveSlider').addEventListener('input', update);
+    controlsContainer = container;
+    renderControls();
 }
 
+const fmtTol = v => v.toFixed(v >= 0.001 ? 3 : 4);
 
-// ==========================================
-// 3. THE LOGIC ENGINE
-// ==========================================
-function update() {
-    // 1. Get Inputs
-    const tol = parseFloat(document.getElementById('tolInput').value) || 0.1;
-    const tilt = parseFloat(document.getElementById('tiltSlider').value);
-    const wave = parseFloat(document.getElementById('waveSlider').value);
+// --- EVALUATION ---
 
-    // Update Text Labels
-    document.getElementById('tiltVal').textContent = tilt.toFixed(2);
-    document.getElementById('waveVal').textContent = wave.toFixed(2);
+/** Height of the top face at u (0 = left end, 1 = right end), relative to nominal. */
+export function surfaceAt(u, { tilt, wave }) {
+    return tilt * (u - 0.5) + (wave / 2) * Math.sin(u * Math.PI * 4);
+}
 
-    // 2. Calculate Geometry for SVG (Scaling)
-    // We choose a scale factor to make the visualization look good.
-    // Let's say 1 unit of tolerance = 200 pixels on screen (if tol is small).
-    // Or we fix the Tolerance Zone visually to be 100px high, and scale the Error relative to it.
-    
-    // VISUAL CONSTANTS
-    const screenCenterY = 300;
-    const screenZoneHeight = 150; // The visual height of the blue box
-    const scaleFactor = screenZoneHeight / tol; // Pixels per mm
-    
-    // 3. Update Tolerance Zone Visuals
-    const zoneTopY = screenCenterY - (screenZoneHeight / 2);
-    const zoneBotY = screenCenterY + (screenZoneHeight / 2);
-    
-    document.getElementById('zoneTop').setAttribute('y1', zoneTopY);
-    document.getElementById('zoneTop').setAttribute('y2', zoneTopY);
-    document.getElementById('zoneBot').setAttribute('y1', zoneBotY);
-    document.getElementById('zoneBot').setAttribute('y2', zoneBotY);
-    document.getElementById('zoneFill').setAttribute('y', zoneTopY);
-    document.getElementById('zoneFill').setAttribute('height', screenZoneHeight);
+/** Dial sweep: the zone floats, so the error is highest − lowest point. */
+export function evaluate(s = state) {
+    const pts = Array.from({ length: N + 1 }, (_, i) => surfaceAt(i / N, s));
+    const hi = Math.max(...pts), lo = Math.min(...pts);
+    const error = hi - lo;
+    return { pts, hi, lo, error, mid: (hi + lo) / 2, pass: error <= s.tolerance + 1e-12 };
+}
 
+function drawScale(r) {
+    const dev = Math.max(Math.abs(r.hi), Math.abs(r.lo));
+    return Math.min(state.scale, dev > 0 ? MAX_DEV_PX / dev : Infinity, MAX_ZONE_PX / state.tolerance);
+}
 
-    // 4. Generate the "Actual Surface" Path
-    // We simulate measuring points across the width (x=150 to x=850)
-    // Length = 700px.
-    const startX = 150;
-    const endX = 850;
-    const width = 700;
-    let pathD = `M ${startX} `;
-    
-    let minHeight = Infinity;
-    let maxHeight = -Infinity;
+// --- RENDERING ---
 
-    // Loop to build path and calculate min/max simultaneously
-    for (let x = 0; x <= width; x += 10) {
-        // Normalized X (0 to 1)
-        const xNorm = (x / width) - 0.5; // -0.5 to 0.5 (center origin)
-        
-        // Tilt Effect: Linear slope
-        // If tilt is 1.0, it means 1mm rise over run.
-        const tiltY = xNorm * tilt; 
+function renderScene() {
+    if (!svgContainer) return;
+    svgContainer.innerHTML = '';
+    addDefs(svgContainer);
+    const r = evaluate();
+    const k = drawScale(r);
+    const X = u => X1 + (X2 - X1) * u;
+    const Y = h => TOP_Y - h * k;
 
-        // Waviness Effect: Sine wave
-        const waveY = Math.sin(xNorm * Math.PI * 4) * (wave / 2); 
+    // datum A
+    svgContainer.appendChild(datumGround(40, 960, BASE_Y));
+    svgContainer.appendChild(datumFeatureSymbol(250, BASE_Y, 'A'));
+    svgContainer.appendChild(text('Datum plane A (the face the part sits on)', 40, BASE_Y + 40, { size: 13, fill: COLORS.muted }));
 
-        // Total Deviation at this point
-        const totalDev = tiltY + waveY;
+    // zone: two planes parallel to A, centred on the surface's spread (it floats)
+    const zTop = Y(r.mid + state.tolerance / 2), zBot = Y(r.mid - state.tolerance / 2);
+    svgContainer.appendChild(zoneBand([{ x: X1 - 30, y: zTop }, { x: X2 + 30, y: zTop }, { x: X2 + 30, y: zBot }, { x: X1 - 30, y: zBot }]));
+    svgContainer.appendChild(zoneEdge(X1 - 30, zTop, X2 + 30, zTop));
+    svgContainer.appendChild(zoneEdge(X1 - 30, zBot, X2 + 30, zBot));
+    // zone width marker at the left
+    const zx = X1 - 48;
+    svgContainer.appendChild(createSVG('line', { x1: zx, y1: zTop, x2: zx, y2: zBot, stroke: COLORS.zoneText, 'stroke-width': 1.5, 'marker-start': 'url(#thm-arrow-zone)', 'marker-end': 'url(#thm-arrow-zone)' }));
+    svgContainer.appendChild(text(`${fmtTol(state.tolerance)}"`, zx - 8, (zTop + zBot) / 2 + 4, { size: 13, weight: 600, mono: true, fill: COLORS.zoneText, anchor: 'end' }));
 
-        // Track Min/Max for TIR calculation
-        if (totalDev > maxHeight) maxHeight = totalDev;
-        if (totalDev < minHeight) minHeight = totalDev;
-
-        // Convert to Screen Coordinates
-        // NOTE: Screen Y is inverted. Positive deviation goes UP (smaller Y).
-        const screenY = screenCenterY - (totalDev * scaleFactor);
-        
-        if (x === 0) pathD += `${screenY}`;
-        else pathD += ` L ${startX + x} ${screenY}`;
+    // the part: body up to the measured top face
+    const top = r.pts.map((h, i) => `${X(i / N).toFixed(1)},${Y(h).toFixed(1)}`);
+    svgContainer.appendChild(createSVG('path', {
+        d: `M ${X1},${BASE_Y} L ${top.join(' L ')} L ${X2},${BASE_Y} Z`,
+        fill: COLORS.partFill, stroke: COLORS.partStroke, 'stroke-width': 1.5, 'stroke-linejoin': 'round'
+    }));
+    svgContainer.appendChild(nominalLine(X1, TOP_Y, X2, TOP_Y));
+    svgContainer.appendChild(createSVG('polyline', { points: top.join(' '), fill: 'none', stroke: COLORS.actual, 'stroke-width': 5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    // red where outside the zone (only when it fails)
+    if (!r.pass) {
+        const lim = state.tolerance / 2;
+        let seg = [];
+        const flush = () => { if (seg.length > 1) svgContainer.appendChild(createSVG('polyline', { points: seg.join(' '), fill: 'none', stroke: COLORS.fail, 'stroke-width': 6, 'stroke-linecap': 'round' })); seg = []; };
+        r.pts.forEach((h, i) => { if (Math.abs(h - r.mid) > lim) seg.push(`${X(i / N)},${Y(h)}`); else flush(); });
+        flush();
     }
 
-    document.getElementById('actualSurfacePath').setAttribute('d', pathD);
+    // dial readings: highest and lowest point
+    const iHi = r.pts.indexOf(r.hi), iLo = r.pts.indexOf(r.lo);
+    const mark = (i, label, ly) => {
+        const x = X(i / N), y = Y(r.pts[i]);
+        svgContainer.appendChild(createSVG('circle', { cx: x, cy: y, r: 5, fill: COLORS.ink }));
+        svgContainer.appendChild(text(label, x, ly, { size: 12.5, weight: 600, fill: COLORS.text, anchor: 'middle' }));
+    };
+    if (r.error > 1e-9) {
+        mark(iHi, `highest ${r.hi >= 0 ? '+' : ''}${r.hi.toFixed(4)}"`, Math.min(zTop, Y(r.hi)) - 10);
+        mark(iLo, `lowest ${r.lo >= 0 ? '+' : ''}${r.lo.toFixed(4)}"`, Math.max(zBot, Y(r.lo)) + 22);
+    }
 
+    // drag handles at the two ends
+    for (const [u, side] of [[0, 'left'], [1, 'right']]) {
+        svgContainer.appendChild(createSVG('circle', { cx: X(u), cy: Y(r.pts[u * N]), r: 9, fill: COLORS.card, stroke: COLORS.ink, 'stroke-width': 2, style: 'cursor: ns-resize', 'data-end': side }));
+    }
+    svgContainer.appendChild(text('drag an end to tilt', X2 - 14, Math.max(zBot, Y(r.pts[N])) + 44, { size: 12, italic: true, fill: COLORS.muted, anchor: 'end' }));
 
-    // 5. Calculate Engineering Result (TIR)
-    // TIR = Distance between the highest peak and lowest valley relative to the slope? 
-    // NO. Parallelism is relative to the Datum. 
-    // The Datum is the reference. We already simulated the surface relative to the datum (zero line).
-    // The Parallelism Error is the separation between two planes that enclose the surface.
-    // Error = Max Height - Min Height.
-    
-    const parallelismError = maxHeight - minHeight;
+    // legend
+    const ex = k / 100;   // vertical px per inch vs about 100 px per inch along the part
+    svgContainer.appendChild(legend(24, 24, [
+        { kind: 'zone', label: 'Zone (parallel to A, floats up/down)' },
+        { kind: 'actual', label: 'Top face as made' },
+        { kind: 'nominal', label: 'Perfect top face' },
+        { kind: 'fail', label: 'Outside the zone' }
+    ], { note: `Heights exaggerated about ×${Math.round(ex)}` }));
 
+    // callout with leader to the top face
+    const fcf = featureControlFrame(FCF_X, LEADER_Y - 17, { symbol: 'parallelism', tolerance: fmtTol(state.tolerance), datums: ['A'] });
+    const tx = X(0.85), ty = Y(surfaceAt(0.85, state));
+    svgContainer.appendChild(createSVG('path', { d: `M ${FCF_X},${LEADER_Y} L ${tx + 30},${LEADER_Y} L ${tx},${ty - 4}`, fill: 'none', stroke: COLORS.ink, 'stroke-width': 1.5, 'marker-end': 'url(#thm-arrow-ink)' }));
+    svgContainer.appendChild(fcf.g);
+    svgContainer.appendChild(wrapText(`Every point of the top face must lie between two planes ${fmtTol(state.tolerance)}" apart, parallel to datum A. The planes may sit at any height.`,
+        FCF_X, LEADER_Y + 44, 30, 17, { size: 12.5, fill: COLORS.muted }));
 
-    // 6. Pass/Fail Logic
-    const isPass = parallelismError <= tol;
-    
-    // 7. Update Banner & Colors
-    const bannerVal = document.getElementById('bannerVal');
-    const bannerStatus = document.getElementById('bannerStatus');
-    const bannerBox = document.querySelector('#resultBanner rect');
-    const surfaceLine = document.getElementById('actualSurfacePath');
-    const zoneFill = document.getElementById('zoneFill');
-    const zoneLines = [document.getElementById('zoneTop'), document.getElementById('zoneBot')];
+    drawResults(r);
+}
 
-    bannerVal.textContent = parallelismError.toFixed(3);
+function drawResults(r) {
+    const e = r.error.toFixed(4), t = fmtTol(state.tolerance);
+    let sentence;
+    if (r.error <= 1e-9) sentence = `The top face is perfectly parallel to datum A: the dial does not move. It passes with the full ${t}" to spare.`;
+    else if (r.pass) sentence = `Swept across the top, the dial moves ${e}" (highest − lowest). That fits between two planes ${t}" apart, parallel to A, so it passes.`;
+    else sentence = `The dial moves ${e}" across the top, but the planes are only ${t}" apart. ${(r.error - state.tolerance).toFixed(4)}" sticks out, so it fails.`;
+    svgContainer.appendChild(resultsStrip({
+        pass: r.pass,
+        measured: { label: 'Dial high − low', value: r.error },
+        allowed: { label: 'Zone width', value: state.tolerance },
+        sentence
+    }));
+}
 
-    if (isPass) {
-        bannerStatus.textContent = "PASS - WITHIN SPEC";
-        bannerStatus.setAttribute('fill', '#16a34a'); // Green
-        bannerVal.setAttribute('fill', '#16a34a');
-        bannerBox.setAttribute('stroke', '#16a34a');
-        
-        surfaceLine.setAttribute('stroke', '#1e293b'); // Dark Grey (Standard)
-        zoneFill.setAttribute('fill', 'rgba(59, 130, 246, 0.1)'); // Blue
-        zoneLines.forEach(l => l.setAttribute('stroke', '#3b82f6'));
-    } else {
-        bannerStatus.textContent = "FAIL - EXCEEDS TOLERANCE";
-        bannerStatus.setAttribute('fill', '#dc2626'); // Red
-        bannerVal.setAttribute('fill', '#dc2626');
-        bannerBox.setAttribute('stroke', '#dc2626');
-        
-        surfaceLine.setAttribute('stroke', '#dc2626'); // Turn line Red
-        zoneFill.setAttribute('fill', 'rgba(220, 38, 38, 0.1)'); // Red tint
-        zoneLines.forEach(l => l.setAttribute('stroke', '#dc2626'));
+// --- INTERACTION ---
+
+function setupInteractions(svg) {
+    const pos = e => { const m = svg.getScreenCTM(); return { x: (e.clientX - m.e) / m.a, y: (e.clientY - m.f) / m.d }; };
+    let k0 = 1;
+    svg.addEventListener('pointerdown', e => {
+        const end = e.target.closest?.('[data-end]');
+        if (!end) return;
+        drag = end.dataset.end;
+        k0 = drawScale(evaluate());
+        svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener('pointermove', e => {
+        if (!drag) return;
+        // the end's height = ±tilt/2 + wave term (zero at the ends), so tilt = ±2 × height
+        const h = (TOP_Y - pos(e).y) / k0;
+        const tilt = drag === 'right' ? 2 * h : -2 * h;
+        state.tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, +tilt.toFixed(4)));
+        renderScene();
+        syncInputs();
+    });
+    const end = () => { drag = null; };
+    svg.addEventListener('pointerup', end);
+    svg.addEventListener('pointercancel', end);
+}
+
+// --- CONTROLS ---
+
+function renderControls() {
+    if (!controlsContainer) return;
+    controlsContainer.innerHTML = `
+        <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Control Frame</h4>
+            <div class="flex items-center font-mono text-xl bg-white border-2 border-black w-full max-w-full overflow-x-auto select-none shadow-md">
+                <div class="px-3 py-2 border-r-2 border-black flex items-center justify-center bg-slate-50">
+                    <span class="text-3xl">∥</span>
+                </div>
+                <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
+                    <input type="number" id="ctrl-tol" value="${state.tolerance}" step="0.001" min="0.001"
+                        class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
+                </div>
+                <div class="px-3 py-2 border-black bg-slate-100 text-slate-400 flex-1 text-center">A</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Top face as made (in)</h4>
+            <div class="flex items-center gap-2 mb-2">
+                <label class="w-20 text-xs font-bold text-slate-500">TILT</label>
+                <input type="number" id="ctrl-tilt" step="0.001" value="${state.tilt}" class="flex-1 px-3 py-2 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <input type="range" id="slide-tilt" min="-${MAX_TILT}" max="${MAX_TILT}" step="0.0005" value="${state.tilt}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mb-4">
+            <div class="flex items-center gap-2 mb-2">
+                <label class="w-20 text-xs font-bold text-slate-500">WAVINESS</label>
+                <input type="number" id="ctrl-wave" step="0.001" min="0" value="${state.wave}" class="flex-1 px-3 py-2 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <input type="range" id="slide-wave" min="0" max="${MAX_WAVE}" step="0.0005" value="${state.wave}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            <div class="grid grid-cols-2 gap-2 mt-4">
+                <button data-p="perfect" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Perfect</button>
+                <button data-p="tilt" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Tilted only</button>
+                <button data-p="wave" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Wavy only</button>
+                <button data-p="fail" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Both: fails</button>
+            </div>
+        </div>
+
+        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
+            <div class="font-bold mb-1"><i class="fa-solid fa-ruler-horizontal"></i> Engineering Note</div>
+            <div class="text-xs opacity-90 leading-relaxed">
+                Parallelism limits tilt and waviness, so it also limits the flatness of that face. It does not control the height: the zone may sit anywhere, and the size dimension checks the height. Check it by resting datum A on a surface plate and sweeping a dial across the top.
+            </div>
+        </div>`;
+
+    const tol = document.getElementById('ctrl-tol');
+    tol.oninput = e => { state.tolerance = readTolerance(e.target.value); renderScene(); };
+    const bind = (key, max, min) => {
+        const set = v => { const x = parseFloat(v); if (!Number.isFinite(x)) return; state[key] = Math.max(min, Math.min(max, x)); renderScene(); syncInputs(); };
+        document.getElementById(`ctrl-${key}`).onchange = e => set(e.target.value);
+        document.getElementById(`slide-${key}`).oninput = e => set(e.target.value);
+    };
+    bind('tilt', MAX_TILT, -MAX_TILT);
+    bind('wave', MAX_WAVE, 0);
+    controlsContainer.querySelectorAll('[data-p]').forEach(b => b.onclick = () => {
+        const t = state.tolerance;
+        const p = { perfect: [0, 0], tilt: [t * 0.8, 0], wave: [0, t * 0.8], fail: [t * 0.8, t * 1.0] }[b.dataset.p];
+        state.tilt = +p[0].toFixed(4); state.wave = +p[1].toFixed(4);
+        renderScene(); syncInputs();
+    });
+}
+
+function syncInputs() {
+    for (const key of ['tilt', 'wave']) {
+        const n = document.getElementById(`ctrl-${key}`), s = document.getElementById(`slide-${key}`);
+        if (n && document.activeElement !== n) n.value = state[key];
+        if (s) s.value = state[key];
     }
 }

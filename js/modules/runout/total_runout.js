@@ -410,9 +410,6 @@ function renderControls() {
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400">A-B</div>
             </div>
             
-            <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
-            </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">

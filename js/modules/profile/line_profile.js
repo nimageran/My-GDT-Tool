@@ -1,7 +1,7 @@
 // js/modules/profile/line_profile.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
-import { COLORS, resultsCard } from '../../theme.js';
+import { COLORS, resultsCard, halo } from '../../theme.js';
 
 const f4 = v => `${v.toFixed(4)}"`;
 
@@ -151,11 +151,11 @@ function drawTrueProfile() {
     // Label
     const mid = getBezierPoint(0.5, startPt, cp1, cp2, endPt);
     const label = createSVG('text', {
-        x: mid.x, y: mid.y + 20, 
+        x: mid.x, y: mid.y + 58, 'text-anchor': 'middle',
         fill: '#0f172a', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold'
     });
-    label.textContent = "TRUE PROFILE";
-    group.appendChild(label);
+    label.textContent = "TRUE PROFILE (dashed)";
+    group.appendChild(halo(label));
     
     svgContainer.appendChild(group);
 }
@@ -394,9 +394,6 @@ function renderControls() {
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400">B</div>
             </div>
             
-             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
-            </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">

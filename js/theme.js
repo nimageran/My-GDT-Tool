@@ -71,6 +71,23 @@ export function text(str, x, y, opts = {}) {
     return t;
 }
 
+/** Outline text in the canvas colour so lines passing under it do not cut through the letters. */
+export function halo(t, color = '#f8fafc') {
+    t.setAttribute('stroke', color);
+    t.setAttribute('stroke-width', 5);
+    t.setAttribute('stroke-linejoin', 'round');
+    t.setAttribute('paint-order', 'stroke');
+    return t;
+}
+
+/** Solid box in the canvas colour behind text that is already in the page (lines under it are hidden). */
+export function backdrop(t, color = '#f8fafc', pad = 4) {
+    const b = t.getBBox();
+    const r = createSVG('rect', { x: b.x - pad, y: b.y - pad / 2, width: b.width + 2 * pad, height: b.height + pad, fill: color });
+    t.parentNode.insertBefore(r, t);
+    return t;
+}
+
 /** Word-wrapped text block (approximate: wraps on character count). */
 export function wrapText(str, x, y, maxChars, lineHeight, opts = {}) {
     const g = createSVG('g', {});

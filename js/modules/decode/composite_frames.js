@@ -14,6 +14,7 @@
 // ============================================================================
 
 import { el, gdtChar, circledMod, diaSymbol } from './symbols.js';
+import { backdrop } from '../../theme.js';
 
 // --------------------------------------------------------------------------
 // CHARACTERISTIC METADATA
@@ -104,14 +105,16 @@ export function draw(canvas) {
     defs.appendChild(mk);
     canvas.appendChild(defs);
 
+    const headings = [];
     [[260, 'WHAT IT MEANS ON THE PART'], [620, 'IN PLAIN ENGLISH']].forEach(([y, label]) => {
         canvas.appendChild(el('line', { x1: 0, y1: y, x2: 1000, y2: y, stroke: '#e2e8f0', 'stroke-width': 1 }));
-        canvas.appendChild(txt(label, 40, y + 20, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
+        headings.push(txt(label, 40, y + 20, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
     });
-    canvas.appendChild(txt('FRAME', 40, 24, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
+    headings.push(txt('FRAME', 40, 24, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
 
     zones = { symbol: el('g'), preview: el('g'), sentence: el('g') };
     Object.values(zones).forEach(z => canvas.appendChild(z));
+    headings.forEach(h => { canvas.appendChild(h); backdrop(h); });   // on top, so leaders pass behind
     update();
 }
 
@@ -338,7 +341,7 @@ function dframe(g, letter, x, y) {
     g.appendChild(txt(letter.toUpperCase(), x, y, { size: 16, bold: true, mono: true, anchor: 'middle', baseline: 'central' }));
     g.appendChild(el('path', { d: `M${x - 6} ${y - 14} L${x} ${y - 26} L${x + 6} ${y - 14} Z`, fill: '#334155' }));
 }
-function zlabel(g, str, x, y, fill = '#475569') { g.appendChild(txt(str, x, y, { size: 13, fill, mono: true })); }
+function zlabel(g, str, x, y, fill = '#475569') { backdrop(g.appendChild(txt(str, x, y, { size: 13, fill, mono: true }))); }
 
 // ==========================================================================
 // RENDERER 3 — THE SENTENCE + GOTCHAS
