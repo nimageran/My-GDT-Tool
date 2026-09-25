@@ -2,7 +2,8 @@
 import { watchCanvas } from './legibility.js';
 import { setFocus } from './focus.js';
 import { initSearch } from './search.js';
-import { initMenu, setActive } from './menu.js';
+import { initMenu, setActive, getActive } from './menu.js';
+import { openNoteEditor } from './notes.js';
 import { GDT_HIERARCHY } from './config.js';
 import { createSVG } from './drawing_utils.js';
 import { COLORS, text, wrapText } from './theme.js';
@@ -28,6 +29,12 @@ function init() {
     initMenu(loadSymbolModule);
     setupSidebarToggle();
     document.getElementById('homeLogo').onclick = () => loadSymbolModule('HOME', 'home');
+    // Recorder: note anything from any tool, linked back to it
+    document.getElementById('addNoteBtn').onclick = () => {
+        const t = getActive();
+        openNoteEditor(t && t.cat !== 'HOME' && t.sym !== 'notebook' ? { tool: t } : {});
+    };
+    document.getElementById('notebookBtn').onclick = () => loadSymbolModule('LEARN', 'notebook');
     // Open on the start page, never straight into a specialist tool
     loadSymbolModule('HOME', 'home');
 }

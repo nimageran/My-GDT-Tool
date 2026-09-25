@@ -616,6 +616,27 @@ export const EXPLAIN = {
         tool: 'Change B\'s size, switch B Ⓜ and B (RMB), edit the hole offsets, or try the presets.'
     },
 
+    notebook: {
+        title: 'My Notebook',
+        terms: [
+            ['Company cheat sheet', 'A ready-made note listing what a company or customer always uses: standard, units, projection, default tolerances, edge breaks, who to ask.'],
+            ['Decoded callout', 'A note of a callout you worked out, with the drawing number, so you never decode it twice.'],
+            ['Backup file', 'A file with all your notes, to keep safe or move to another computer.']
+        ],
+        simple: [
+            'The notebook is **your own record**: what each **company or customer** does, **callouts you decoded**, and **lessons learned**.',
+            'Add a note **from any tool** with **+ Note** in the bar at the top; it is **linked back** to that tool.',
+            'Notes have **tags** and an optional **drawing number**, and **global search finds them** next to the tool\'s own answers.',
+            'They are saved **in this browser only**, so **export a backup** now and then.'
+        ],
+        example: [
+            'You join a new company and fill in a cheat sheet: ASME Y14.5-2009, inches, third angle, X.XX ±.01, X.XXX ±.005, break edges .010 max.',
+            'A month later you decode a tricky composite frame on drawing 55-102 and save it as a decoded callout with the tag "composite".',
+            'Next time you meet it, pressing / and typing 55-102 brings your note straight up.'
+        ],
+        tool: 'Press New note or Company cheat sheet; search, filter by type or tag, pin the important ones, and export a backup.'
+    },
+
     practice: {
         title: 'Learning path & quizzes',
         terms: [

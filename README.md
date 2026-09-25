@@ -26,7 +26,7 @@ The tool opens on a **Home** page ("What do you need to do?" start points and a 
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D) | Datum targets |
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas, ISO fits (ISO 286: H7/g6 → limits, clearance or interference, preferred fits) | |
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
-| **Learn** | Standards and practice | Learning path (6 lessons, 30 quiz questions from real callouts, progress saved; shown on Home), glossary (103 terms, searchable), ASME vs ISO GPS | Y14.5-2009 vs 2018 |
+| **Learn** | Standards, practice and your own notes | My Notebook (your notes: company rules, decoded callouts, lessons learned; "+ Note" from any tool, tags, pins, found by search, backup export / import), learning path (6 lessons, 30 quiz questions from real callouts, progress saved; shown on Home), glossary (103 terms, searchable), ASME vs ISO GPS | Y14.5-2009 vs 2018 |
 | **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
 
 ## Structure
@@ -42,6 +42,7 @@ js/gdt_math.js             Shared calculations (position, bonus, virtual conditi
 js/explain.js              Plain-language Explain panel content for every tool
 js/glossary.js             Glossary terms + dotted-underline hover definitions
 js/search.js               Search everything (header button, / or Ctrl+K); results open a tool on the right item
+js/notes.js                My Notebook storage, note editor, backup export / import
 js/focus.js                Hand-off of that item to the tool (setFocus / takeFocus)
 js/legibility.js           Keeps canvas text readable when the canvas is scaled down
 js/modules/<area>/*.js     One file per tool

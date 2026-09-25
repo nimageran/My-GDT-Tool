@@ -202,6 +202,12 @@ export function initMenu(onPick) {
     renderBar();
 }
 
+/** The tool now open: { cat, sym, name }. */
+export function getActive() {
+    const d = GDT_HIERARCHY[active.cat]?.symbols[active.sym];
+    return d ? { cat: active.cat, sym: active.sym, name: d.name } : null;
+}
+
 /** Called by main.js whenever a tool is loaded. */
 export function setActive(cat, sym) {
     active.cat = cat;
