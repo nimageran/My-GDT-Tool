@@ -2,8 +2,12 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName, decimals } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', lengths: ['toleranceRunout', 'eccentricity', 'ovality', 'history'], perLength: ['scale'],
+    nice: { mm: { toleranceRunout: 0.25, scale: 80 } } };
+
+const f4 = v => fmt(v);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -41,12 +45,14 @@ let animationFrameId = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     startAnimation();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -272,7 +278,7 @@ function drawIndicator() {
     
     // 5. The Needle
     // Map deviation to angle. 0.005 inch = 180 degrees?
-    const needleAngle = (currentDev / 0.010) * Math.PI * 2 - (Math.PI/2); 
+    const needleAngle = (currentDev / fromIn(0.010)) * Math.PI * 2 - (Math.PI/2); 
     const nx = center.x + (dialR-4) * Math.cos(needleAngle);
     const ny = dialY + (dialR-4) * Math.sin(needleAngle);
     
@@ -347,7 +353,7 @@ function drawResultsCard() {
         measured: fim, allowed: toleranceRunout,
         sentence: pass ? `In one turn the dial moves ${f4(fim)}, within the ${f4(toleranceRunout)} allowed: it passes.`
             : `In one turn the dial moves ${f4(fim)}, more than the ${f4(toleranceRunout)} allowed: it fails.`,
-        note: `Off-centre ${state.eccentricity.toFixed(4)}" · oval ${state.ovality.toFixed(4)}"`
+        note: `Off-centre ${f4(state.eccentricity)} · oval ${f4(state.ovality)}`
     }).g);
 }
 
@@ -373,7 +379,7 @@ function renderControls() {
                     <span class="text-3xl">↗</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceRunout}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceRunout}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400">A</div>
@@ -390,7 +396,7 @@ function renderControls() {
                         <span>Off-centre (eccentricity)</span>
                         <span id="val-ecc">0.000</span>
                     </div>
-                    <input type="range" id="slide-ecc" min="0" max="0.010" step="0.0001" value="${state.eccentricity}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-ecc" min="0" max="${fromIn(0.010)}" step="${fromIn(0.0001)}" value="${state.eccentricity}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
                 
                 <div>
@@ -398,7 +404,7 @@ function renderControls() {
                         <span>Oval (out of round)</span>
                         <span id="val-oval">0.000</span>
                     </div>
-                    <input type="range" id="slide-oval" min="0" max="0.010" step="0.0001" value="${state.ovality}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-oval" min="0" max="${fromIn(0.010)}" step="${fromIn(0.0001)}" value="${state.ovality}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
             
@@ -436,8 +442,8 @@ function bindControlEvents() {
         state.eccentricity = parseFloat(sEcc.value);
         state.ovality = parseFloat(sOval.value);
         
-        vEcc.innerText = state.eccentricity.toFixed(4);
-        vOval.innerText = state.ovality.toFixed(4);
+        vEcc.innerText = state.eccentricity.toFixed(decimals());
+        vOval.innerText = state.ovality.toFixed(decimals());
     };
 
     sEcc.oninput = updateDeforms;

@@ -7,11 +7,15 @@
 import { createSVG } from '../../drawing_utils.js';
 import { COLORS, addDefs, text, wrapText, featureControlFrame } from '../../theme.js';
 import { UI } from '../drawing/sheet.js';
+import { syncUnits } from '../../units.js';
 
-const state = { tx: 0.1, ty: 0.1, dx: 0.12, dy: 0.02, units: 'mm' };
+const UNITS = { native: 'mm', lengths: ['tx', 'ty', 'dx', 'dy'], nice: { in: { tx: 0.004, ty: 0.004, dx: 0.005, dy: 0.001 } } };
+
+const state = { tx: 0.1, ty: 0.1, dx: 0.12, dy: 0.02 };
 let svgRef = null, controlsRoot = null, dragging = false;
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgRef = svg;
     svg.addEventListener('pointerdown', e => { if (e.target.closest('[data-drag]')) { dragging = true; svg.setPointerCapture(e.pointerId); } });
     svg.addEventListener('pointermove', e => { if (dragging) moveTo(e); });
@@ -20,6 +24,7 @@ export function draw(svg) {
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsRoot = container;
     renderControls();
 }
@@ -144,11 +149,9 @@ function drawVerdict(svg, r) {
 
 function renderControls() {
     if (!controlsRoot) return;
-    const seg = (v, label) => `<button data-units="${v}" class="${UI.segBtn} ${state.units === v ? UI.segOn : UI.segOff}">${label}</button>`;
     const step = state.units === 'in' ? 0.001 : 0.01;
     controlsRoot.innerHTML = `
         <div class="${UI.card} space-y-3">
-            <div class="flex gap-2">${seg('mm', 'mm')}${seg('in', 'inch')}</div>
             <div class="grid grid-cols-2 gap-2">
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">± IN X</label><input id="pm-tx" type="number" step="${step}" min="0" value="${state.tx}" class="${UI.input}"></div>
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">± IN Y</label><input id="pm-ty" type="number" step="${step}" min="0" value="${state.ty}" class="${UI.input}"></div>
@@ -174,13 +177,6 @@ function renderControls() {
                 <li>± stacks from edge to edge and hole to hole; basic dimensions with position do not.</li>
             </ul>
         </div>`;
-    controlsRoot.querySelectorAll('[data-units]').forEach(b => b.onclick = () => {
-        if (state.units === b.dataset.units) return;
-        const k = b.dataset.units === 'in' ? 1 / 25.4 : 25.4;
-        for (const key of ['tx', 'ty', 'dx', 'dy']) state[key] = +(state[key] * k).toFixed(b.dataset.units === 'in' ? 4 : 3);
-        state.units = b.dataset.units;
-        render(); renderControls();
-    });
     const num = (id, key, positive) => controlsRoot.querySelector(id).oninput = e => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && (!positive || v > 0)) { state[key] = v; render(); } };
     num('#pm-tx', 'tx', true); num('#pm-ty', 'ty', true); num('#pm-dx', 'dx'); num('#pm-dy', 'dy');
     controlsRoot.querySelectorAll('[data-p]').forEach(b => b.onclick = () => {

@@ -5,6 +5,10 @@
 import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, text, wrapText, addDefs, resultsStrip } from '../../theme.js';
+import { syncUnits, step } from '../../units.js';
+
+const UNITS = { native: 'mm', lengths: ['minGap', 'maxGap'],
+    custom: (s, conv) => { s.rows = s.rows.map(r => ({ ...r, nominal: conv(r.nominal), plus: conv(r.plus), minus: conv(r.minus) })); } };
 
 const STORAGE_KEY = 'stackup_v1';
 
@@ -47,11 +51,13 @@ let svgContainer = null;
 let controlsContainer = null;
 
 export function draw(svg) {
+    if (syncUnits(state, UNITS)) saveState();
     svgContainer = svg;
     renderScene();
 }
 
 export function loadControls(container) {
+    if (syncUnits(state, UNITS)) saveState();
     controlsContainer = container;
     renderControls();
 }
@@ -308,16 +314,12 @@ function renderControls() {
             <input id="su-name" type="text" value="${state.gapName.replace(/"/g, '&quot;')}" class="${numInput} font-sans mb-3">
             <div class="grid grid-cols-2 gap-2">
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">MIN GAP</label>
-                    <input id="su-min" type="number" step="0.01" value="${state.minGap}" class="${numInput}"></div>
+                    <input id="su-min" type="number" step="${step()}" value="${state.minGap}" class="${numInput}"></div>
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">MAX GAP (blank = none)</label>
-                    <input id="su-max" type="number" step="0.01" value="${state.maxGap ?? ''}" class="${numInput}"></div>
+                    <input id="su-max" type="number" step="${step()}" value="${state.maxGap ?? ''}" class="${numInput}"></div>
             </div>
             <div class="text-xs font-bold text-slate-500 mt-3 mb-1">PASS / FAIL DECIDED BY</div>
             <div class="flex gap-2">${seg('method', 'method', 'wc', 'Worst case')}${seg('method', 'method', 'rss', 'RSS (statistical)')}</div>
-            <div class="flex items-center justify-between mt-3">
-                <span class="text-xs font-bold text-slate-500">UNITS</span>
-                <div class="flex gap-2 w-40">${seg('units', 'units', 'mm', 'mm')}${seg('units', 'units', 'in', 'inch')}</div>
-            </div>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
@@ -353,7 +355,6 @@ function bind() {
     const $ = id => document.getElementById(id);
     const c = controlsContainer;
     c.querySelectorAll('[data-method]').forEach(b => b.onclick = () => { state.method = b.dataset.method; changed(true); });
-    c.querySelectorAll('[data-units]').forEach(b => b.onclick = () => { state.units = b.dataset.units; changed(true); });
     $('su-name').onchange = e => { state.gapName = e.target.value.trim() || 'Gap'; changed(); };
     $('su-min').onchange = e => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) state.minGap = v; changed(true); };
     $('su-max').onchange = e => { const v = parseFloat(e.target.value); state.maxGap = Number.isFinite(v) ? v : null; changed(true); };

@@ -2,8 +2,12 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard, halo } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', lengths: ['toleranceWidth', 'deviations'], perLength: ['scale'],
+    nice: { mm: { toleranceWidth: 0.8, scale: 50 } } };
+
+const f4 = v => fmt(v);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -35,12 +39,14 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -387,7 +393,7 @@ function renderControls() {
                     <span class="text-3xl">⌒</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black bg-slate-100 text-slate-400">A</div>
@@ -410,21 +416,21 @@ function renderControls() {
                         <span>Point 1 (Left)</span>
                         <span id="val-d1">0.000</span>
                     </div>
-                    <input type="range" id="slide-d1" min="-0.03" max="0.03" step="0.001" value="${state.deviations[0]}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-d1" min="${-fromIn(0.03)}" max="${fromIn(0.03)}" step="${fromIn(0.001)}" value="${state.deviations[0]}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
                         <span>Point 2 (Mid)</span>
                         <span id="val-d2">0.000</span>
                     </div>
-                    <input type="range" id="slide-d2" min="-0.03" max="0.03" step="0.001" value="${state.deviations[1]}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-d2" min="${-fromIn(0.03)}" max="${fromIn(0.03)}" step="${fromIn(0.001)}" value="${state.deviations[1]}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
                         <span>Point 3 (Right)</span>
                         <span id="val-d3">0.000</span>
                     </div>
-                    <input type="range" id="slide-d3" min="-0.03" max="0.03" step="0.001" value="${state.deviations[2]}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-d3" min="${-fromIn(0.03)}" max="${fromIn(0.03)}" step="${fromIn(0.001)}" value="${state.deviations[2]}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
         </div>
@@ -435,7 +441,7 @@ function renderControls() {
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-bold text-slate-500">ZOOM LEVEL</span>
             </div>
-            <input type="range" id="ctrl-zoom" min="800" max="2000" step="100" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="ctrl-zoom" min="${perFromIn(800)}" max="${perFromIn(2000)}" step="${perFromIn(100)}" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
 
             <div class="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
                 <div class="font-bold mb-1"><i class="fa-solid fa-wave-square"></i> Note</div>
@@ -473,9 +479,9 @@ function bindControlEvents() {
         state.deviations[1] = parseFloat(s2.value);
         state.deviations[2] = parseFloat(s3.value);
         
-        v1.innerText = state.deviations[0].toFixed(3);
-        v2.innerText = state.deviations[1].toFixed(3);
-        v3.innerText = state.deviations[2].toFixed(3);
+        v1.innerText = f4(state.deviations[0]);
+        v2.innerText = f4(state.deviations[1]);
+        v3.innerText = f4(state.deviations[2]);
         
         renderScene();
     };
@@ -491,7 +497,7 @@ function bindControlEvents() {
     };
 
     btnRandom.onclick = () => {
-        const r = () => (Math.random() * 0.04) - 0.02;
+        const r = () => fromIn((Math.random() * 0.04) - 0.02);
         state.deviations = [r(), r(), r()];
         s1.value = state.deviations[0]; 
         s2.value = state.deviations[1]; 

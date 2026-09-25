@@ -42,6 +42,7 @@ js/gdt_math.js             Shared calculations (position, bonus, virtual conditi
 js/explain.js              Plain-language Explain panel content for every tool
 js/glossary.js             Glossary terms + dotted-underline hover definitions
 js/search.js               Search everything (header button, / or Ctrl+K); results open a tool on the right item
+js/units.js                One mm / inch setting (top bar) for every tool; tools convert their numbers when it changes
 js/notes.js                My Notebook storage, note editor, backup export / import
 js/focus.js                Hand-off of that item to the tool (setFocus / takeFocus)
 js/legibility.js           Keeps canvas text readable when the canvas is scaled down

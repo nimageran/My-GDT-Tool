@@ -2,8 +2,13 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', lengths: ['toleranceRadial', 'ampOval', 'ampTri', 'ampNoise'], perLength: ['scale'],
+    nice: { mm: { toleranceRadial: 0.12, scale: 80 } } };
+
+const f4 = v => fmt(v);
+const f5 = v => fmt(v, state.units === 'in' ? 5 : 4);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -38,6 +43,7 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     recalculateProfile(); // Generate initial data
@@ -45,6 +51,7 @@ export function draw(svg) {
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -257,13 +264,13 @@ function drawResultsCard() {
     const { stats, toleranceRadial } = state;
     const { error } = stats;
     const pass = error <= toleranceRadial;
-    const on = [['oval', state.ampOval], ['lobing', state.ampTri], ['noise', state.ampNoise]].filter(([, v]) => Math.abs(v) > 0.0001).map(([n]) => n);
+    const on = [['oval', state.ampOval], ['lobing', state.ampTri], ['noise', state.ampNoise]].filter(([, v]) => Math.abs(v) > fromIn(0.0001)).map(([n]) => n);
     svgContainer.appendChild(resultsCard({
         title: 'Circularity (roundness)', pass,
-        rows: [['Band needed (radial)', `${error.toFixed(5)}"`, { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed', f4(toleranceRadial)]],
+        rows: [['Band needed (radial)', f5(error), { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed', f4(toleranceRadial)]],
         measured: error, allowed: toleranceRadial,
         sentence: pass ? `This slice fits between two circles ${f4(toleranceRadial)} apart: it passes.`
-            : `This slice needs two circles ${error.toFixed(5)}" apart, more than the ${f4(toleranceRadial)} allowed: it fails.`,
+            : `This slice needs two circles ${f5(error)} apart, more than the ${f4(toleranceRadial)} allowed: it fails.`,
         note: on.length ? `Shape errors added: ${on.join(', ')}` : 'No shape errors added'
     }).g);
 }
@@ -303,7 +310,7 @@ function renderControls() {
                     <span class="text-3xl">○</span>
                 </div>
                 <div class="px-3 py-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceRadial}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceRadial}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
             </div>
@@ -320,7 +327,7 @@ function renderControls() {
                         <span>Oval (2-lobe)</span>
                         <span id="val-oval">0.000</span>
                     </div>
-                    <input type="range" id="slide-oval" min="0" max="0.005" step="0.0001" value="${state.ampOval}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-oval" min="0" max="${fromIn(0.005)}" step="${fromIn(0.0001)}" value="${state.ampOval}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
                 
                 <div>
@@ -328,7 +335,7 @@ function renderControls() {
                         <span>3-lobe (triangle-like)</span>
                         <span id="val-tri">0.000</span>
                     </div>
-                    <input type="range" id="slide-tri" min="0" max="0.005" step="0.0001" value="${state.ampTri}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-tri" min="0" max="${fromIn(0.005)}" step="${fromIn(0.0001)}" value="${state.ampTri}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
 
                 <div>
@@ -336,7 +343,7 @@ function renderControls() {
                         <span>Random bumps (chatter)</span>
                         <span id="val-noise">0.000</span>
                     </div>
-                    <input type="range" id="slide-noise" min="0" max="0.003" step="0.0001" value="${state.ampNoise}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-noise" min="0" max="${fromIn(0.003)}" step="${fromIn(0.0001)}" value="${state.ampNoise}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
             
@@ -347,7 +354,7 @@ function renderControls() {
              <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-bold text-slate-500">MAGNIFY ERRORS</span>
             </div>
-            <input type="range" id="ctrl-zoom" min="500" max="5000" step="100" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="ctrl-zoom" min="${perFromIn(500)}" max="${perFromIn(5000)}" step="${perFromIn(100)}" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
         </div>
     `;
 
@@ -377,9 +384,9 @@ function bindControlEvents() {
         state.ampTri = parseFloat(sTri.value);
         state.ampNoise = parseFloat(sNoise.value);
         
-        vOval.innerText = state.ampOval.toFixed(4);
-        vTri.innerText = state.ampTri.toFixed(4);
-        vNoise.innerText = state.ampNoise.toFixed(4);
+        vOval.innerText = f4(state.ampOval);
+        vTri.innerText = f4(state.ampTri);
+        vNoise.innerText = f4(state.ampNoise);
         
         recalculateProfile();
         renderScene();

@@ -2,8 +2,11 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const f4 = v => fmt(v);
+const UNITS = { native: 'in', lengths: ['toleranceWidth', 'offsets'], perLength: ['scale'],
+    nice: { mm: { toleranceWidth: 0.25, scale: 100 } } };
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -37,12 +40,14 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -339,7 +344,7 @@ function setupInteractions(svg) {
         let newOff = (state.baseY - m.y) / state.scale;
         
         // Limits
-        newOff = Math.max(-0.05, Math.min(0.05, newOff));
+        newOff = Math.max(-fromIn(0.05), Math.min(fromIn(0.05), newOff));
         
         state.offsets[state.activeHandleIdx] = newOff;
         renderScene();
@@ -364,7 +369,7 @@ function renderControls() {
                     <span class="text-3xl">—</span>
                 </div>
                 <div class="px-3 py-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
             </div>
@@ -382,7 +387,7 @@ function renderControls() {
             </div>
             
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">View Zoom</h4>
-            <input type="range" id="ctrl-zoom" min="1000" max="4000" step="100" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="ctrl-zoom" min="${perFromIn(1000)}" max="${perFromIn(4000)}" step="${perFromIn(100)}" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
         </div>
     `;
 
@@ -405,11 +410,11 @@ function bindControlEvents() {
     document.getElementById('btn-bow').onclick = () => setOffsets((i, n) => {
         // Parabolic arc
         const x = (i / (n-1)) * 2 - 1; // -1 to 1
-        return 0.015 * (1 - x*x);
+        return fromIn(0.015) * (1 - x*x);
     });
     document.getElementById('btn-wave').onclick = () => setOffsets((i, n) => {
         const x = (i / (n-1)) * 4 * Math.PI; 
-        return 0.008 * Math.sin(x);
+        return fromIn(0.008) * Math.sin(x);
     });
-    document.getElementById('btn-random').onclick = () => setOffsets(() => (Math.random() * 0.02) - 0.01);
+    document.getElementById('btn-random').onclick = () => setOffsets(() => fromIn((Math.random() * 0.02) - 0.01));
 }

@@ -2,8 +2,12 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard, halo } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', lengths: ['toleranceWidth', 'slotWidth', 'deviation'], perLength: ['scale'],
+    nice: { mm: { toleranceWidth: 0.5, slotWidth: 12, deviation: 0.12, scale: 71 } } };
+
+const f4 = v => fmt(v);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -28,12 +32,14 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -71,7 +77,7 @@ function renderScene() {
 
 function drawGrid() {
     const { center, scale } = state;
-    const gridSize = 0.010 * scale; 
+    const gridSize = fromIn(0.010) * scale; 
     
     const group = createSVG('g', { stroke: '#e2e8f0', 'stroke-width': 1 });
     
@@ -151,7 +157,7 @@ function drawToleranceZone() {
         x: x2 + 10, y: dimY + 5,
         fill: '#2563eb', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'start'
     });
-    label.textContent = `${toleranceWidth.toFixed(3)}" zone`;
+    label.textContent = `${toleranceWidth.toFixed(3)}${suffix()} zone`;
     halo(label);
 
     group.appendChild(arrowGroup);
@@ -206,7 +212,7 @@ function drawSlotFeature() {
         fill: '#1e293b', 'font-family': 'sans-serif', 'font-size': '16', 'font-weight': 'bold', 'text-anchor': 'middle'
     });
     halo(widthText);
-    widthText.textContent = `${slotWidth.toFixed(3)}"`;
+    widthText.textContent = `${slotWidth.toFixed(3)}${suffix()}`;
     
     group.appendChild(widthText);
     svgContainer.appendChild(group);
@@ -326,7 +332,7 @@ function renderControls() {
                     <span class="text-3xl">⌯</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400 flex-1 text-center">A</div>
@@ -335,28 +341,28 @@ function renderControls() {
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Slot offset from centre (in)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Slot offset from centre (${unitName()})</h4>
             <div class="flex items-center gap-2 mb-2">
                 <label class="w-16 text-xs font-bold text-slate-500">SHIFT</label>
-                <input type="number" id="ctrl-dev" step="0.001" value="${state.deviation.toFixed(4)}"
+                <input type="number" id="ctrl-dev" step="${step()}" value="${state.deviation.toFixed(4)}"
                     class="flex-1 px-3 py-2 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500">
             </div>
-            <input type="range" id="slide-dev" min="-0.03" max="0.03" step="0.001" value="${state.deviation}" 
+            <input type="range" id="slide-dev" min="${-fromIn(0.03)}" max="${fromIn(0.03)}" step="${fromIn(0.001)}" value="${state.deviation}" 
                 class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
             
             <div class="mt-4 pt-4 border-t border-slate-100">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold text-slate-500">ZOOM LEVEL</span>
                 </div>
-                <input type="range" id="ctrl-zoom" min="1000" max="3000" step="100" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+                <input type="range" id="ctrl-zoom" min="${perFromIn(1000)}" max="${perFromIn(3000)}" step="${perFromIn(100)}" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
             </div>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Settings</h4>
             <div class="flex items-center justify-between mb-4">
-                <label class="text-sm font-semibold text-slate-700">Slot Width (in)</label>
-                <input type="number" id="ctrl-width" value="${state.slotWidth}" step="0.010"
+                <label class="text-sm font-semibold text-slate-700">Slot Width (${unitName()})</label>
+                <input type="number" id="ctrl-width" value="${state.slotWidth}" step="${fromIn(0.010)}"
                     class="w-24 px-2 py-1 border border-slate-300 rounded text-right font-mono">
             </div>
 
@@ -391,7 +397,7 @@ function bindControlEvents() {
     inputDev.oninput = (e) => updateDev(e.target.value);
     slideDev.oninput = (e) => updateDev(e.target.value);
 
-    inputWidth.oninput = (e) => { state.slotWidth = parseFloat(e.target.value) || 0.1; renderScene(); };
+    inputWidth.oninput = (e) => { state.slotWidth = parseFloat(e.target.value) || fromIn(0.1); renderScene(); };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); renderScene(); };
     
 }

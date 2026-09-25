@@ -7,6 +7,11 @@
 import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, addDefs, text, wrapText, legend, resultsStrip } from '../../theme.js';
+import { syncUnits, fromMm, step, decimals } from '../../units.js';
+
+const UNITS = { native: 'mm', lengths: ['nominal', 'plus', 'minus', 'size', 'bend'],
+    nice: { in: { nominal: 0.375, plus: 0.004, minus: 0.004, size: 0.373, bend: 0.002 } } };
+const fine = () => (state.units === 'in' ? 0.0001 : 0.001);   // slider step
 
 const state = {
     feature: 'pin',          // 'pin' | 'hole'
@@ -17,14 +22,16 @@ const state = {
 };
 
 let svgRef = null, controlsRoot = null;
-const f3 = v => v.toFixed(3);
+const f3 = v => v.toFixed(decimals());
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgRef = svg;
     render();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsRoot = container;
     renderControls();
 }
@@ -62,7 +69,7 @@ function render() {
     const r = evaluateRule1(state);
 
     // Deviations are magnified so 0.1 mm is visible
-    const devRange = Math.max(state.plus + state.minus, state.bend, 0.02);
+    const devRange = Math.max(state.plus + state.minus, state.bend, fromMm(0.02));
     const K = 70 / devRange;                                   // px per mm of deviation
     const D = s => D0 + (s - state.nominal) * K;
 
@@ -173,7 +180,7 @@ function drawFormChart(svg, r) {
     const x0 = 640, x1 = 960, y0 = 400, y1 = 610;
     svg.appendChild(text('BEND ALLOWED AT EACH SIZE', x0, y0, { size: 12, weight: 800, fill: COLORS.muted, letterSpacing: '0.06em' }));
     const tolRange = r.upper - r.lower;
-    const maxB = Math.max(tolRange, state.bend) * 1.15 || 0.1;
+    const maxB = Math.max(tolRange, state.bend) * 1.15 || fromMm(0.1);
     const X = s => x0 + 20 + (s - r.lower) / (tolRange || 1) * (x1 - x0 - 40);
     const Y = b => y1 - 20 - b / maxB * (y1 - y0 - 50);
     svg.appendChild(createSVG('line', { x1: X(r.lower), y1: Y(0), x2: X(r.upper), y2: Y(0), stroke: COLORS.ink, 'stroke-width': 1.5 }));
@@ -201,7 +208,7 @@ function drawResults(svg, r) {
     else sentence = `Every caliper reading is fine (Ø${f3(state.size)}), but the ${f} bends ${f3(state.bend)} and only ${f3(r.bendAllowed)} is allowed at this size. It will not fit the Ø${f3(r.mmc)} ${r.pin ? 'ring' : 'plug'} gauge: it fails Rule #1.`;
     const envelope = state.principle === 'envelope';
     svg.appendChild(resultsStrip({
-        pass: r.pass, unit: ' mm', decimals: 3, compact: true,
+        pass: r.pass, compact: true,
         measured: { label: envelope ? (r.pin ? 'Size + bend' : 'Size − bend') : 'Size (caliper)', value: envelope ? r.needs : state.size },
         allowed: { label: envelope ? `MMC (${r.pin ? 'max' : 'min'})` : 'Limits', value: r.mmc, text: envelope ? undefined : `${f3(r.lower)}…${f3(r.upper)}` },
         gauge: false,
@@ -221,9 +228,9 @@ const smallBtn = 'text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded te
 
 const PRESETS = [
     { label: 'Perfect pin at MMC', set: { feature: 'pin', size: null, at: 'mmc', bend: 0 } },
-    { label: 'Bent pin at MMC: caliper OK, gauge fails', set: { feature: 'pin', at: 'mmc', bend: 0.05 } },
-    { label: 'Same bend, pin at LMC: passes', set: { feature: 'pin', at: 'lmc', bend: 0.05 } },
-    { label: 'Bent hole near MMC: fails', set: { feature: 'hole', at: 'mid-mmc', bend: 0.08 } }
+    { label: 'Bent pin at MMC: caliper OK, gauge fails', set: { feature: 'pin', at: 'mmc', bend: 0.25 } },
+    { label: 'Same bend, pin at LMC: passes', set: { feature: 'pin', at: 'lmc', bend: 0.25 } },
+    { label: 'Bent hole near MMC: fails', set: { feature: 'hole', at: 'mid-mmc', bend: 0.4 } }
 ];
 
 function applyPreset(p) {
@@ -231,14 +238,14 @@ function applyPreset(p) {
     state.principle = 'envelope';
     const r = evaluateRule1(state);
     state.size = p.set.at === 'mmc' ? r.mmc : p.set.at === 'lmc' ? r.lmc : (r.mmc * 3 + r.lmc) / 4;
-    state.bend = p.set.bend;
+    state.bend = +(p.set.bend * (state.plus + state.minus)).toFixed(5);   // bend as a share of the size tolerance
 }
 
 function renderControls() {
     if (!controlsRoot) return;
     const r = evaluateRule1(state);
     const seg = (key, value, label) => `<button data-${key}="${value}" class="${segBtn} ${state[key] === value ? segOn : segOff}">${label}</button>`;
-    const lo = (r.lower - state.minus * 0.5).toFixed(3), hi = (r.upper + state.plus * 0.5).toFixed(3);
+    const lo = (r.lower - state.minus * 0.5).toFixed(decimals()), hi = (r.upper + state.plus * 0.5).toFixed(decimals());
     controlsRoot.innerHTML = `
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200 space-y-3">
             <div class="flex gap-2">${seg('feature', 'pin', 'Pin (shaft)')}${seg('feature', 'hole', 'Hole')}</div>
@@ -247,19 +254,19 @@ function renderControls() {
                 <div class="flex gap-2">${seg('principle', 'envelope', 'Rule #1 (ASME)')}${seg('principle', 'independency', 'Independency (ISO / Ⓘ)')}</div>
             </div>
             <div class="grid grid-cols-3 gap-2">
-                <div><label class="block text-xs font-bold text-slate-500 mb-1">NOMINAL Ø</label><input id="r1-nom" type="number" step="0.1" value="${state.nominal}" class="${input}"></div>
-                <div><label class="block text-xs font-bold text-slate-500 mb-1">+ TOL</label><input id="r1-plus" type="number" step="0.01" min="0" value="${state.plus}" class="${input}"></div>
-                <div><label class="block text-xs font-bold text-slate-500 mb-1">− TOL</label><input id="r1-minus" type="number" step="0.01" min="0" value="${state.minus}" class="${input}"></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">NOMINAL Ø</label><input id="r1-nom" type="number" step="${state.units === 'in' ? 0.01 : 0.1}" value="${state.nominal}" class="${input}"></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">+ TOL</label><input id="r1-plus" type="number" step="${step()}" min="0" value="${state.plus}" class="${input}"></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">− TOL</label><input id="r1-minus" type="number" step="${step()}" min="0" value="${state.minus}" class="${input}"></div>
             </div>
         </div>
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200 space-y-3">
             <div>
                 <div class="flex justify-between text-xs font-bold text-slate-500 mb-1"><span>SIZE (CALIPER) Ø</span><span id="r1-size-v" class="font-mono">${f3(state.size)}</span></div>
-                <input id="r1-size" type="range" min="${lo}" max="${hi}" step="0.001" value="${state.size}" class="w-full">
+                <input id="r1-size" type="range" min="${lo}" max="${hi}" step="${fine()}" value="${state.size}" class="w-full">
             </div>
             <div>
                 <div class="flex justify-between text-xs font-bold text-slate-500 mb-1"><span>BEND OF THE AXIS</span><span id="r1-bend-v" class="font-mono">${f3(state.bend)}</span></div>
-                <input id="r1-bend" type="range" min="0" max="${(Math.max(state.plus + state.minus, 0.02) * 1.5).toFixed(3)}" step="0.001" value="${state.bend}" class="w-full">
+                <input id="r1-bend" type="range" min="0" max="${(Math.max(state.plus + state.minus, fromMm(0.02)) * 1.5).toFixed(decimals())}" step="${fine()}" value="${state.bend}" class="w-full">
             </div>
         </div>
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">

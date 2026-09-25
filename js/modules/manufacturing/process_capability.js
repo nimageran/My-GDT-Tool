@@ -8,6 +8,9 @@
 import { createSVG } from '../../drawing_utils.js';
 import { COLORS, addDefs, text, wrapText } from '../../theme.js';
 import { UI } from '../drawing/sheet.js';
+import { syncUnits } from '../../units.js';
+
+const UNITS = { native: 'mm', lengths: ['tol'], nice: { in: { tol: 0.002 } } };
 
 // lo = tightest with care, hi = routine (both ± mm); ra = typical Ra range (µm)
 export const PROCESSES = [
@@ -50,7 +53,7 @@ export function verdict(p, tolMM) {
     return tolMM >= p.hi - 1e-12 ? 'routine' : tolMM >= p.lo - 1e-12 ? 'care' : 'no';
 }
 
-const state = { units: 'mm', tol: 0.05, ra: null };
+const state = { tol: 0.05, ra: null };
 let svgRef = null, controlsRoot = null;
 
 const toMM = v => (state.units === 'in' ? v * 25.4 : v);
@@ -62,11 +65,13 @@ const V = {
 };
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgRef = svg;
     render();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsRoot = container;
     renderControls();
 }
@@ -146,11 +151,9 @@ const list = a => (a.length <= 1 ? a.join('') : `${a.slice(0, -1).join(', ')} an
 
 function renderControls() {
     if (!controlsRoot) return;
-    const seg = (v, label) => `<button data-units="${v}" class="${UI.segBtn} ${state.units === v ? UI.segOn : UI.segOff}">${label}</button>`;
     const presets = state.units === 'in' ? [0.03, 0.005, 0.001, 0.0002] : [0.5, 0.1, 0.025, 0.005];
     controlsRoot.innerHTML = `
         <div class="${UI.card} space-y-3">
-            <div class="flex gap-2">${seg('mm', 'mm')}${seg('in', 'inch')}</div>
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">TOLERANCE (± EACH SIDE)</label>
                 <input id="pc-tol" type="number" step="${state.units === 'in' ? 0.0001 : 0.001}" min="0" value="${state.tol}" class="${UI.input}">
@@ -165,17 +168,11 @@ function renderControls() {
         <div class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Read these as a guide</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
-                <li>Typical figures for features about 25–100 mm. Bigger parts, thin walls, hard or soft materials and heat all widen them.</li>
+                <li>Typical figures for features about 25–100 mm (1–4"). Bigger parts, thin walls, hard or soft materials and heat all widen them.</li>
                 <li>"With care" means the process can do it, but needs a good machine, a stable setup and checking. Expect more scrap and cost.</li>
                 <li>Before accepting a tight tolerance, ask the shop for their Cpk on similar features.</li>
             </ul>
         </div>`;
-    controlsRoot.querySelectorAll('[data-units]').forEach(b => b.onclick = () => {
-        if (state.units === b.dataset.units) return;
-        state.tol = b.dataset.units === 'in' ? +(state.tol / 25.4).toFixed(4) : +(state.tol * 25.4).toFixed(3);
-        state.units = b.dataset.units;
-        render(); renderControls();
-    });
     controlsRoot.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => { state.tol = +b.dataset.preset; render(); renderControls(); });
     controlsRoot.querySelector('#pc-tol').oninput = e => { state.tol = parseFloat(e.target.value) || 0; render(); };
     controlsRoot.querySelector('#pc-ra').oninput = e => { const v = parseFloat(e.target.value); state.ra = v > 0 ? v : null; render(); };

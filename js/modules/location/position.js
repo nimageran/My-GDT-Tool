@@ -8,19 +8,29 @@ import {
     COLORS, text, wrapText, addDefs, nominalLine, callout,
     featureControlFrame, legend, resultsStrip
 } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName, decimals } from '../../units.js';
+
+const UNITS = { native: 'in', lengths: ['toleranceDiam', 'nominal', 'plusTol', 'minusTol', 'actualSize', 'deviationX', 'deviationY'],
+    nice: { mm: { toleranceDiam: 0.75, nominal: 12.0, plusTol: 0.25, minusTol: 0, actualSize: 12.15, deviationX: 0.3, deviationY: 0.3 } } };
 
 // --- STATE MANAGEMENT ---
 // Engineering Parameters (INCHES)
 const DEFAULT_SIZES = {
-    hole: { nominal: 0.500, plusTol: 0.010, minusTol: 0.000, actualSize: 0.506 },
-    pin:  { nominal: 0.490, plusTol: 0.000, minusTol: 0.010, actualSize: 0.484 }
+    in: {
+        hole: { nominal: 0.500, plusTol: 0.010, minusTol: 0.000, actualSize: 0.506 },
+        pin:  { nominal: 0.490, plusTol: 0.000, minusTol: 0.010, actualSize: 0.484 }
+    },
+    mm: {
+        hole: { nominal: 12.00, plusTol: 0.25, minusTol: 0.00, actualSize: 12.15 },
+        pin:  { nominal: 11.75, plusTol: 0.00, minusTol: 0.25, actualSize: 11.60 }
+    }
 };
 
 const state = {
     featureType: 'hole',     // 'hole' | 'pin'
     modifier: 'MMC',         // 'RFS' | 'MMC' | 'LMC'
     toleranceDiam: 0.030,    // Stated position tolerance (diameter)
-    ...DEFAULT_SIZES.hole,
+    ...DEFAULT_SIZES.in.hole,
     deviationX: 0.012,       // Measured axis offset from true position
     deviationY: 0.012,
 
@@ -42,19 +52,21 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
 
 // --- EVALUATION ---
 
-const f4 = v => v.toFixed(4);
+const f4 = v => v.toFixed(decimals());
 
 function evaluate() {
     return evaluatePosition({
@@ -230,7 +242,7 @@ function drawSizePanel(r) {
     g.appendChild(panelTitle(`1. MEASURED SIZE ${state.modifier === 'RFS' ? '(IGNORED AT RFS)' : '→ BONUS'}`, 190));
 
     // Size scale: covers both limits and the measured size, with padding
-    const pad = 0.3 * Math.max(r.sizeRange, 0.002);
+    const pad = 0.3 * Math.max(r.sizeRange, fromIn(0.002));
     const vmin = Math.min(r.lower, state.actualSize) - pad;
     const vmax = Math.max(r.upper, state.actualSize) + pad;
     const X = v => PANEL_X + ((v - vmin) / (vmax - vmin)) * PANEL_W;
@@ -342,12 +354,12 @@ function drawResults(r) {
     if (!r.sizeOK) {
         sentence = `The ${feature} measures Ø${f4(state.actualSize)}, outside its size limits Ø${f4(r.lower)} to Ø${f4(r.upper)}. It fails on size, whatever its position.`;
     } else {
-        const where = `The axis is ${f4(r.radial)}" from true position, a position of Ø${f4(r.position)}.`;
+        const where = `The axis is ${f4(r.radial)}${suffix()} from true position, a position of Ø${f4(r.position)}.`;
         let why;
         if (state.modifier === 'RFS') {
             why = ` RFS gives no bonus, so it must fit the stated Ø${tol}.`;
         } else if (r.bonus > EPS) {
-            why = ` At Ø${f4(state.actualSize)} the ${feature} is ${f4(r.bonus)}" from ${state.modifier}, earning that as bonus: allowed Ø${f4(r.allowed)}.`;
+            why = ` At Ø${f4(state.actualSize)} the ${feature} is ${f4(r.bonus)}${suffix()} from ${state.modifier}, earning that as bonus: allowed Ø${f4(r.allowed)}.`;
         } else {
             why = ` The ${feature} is at ${state.modifier}, so there is no bonus: allowed Ø${tol}.`;
         }
@@ -422,9 +434,9 @@ const numInput = 'w-full px-2 py-1.5 border border-slate-300 rounded font-mono t
 function renderControls() {
     if (!controlsContainer) return;
     const r = evaluate();
-    const pad = Math.max(r.sizeRange * 0.5, 0.002);
-    const sMin = (r.lower - pad).toFixed(4);
-    const sMax = (r.upper + pad).toFixed(4);
+    const pad = Math.max(r.sizeRange * 0.5, fromIn(0.002));
+    const sMin = (r.lower - pad).toFixed(decimals());
+    const sMax = (r.upper + pad).toFixed(decimals());
     const seg = (group, value, label) =>
         `<button data-${group}="${value}" class="${segBtn} ${state[group === 'mod' ? 'modifier' : 'featureType'] === value ? segOn : segOff}">${label}</button>`;
 
@@ -433,7 +445,7 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Control Frame</h4>
             <div class="flex items-center gap-2 mb-3">
                 <label class="text-sm font-semibold text-slate-700 w-32 shrink-0">Tolerance Ø</label>
-                <input type="number" id="ctrl-tol" value="${state.toleranceDiam}" step="0.001" min="0.001" class="${numInput} bg-yellow-50">
+                <input type="number" id="ctrl-tol" value="${state.toleranceDiam}" step="${step()}" min="${step()}" class="${numInput} bg-yellow-50">
             </div>
             <div class="text-xs font-bold text-slate-500 mb-1">MATERIAL CONDITION</div>
             <div class="flex gap-2">
@@ -442,25 +454,25 @@ function renderControls() {
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Size (in)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Size (${unitName()})</h4>
             <div class="flex gap-2 mb-3">
                 ${seg('type', 'hole', 'Hole (internal)')}${seg('type', 'pin', 'Pin (external)')}
             </div>
             <div class="grid grid-cols-3 gap-2 mb-1">
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">NOMINAL Ø</label>
-                    <input type="number" id="ctrl-nom" step="0.001" value="${state.nominal.toFixed(4)}" class="${numInput}"></div>
+                    <input type="number" id="ctrl-nom" step="${step()}" value="${f4(state.nominal)}" class="${numInput}"></div>
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">+ TOL</label>
-                    <input type="number" id="ctrl-plus" step="0.001" min="0" value="${state.plusTol.toFixed(4)}" class="${numInput}"></div>
+                    <input type="number" id="ctrl-plus" step="${step()}" min="0" value="${f4(state.plusTol)}" class="${numInput}"></div>
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">− TOL</label>
-                    <input type="number" id="ctrl-minus" step="0.001" min="0" value="${state.minusTol.toFixed(4)}" class="${numInput}"></div>
+                    <input type="number" id="ctrl-minus" step="${step()}" min="0" value="${f4(state.minusTol)}" class="${numInput}"></div>
             </div>
             <div class="text-xs text-slate-500 font-mono mb-4">MMC Ø${f4(r.mmc)} · LMC Ø${f4(r.lmc)}</div>
 
             <div class="flex items-center justify-between mb-1">
                 <label class="text-xs font-bold text-slate-500">MEASURED SIZE Ø</label>
-                <input type="number" id="ctrl-size" step="0.0005" value="${state.actualSize.toFixed(4)}" class="w-28 px-2 py-1 border border-slate-300 rounded font-mono text-sm text-right">
+                <input type="number" id="ctrl-size" step="${fromIn(0.0005)}" value="${f4(state.actualSize)}" class="w-28 px-2 py-1 border border-slate-300 rounded font-mono text-sm text-right">
             </div>
-            <input type="range" id="slide-size" min="${sMin}" max="${sMax}" step="0.0001" value="${state.actualSize}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="slide-size" min="${sMin}" max="${sMax}" step="${fromIn(0.0001)}" value="${state.actualSize}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
             <div class="flex gap-2 mt-2">
                 <button id="btn-at-mmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">SET TO MMC</button>
                 <button id="btn-at-lmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">SET TO LMC</button>
@@ -468,12 +480,12 @@ function renderControls() {
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Measured Axis Location (in)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Measured Axis Location (${unitName()})</h4>
             <div class="grid grid-cols-2 gap-3">
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">X OFFSET</label>
-                    <input type="number" id="ctrl-x" step="0.001" value="${state.deviationX.toFixed(4)}" class="${numInput}"></div>
+                    <input type="number" id="ctrl-x" step="${step()}" value="${f4(state.deviationX)}" class="${numInput}"></div>
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">Y OFFSET</label>
-                    <input type="number" id="ctrl-y" step="0.001" value="${state.deviationY.toFixed(4)}" class="${numInput}"></div>
+                    <input type="number" id="ctrl-y" step="${step()}" value="${f4(state.deviationY)}" class="${numInput}"></div>
             </div>
             <p class="text-xs text-slate-400 mt-2">Or drag the axis point on the drawing.</p>
         </div>
@@ -501,7 +513,7 @@ function bindControlEvents() {
         b.onclick = () => {
             if (state.featureType === b.dataset.type) return;
             state.featureType = b.dataset.type;
-            Object.assign(state, DEFAULT_SIZES[state.featureType]);
+            Object.assign(state, DEFAULT_SIZES[state.units][state.featureType]);
             renderControls();
             renderScene();
         };
@@ -523,7 +535,7 @@ function bindControlEvents() {
     const setSize = (v) => {
         if (!Number.isFinite(v) || v <= 0) return;
         state.actualSize = v;
-        $('ctrl-size').value = v.toFixed(4);
+        $('ctrl-size').value = f4(v);
         $('slide-size').value = v;
         renderScene();
     };
@@ -546,7 +558,7 @@ function updateReadouts() {
     if (state.isDragging) {
         const inputX = document.getElementById('ctrl-x');
         const inputY = document.getElementById('ctrl-y');
-        if (inputX) inputX.value = state.deviationX.toFixed(4);
-        if (inputY) inputY.value = state.deviationY.toFixed(4);
+        if (inputX) inputX.value = f4(state.deviationX);
+        if (inputY) inputY.value = f4(state.deviationY);
     }
 }

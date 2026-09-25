@@ -8,10 +8,22 @@
 import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, addDefs, text, wrapText, legend, resultsStrip, featureControlFrame } from '../../theme.js';
+import { getUnits, step, unitName, decimals } from '../../units.js';
 
-const MMB = 10.0;                       // datum hole B: Ø10 +0.1/0, so its MMB is Ø10.000
-const B_MAX = 10.1;
-const PITCH = 20;                       // holes at (±20, ±20) mm from B
+// The example part in each unit: datum hole B (MMB and largest size), hole
+// pitch from B, and g, the size of the deviations compared with the mm example.
+const GEO = { mm: { mmb: 10.0, bMax: 10.1, pitch: 20, g: 1, label: 'Ø10 +0.1/0' },
+              in: { mmb: 0.375, bMax: 0.379, pitch: 0.75, g: 0.04, label: 'Ø.375 +.004/0' } };
+const G = () => GEO[state.units];
+const scaleDev = dev => dev.map(d => d.map(v => +(v * G().g).toFixed(5)));
+// The two example parts differ, so a unit change loads that unit's example (no conversion)
+const START = { mm: { tol: 0.2, bSize: 10.08 }, in: { tol: 0.008, bSize: 0.3782 } };
+function followUnits() {
+    if (state.units === getUnits()) return;
+    state.units = getUnits();
+    Object.assign(state, START[state.units], { dev: scaleDev(PRESETS[0].dev) });
+}
+
 
 const PRESETS = [
     { label: 'Pattern off to one side: shift saves it', dev: [[0.12, 0.02], [0.13, -0.01], [0.11, 0.03], [0.12, 0]] },
@@ -20,6 +32,7 @@ const PRESETS = [
 ];
 
 const state = {
+    units: 'mm',
     tol: 0.2,                           // position Ø of the 4 holes (made at MMC, so no bonus)
     bRef: 'MMB',                        // 'MMB' (B Ⓜ) | 'RMB' (B, no modifier)
     bSize: 10.08,                       // actual size of datum hole B
@@ -27,15 +40,17 @@ const state = {
 };
 
 let svgRef = null, controlsRoot = null;
-const f3 = v => v.toFixed(3);
-const TRUE = [[-PITCH, PITCH], [PITCH, PITCH], [PITCH, -PITCH], [-PITCH, -PITCH]];
+const f3 = v => v.toFixed(decimals());
+const trueXY = () => { const p = G().pitch; return [[-p, p], [p, p], [p, -p], [-p, -p]]; };   // holes at (±pitch, ±pitch) from B
 
 export function draw(svg) {
+    followUnits();
     svgRef = svg;
     render();
 }
 
 export function loadControls(container) {
+    followUnits();
     controlsRoot = container;
     renderControls();
 }
@@ -71,11 +86,11 @@ export function bestShift(dev, smax) {
 }
 
 export function evaluateShift(s) {
-    const smax = s.bRef === 'MMB' ? Math.max(0, (s.bSize - MMB) / 2) : 0;
+    const smax = s.bRef === 'MMB' ? Math.max(0, (s.bSize - G().mmb) / 2) : 0;
     const shift = bestShift(s.dev, smax);
     const before = s.dev.map(([dx, dy]) => 2 * Math.hypot(dx, dy));
     const after = s.dev.map(([dx, dy]) => 2 * Math.hypot(dx - shift[0], dy - shift[1]));
-    const bOK = s.bSize >= MMB - EPS && s.bSize <= B_MAX + EPS;
+    const bOK = s.bSize >= G().mmb - EPS && s.bSize <= G().bMax + EPS;
     const passBefore = before.every(p => p <= s.tol + EPS);
     const pass = bOK && after.every(p => p <= s.tol + EPS);
     return { smax, shift, before, after, bOK, passBefore, pass, worst: Math.max(...after) };
@@ -86,8 +101,8 @@ export function evaluateShift(s) {
 // --------------------------------------------------------------------------
 
 const C = { x: 250, y: 385 };            // datum B centre in the view
-const P = 5.5;                           // px per mm for the layout
-const M = 260;                           // px per mm for deviations (magnified)
+const layoutPx = () => 110 / G().pitch;     // px per unit for the layout (the pitch is always 110 px)
+const devPx = () => 260 / G().g;          // px per unit for deviations (magnified)
 
 function render() {
     const svg = svgRef;
@@ -100,7 +115,7 @@ function render() {
         { kind: 'zoneOutline', label: 'Position zones, moved by the shift' },
         { kind: 'nominal', label: 'Zones with no shift' },
         { kind: 'point', label: 'Measured hole centre' },
-        { kind: 'actual', label: 'Gauge pin for B at MMB (Ø10.000)' }
+        { kind: 'actual', label: `Gauge pin for B at MMB (Ø${f3(G().mmb)})` }
     ], { note: 'Top view. Errors magnified.' }));
 
     drawPart(svg, r);
@@ -109,13 +124,14 @@ function render() {
 }
 
 function drawPart(svg, r) {
-    const half = 36 * P;
+    const P = layoutPx(), M = devPx();
+    const half = 1.8 * G().pitch * P;
     svg.appendChild(createSVG('rect', { x: C.x - half, y: C.y - half, width: 2 * half, height: 2 * half, rx: 14, fill: '#e2e8f0', stroke: COLORS.partStroke, 'stroke-width': 2 }));
     const s = r.shift;
     const sx = s[0] * M, sy = -s[1] * M;
 
     // Datum hole B (as made) and the gauge pin at MMB, shifted inside it
-    const rB = 30 + (state.bSize - MMB) / 2 * M, rPin = 30;
+    const rB = 30 + (state.bSize - G().mmb) / 2 * M, rPin = 30;
     svg.appendChild(createSVG('circle', { cx: C.x, cy: C.y, r: rB, fill: '#fff', stroke: COLORS.actual, 'stroke-width': 2 }));
     svg.appendChild(createSVG('circle', { cx: C.x + sx, cy: C.y + sy, r: rPin, fill: 'rgba(15,23,42,0.75)' }));
     svg.appendChild(text('B', C.x + sx, C.y + sy + 5, { size: 15, weight: 800, fill: '#fff', anchor: 'middle' }));
@@ -123,7 +139,7 @@ function drawPart(svg, r) {
         svg.appendChild(createSVG('circle', { cx: C.x, cy: C.y, r: r.smax * M, fill: 'none', stroke: '#b45309', 'stroke-width': 1.5, 'stroke-dasharray': '3 3' }));
     }
 
-    TRUE.forEach(([tx, ty], i) => {
+    trueXY().forEach(([tx, ty], i) => {
         const x = C.x + tx * P, y = C.y - ty * P;
         const zr = state.tol / 2 * M;
         const ok = r.after[i] <= state.tol + EPS;
@@ -149,7 +165,7 @@ function drawPanel(svg, r) {
     const fcf = featureControlFrame(x, 30, { symbol: 'position', tolerance: state.tol.toFixed(2), diameter: true, modifier: 'M',
         datums: ['A', state.bRef === 'MMB' ? { letter: 'B', mod: 'M' } : 'B'] });
     svg.appendChild(fcf.g);
-    svg.appendChild(text(`4X holes at MMC · datum hole B Ø${f3(state.bSize)} (MMB Ø${f3(MMB)})`, x, 90, { size: 13, fill: COLORS.muted }));
+    svg.appendChild(text(`4X holes at MMC · datum hole B Ø${f3(state.bSize)} (MMB Ø${f3(G().mmb)})`, x, 90, { size: 13, fill: COLORS.muted }));
 
     // Table: each hole before and after the shift
     const y0 = 128;
@@ -167,7 +183,7 @@ function drawPanel(svg, r) {
 
     const shiftLen = Math.hypot(...r.shift);
     const lines = [
-        `Shift available: ${f3(r.smax)} in any direction${state.bRef === 'MMB' ? ` (half of ${f3(state.bSize)} − ${f3(MMB)})` : ' (B at RMB)'}.`,
+        `Shift available: ${f3(r.smax)} in any direction${state.bRef === 'MMB' ? ` (half of ${f3(state.bSize)} − ${f3(G().mmb)})` : ' (B at RMB)'}.`,
         shiftLen > EPS ? `Best shift used: ${f3(shiftLen)} toward the pattern's offset.` : 'No shift used.',
         'The whole pattern of zones moves together, like one gauge.'
     ];
@@ -178,15 +194,15 @@ function drawPanel(svg, r) {
 function drawResults(svg, r) {
     const moved = r.before.some((b, i) => Math.abs(b - r.after[i]) > 1e-6);
     let sentence;
-    if (!r.bOK) sentence = `Datum hole B measures Ø${f3(state.bSize)}, outside Ø${f3(MMB)} to Ø${f3(B_MAX)}: the part fails on B's size.`;
+    if (!r.bOK) sentence = `Datum hole B measures Ø${f3(state.bSize)}, outside Ø${f3(G().mmb)} to Ø${f3(G().bMax)}: the part fails on B's size.`;
     else if (r.passBefore) sentence = `All holes pass even measured straight from B's axis (worst Ø${f3(Math.max(...r.before))}). No datum shift needed.`;
-    else if (r.pass) sentence = `Measured from B's axis, the worst hole is Ø${f3(Math.max(...r.before))}: it would fail. But B is ${f3(state.bSize - MMB)} bigger than its MMB, so the part can slide ${f3(r.smax)} on the gauge pin. Sliding it brings every hole within Ø${f3(state.tol)}: it passes, thanks to datum shift.`;
+    else if (r.pass) sentence = `Measured from B's axis, the worst hole is Ø${f3(Math.max(...r.before))}: it would fail. But B is ${f3(state.bSize - G().mmb)} bigger than its MMB, so the part can slide ${f3(r.smax)} on the gauge pin. Sliding it brings every hole within Ø${f3(state.tol)}: it passes, thanks to datum shift.`;
     else if (state.bRef === 'RMB') sentence = `B is referenced at RMB, so the part is held on B's own axis with no shift. The worst hole is Ø${f3(r.worst)} against Ø${f3(state.tol)}: it fails.`;
     else if (moved) sentence = `Datum shift helps (worst hole from Ø${f3(Math.max(...r.before))} to Ø${f3(r.worst)}), but not enough: moving the pattern toward one hole moves it away from another. It fails.`;
     else if (r.smax > EPS) sentence = `B could slide up to ${f3(r.smax)} on the pin, but the holes are off in opposite directions: moving the pattern toward one hole moves it away from another, so the shift cannot help. The worst hole is Ø${f3(r.worst)} against Ø${f3(state.tol)}: it fails.`;
     else sentence = `B fits the pin exactly (at MMB), so there is no room to shift. The worst hole is Ø${f3(r.worst)} against Ø${f3(state.tol)}: it fails.`;
     svg.appendChild(resultsStrip({
-        pass: r.pass, unit: ' mm', decimals: 3, compact: true,
+        pass: r.pass, compact: true,
         measured: { label: 'Worst hole (Ø)', value: r.worst },
         allowed: { label: 'Allowed (Ø)', value: state.tol },
         sentence
@@ -213,21 +229,21 @@ function renderControls() {
                 <div class="flex gap-2">${seg('MMB', 'B Ⓜ (at MMB)')}${seg('RMB', 'B (RMB)')}</div>
             </div>
             <div>
-                <div class="flex justify-between text-xs font-bold text-slate-500 mb-1"><span>DATUM HOLE B SIZE (Ø10 +0.1/0)</span><span id="ds-b-v" class="font-mono">${f3(state.bSize)}</span></div>
-                <input id="ds-b" type="range" min="10" max="10.1" step="0.005" value="${state.bSize}" class="w-full">
+                <div class="flex justify-between text-xs font-bold text-slate-500 mb-1"><span>DATUM HOLE B SIZE (${G().label})</span><span id="ds-b-v" class="font-mono">${f3(state.bSize)}</span></div>
+                <input id="ds-b" type="range" min="${G().mmb}" max="${G().bMax}" step="${state.units === 'in' ? 0.0002 : 0.005}" value="${state.bSize}" class="w-full">
             </div>
             <div class="grid grid-cols-2 gap-2 items-end">
-                <div><label class="block text-xs font-bold text-slate-500 mb-1">POSITION Ø (4X)</label><input id="ds-tol" type="number" step="0.01" min="0.01" value="${state.tol}" class="${input}"></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">POSITION Ø (4X)</label><input id="ds-tol" type="number" step="${step()}" min="${step()}" value="${state.tol}" class="${input}"></div>
                 <p class="text-xs text-slate-500">Holes made at MMC, so they get no bonus here.</p>
             </div>
         </div>
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Measured offsets from true position (mm)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Measured offsets from true position (${unitName()})</h4>
             <div class="grid grid-cols-[2rem_1fr_1fr] gap-1.5 items-center text-xs font-bold text-slate-500">
                 <span></span><span>X</span><span>Y</span>
                 ${state.dev.map(([dx, dy], i) => `<span>H${i + 1}</span>
-                    <input data-dev="${i}:0" type="number" step="0.01" value="${dx}" class="${input}">
-                    <input data-dev="${i}:1" type="number" step="0.01" value="${dy}" class="${input}">`).join('')}
+                    <input data-dev="${i}:0" type="number" step="${step()}" value="${dx}" class="${input}">
+                    <input data-dev="${i}:1" type="number" step="${step()}" value="${dy}" class="${input}">`).join('')}
             </div>
         </div>
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
@@ -252,7 +268,7 @@ function renderControls() {
         if (Number.isFinite(v)) { state.dev[i][k] = v; render(); }
     });
     controlsRoot.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
-        state.dev = PRESETS[+b.dataset.preset].dev.map(d => [...d]);
+        state.dev = scaleDev(PRESETS[+b.dataset.preset].dev);
         update();
     });
 }

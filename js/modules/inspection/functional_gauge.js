@@ -8,6 +8,7 @@
 import { createSVG } from '../../drawing_utils.js';
 import { COLORS, addDefs, text, wrapText, featureControlFrame, resultsStrip } from '../../theme.js';
 import { UI } from '../drawing/sheet.js';
+import { getUnits } from '../../units.js';
 
 // Basic geometry per unit: plate W × H, holes at xs × ys from the lower-left corner.
 const GEOM = {
@@ -24,15 +25,21 @@ const fresh = u => ({
     ...DEFAULTS[u],
     holes: [0, 1, 2, 3].map(() => ({ h: DEFAULTS[u].h, dx: 0, dy: 0 }))
 });
-const state = fresh('mm');
+const state = fresh(getUnits());
+// Each unit has its own clean example part, so a unit change loads that example
+function followUnits() {
+    if (state.units !== getUnits()) Object.assign(state, fresh(getUnits()), { scheme: state.scheme, mmcMod: state.mmcMod, gaugePct: state.gaugePct });
+}
 let svgRef = null, controlsRoot = null;
 
 export function draw(svg) {
+    followUnits();
     svgRef = svg;
     render();
 }
 
 export function loadControls(container) {
+    followUnits();
     controlsRoot = container;
     renderControls();
 }
@@ -293,7 +300,6 @@ function renderControls() {
     const h = state.holes[state.sel];
     controlsRoot.innerHTML = `
         <div class="${UI.card} space-y-3">
-            <div class="flex gap-2">${seg('units', 'mm', 'mm')}${seg('units', 'in', 'inch')}</div>
             <div><h4 class="${UI.h4}">Datums</h4>
             <div class="flex gap-2">${seg('scheme', 'faces', 'A | B | C faces')}${seg('scheme', 'bore', 'A | B Ⓜ bore')}</div></div>
         </div>
@@ -331,11 +337,6 @@ function renderControls() {
 
     const on = (sel, ev, fn) => { const el = controlsRoot.querySelector(sel); if (el) el[ev] = fn; };
     const num = (sel, fn) => on(sel, 'oninput', e => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) { fn(v); render(); } });
-    controlsRoot.querySelectorAll('[data-units]').forEach(b => b.onclick = () => {
-        if (state.units === b.dataset.units) return;
-        Object.assign(state, fresh(b.dataset.units), { scheme: state.scheme, mmcMod: state.mmcMod, gaugePct: state.gaugePct });
-        render(); renderControls();
-    });
     controlsRoot.querySelectorAll('[data-scheme]').forEach(b => b.onclick = () => { state.scheme = b.dataset.scheme; render(); renderControls(); });
     controlsRoot.querySelectorAll('[data-sel]').forEach(b => b.onclick = () => { state.sel = +b.dataset.sel; render(); renderControls(); });
     num('#fg-mmc', v => { if (v > 0) state.mmc = v; });

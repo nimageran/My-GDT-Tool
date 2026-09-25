@@ -2,8 +2,12 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', lengths: ['toleranceWidth', 'zValues'], perLength: ['zScale'],
+    nice: { mm: { toleranceWidth: 0.8, zScale: 200 } } };
+
+const f4 = v => fmt(v);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -38,12 +42,14 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -204,7 +210,7 @@ function drawWhiskers() {
             const idx = r * gridSize + c;
             const z = zValues[idx];
             
-            if (Math.abs(z) > 0.001) {
+            if (Math.abs(z) > fromIn(0.001)) {
                 // Point on Surface
                 const surfPt = project(r, c, z);
                 // Point on Neutral Plane
@@ -294,12 +300,12 @@ function setupInteractions(svg) {
         // Map pixel movement to Z-inch movement
         // Moving Mouse DOWN (positive Y) means Negative Z (down into screen)
         // Sensitivity: 100px = 0.020 inch
-        const sensitivity = 0.020 / 100;
+        const sensitivity = fromIn(0.020) / 100;
         
         let newZ = state.dragStartZ - (dy * sensitivity);
         
         // Clamp for sanity
-        newZ = Math.max(-0.040, Math.min(0.040, newZ));
+        newZ = Math.max(-fromIn(0.040), Math.min(fromIn(0.040), newZ));
         
         state.zValues[state.activeHandleIdx] = newZ;
         renderScene();
@@ -324,7 +330,7 @@ function renderControls() {
                     <span class="text-3xl">⌓</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black bg-slate-100 text-slate-400">A</div>
@@ -356,7 +362,7 @@ function renderControls() {
              <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-bold text-slate-500">MAGNIFY HEIGHT</span>
             </div>
-            <input type="range" id="ctrl-zscale" min="1000" max="8000" step="100" value="${state.zScale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="ctrl-zscale" min="${perFromIn(1000)}" max="${perFromIn(8000)}" step="${perFromIn(100)}" value="${state.zScale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
         </div>
     `;
 
@@ -383,19 +389,19 @@ function bindControlEvents() {
     document.getElementById('btn-bowl').onclick = () => setGrid((r,c) => {
         // Distance from center
         const dx = c - 1.5; const dy = r - 1.5;
-        return -0.005 * (dx*dx + dy*dy);
+        return -fromIn(0.005) * (dx*dx + dy*dy);
     });
     document.getElementById('btn-dome').onclick = () => setGrid((r,c) => {
         const dx = c - 1.5; const dy = r - 1.5;
-        return 0.005 * (dx*dx + dy*dy);
+        return fromIn(0.005) * (dx*dx + dy*dy);
     });
     document.getElementById('btn-saddle').onclick = () => setGrid((r,c) => {
          const dx = c - 1.5; const dy = r - 1.5;
-         return 0.005 * (dx*dx - dy*dy);
+         return fromIn(0.005) * (dx*dx - dy*dy);
     });
     document.getElementById('btn-twist').onclick = () => setGrid((r,c) => {
          const dx = c - 1.5; const dy = r - 1.5;
-         return 0.005 * (dx * dy);
+         return fromIn(0.005) * (dx * dy);
     });
-    document.getElementById('btn-random').onclick = () => setGrid(() => (Math.random() * 0.04) - 0.02);
+    document.getElementById('btn-random').onclick = () => setGrid(() => fromIn((Math.random() * 0.04) - 0.02));
 }

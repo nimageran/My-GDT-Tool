@@ -16,6 +16,7 @@
 
 import { createSVG } from './drawing_utils.js';
 import { gdtChar, circledMod, diaSymbol } from './modules/decode/symbols.js';
+import { suffix, decimals } from './units.js';
 
 export const COLORS = {
     ink: '#0f172a',
@@ -351,7 +352,7 @@ export function legend(x, y, items, { title = 'KEY', note } = {}) {
  * results: {
  *   pass: boolean,
  *   measured: { label, value }, allowed: { label, value },   // numbers
- *   unit: '"' | ' mm', decimals,
+ *   unit: '"' | ' mm', decimals (default: the global mm / inch setting),
  *   sentence: string,
  *   compact: boolean,  // smaller type for sentences over ~200 characters
  *   gauge: false       // hide the gauge (e.g. when values are ranges)
@@ -360,8 +361,8 @@ export function legend(x, y, items, { title = 'KEY', note } = {}) {
  */
 export function resultsStrip(results) {
     const { pass, measured, allowed, sentence } = results;
-    const unit = results.unit ?? '"';
-    const dec = results.decimals ?? 4;
+    const unit = results.unit ?? suffix();        // the global mm / inch setting
+    const dec = results.decimals ?? decimals();
     const top = LAYOUT.strip.top;
     const g = createSVG('g', {});
 
