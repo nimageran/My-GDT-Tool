@@ -98,10 +98,10 @@ const EXPLAIN = {
         ],
         example: [
             'A hydraulic piston has cylindricity 0.0005".',
-            'Every slice is round within 0.0003", but the diameter grows 0.0004" from one end to the other.',
+            'Every slice is round within 0.0003", but the diameter grows 0.0008" from one end to the other (0.0004" on the radius).',
             'Together the surface needs a band of about 0.0007", so it fails, even though each slice alone looked fine.'
         ],
-        tool: 'Add taper, barrel, bend or oval error. Note: this tool measures from the nominal size, a simplification; a real check uses a best-fit axis.'
+        tool: 'Add taper, barrel, bend or oval error. Each slider value is the band that error needs on its own. The tool finds the best-fit axis and size, just like a real check, and shows the narrowest band that holds the whole surface.'
     },
 
     line_profile: {
