@@ -149,7 +149,7 @@ function drawTrueProfile() {
     const mid = getBezierPoint(0.5, startPt, cp1, cp2, endPt);
     const label = createSVG('text', {
         x: mid.x, y: mid.y + 20, 
-        fill: '#0f172a', 'font-family': 'JetBrains Mono', 'font-size': '14', 'font-weight': 'bold'
+        fill: '#0f172a', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold'
     });
     label.textContent = "TRUE PROFILE";
     group.appendChild(label);
@@ -323,7 +323,7 @@ function drawFuturisticHUD() {
     }));
 
     const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': 'JetBrains Mono', 'font-size': size, 'font-weight': weight });
+        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
         t.textContent = txt;
         return t;
     };

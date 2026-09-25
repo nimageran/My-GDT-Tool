@@ -199,7 +199,7 @@ function update() {
 function txt(str, x, y, o = {}) {
     const t = el('text', {
         x, y, 'font-size': o.size || 16, fill: o.fill || '#0f172a',
-        'font-family': o.mono ? "'JetBrains Mono', monospace" : 'ui-sans-serif, system-ui, sans-serif',
+        'font-family': o.mono ? "'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" : 'ui-sans-serif, system-ui, sans-serif',
         'text-anchor': o.anchor || 'start', 'dominant-baseline': o.baseline || 'auto'
     });
     if (o.bold) t.setAttribute('font-weight', '700');
@@ -315,7 +315,7 @@ function renderFindings(g, findings) {
         g.appendChild(el('rect', { x: cx, y, width: colW, height: hgt, rx: 8, fill: st.bg }));
         g.appendChild(el('rect', { x: cx, y, width: 5, height: hgt, rx: 2, fill: st.bar }));
         g.appendChild(txt(st.tag, cx + 18, y + 22, { size: 10.5, bold: true, fill: st.tagFill, spacing: 1 }));
-        g.appendChild(txt(f.title, cx + 18 + st.tag.length * 8 + 12, y + 22, { size: 14, bold: true, fill: '#0f172a' }));
+        g.appendChild(txt(f.title, cx + 18 + st.tag.length * 11 + 14, y + 22, { size: 14, bold: true, fill: '#0f172a' }));
         wrapText(g, f.text, cx + 18, y + 42, colW - 30, 12.5, '#334155', 17);
         y += hgt + 10;
     }

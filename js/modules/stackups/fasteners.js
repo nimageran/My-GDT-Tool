@@ -250,7 +250,7 @@ function drawResults(r) {
     }
     svgContainer.appendChild(resultsStrip({
         pass: r.fits,
-        measured: { label: floating ? 'Your position tol.' : 'Your T₁ + T₂', value: r.used },
+        measured: { label: floating ? 'Your tolerance' : 'Your T₁ + T₂', value: r.used },
         allowed: { label: 'Max: H − F', value: Math.max(r.clearance, 0) },
         unit: u(),
         decimals: state.units === 'mm' ? 3 : 4,

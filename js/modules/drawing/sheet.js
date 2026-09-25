@@ -60,7 +60,7 @@ export function projectionSymbol(x, y, s, angle) {
 export const TITLE_FIELDS = [
     { id: 'tolerances', label: 'UNLESS OTHERWISE SPECIFIED', x: 0, y: 0, w: 180, h: 70,
       lines: ['DIMENSIONS IN MM', 'X ±0.5   X.X ±0.2', 'X.XX ±0.1   ANGLES ±0.5°'] },
-    { id: 'standard', label: 'STANDARD', x: 0, y: 70, w: 180, h: 40, lines: ['INTERPRET PER ASME Y14.5-2018'] },
+    { id: 'standard', label: 'STANDARD', x: 0, y: 70, w: 180, h: 40, lines: ['ASME Y14.5-2018'] },
     { id: 'projection', label: 'PROJECTION', x: 0, y: 110, w: 180, h: 70, lines: [] },
     { id: 'company', label: 'COMPANY', x: 180, y: 0, w: 240, h: 40, lines: ['YOUR COMPANY INC.'] },
     { id: 'title', label: 'TITLE', x: 180, y: 40, w: 240, h: 40, lines: ['BRACKET, MOUNTING'] },
@@ -77,10 +77,14 @@ export const TITLE_FIELDS = [
 /**
  * Draw the title block with its top-left at (x, y), scaled by k.
  * opts.highlight: field id to highlight; opts.onClick(id): makes fields clickable.
+ * opts.labelSize / valueSize / bigSize: text sizes (default: scaled with k).
+ * opts.fixed: sizes are already chosen to be readable; skip the automatic
+ * enlargement (js/legibility.js), which would overflow the small cells.
  * Returns { g, rect(id) } where rect gives a field's box in canvas units.
  */
 export function titleBlock(x, y, k = 1, opts = {}) {
-    const g = createSVG('g', {});
+    const g = createSVG('g', opts.fixed ? { 'data-fixed-size': '' } : {});
+    const LS = opts.labelSize ?? 6.5 * k, VS = opts.valueSize ?? 8.5 * k, BS = opts.bigSize ?? 13 * k;
     const rect = id => {
         const f = TITLE_FIELDS.find(t => t.id === id);
         return { x: x + f.x * k, y: y + f.y * k, w: f.w * k, h: f.h * k };
@@ -93,15 +97,18 @@ export function titleBlock(x, y, k = 1, opts = {}) {
             x: r.x, y: r.y, width: r.w, height: r.h,
             fill: on ? '#dbeafe' : '#ffffff', stroke: INK, 'stroke-width': on ? 2.5 : 1.2
         }));
-        cell.appendChild(text(f.label, r.x + 4 * k, r.y + 9 * k, { size: 6.5 * k, fill: '#64748b', weight: 600 }));
+        cell.appendChild(text(f.label, r.x + 4 * k, r.y + LS + 1.5, { size: LS, fill: '#64748b', weight: 600 }));
         if (f.id === 'projection') {
-            cell.appendChild(projectionSymbol(r.x + 34 * k, r.y + 18 * k, 26 * k, 'third'));
-            cell.appendChild(text('THIRD ANGLE', r.x + 90 * k, r.y + 64 * k, { size: 7 * k, fill: INK, weight: 700, anchor: 'middle' }));
+            cell.appendChild(projectionSymbol(r.x + 34 * k, r.y + LS + 6, 22 * k, 'third'));
+            cell.appendChild(text('THIRD ANGLE', r.x + 90 * k, r.y + r.h - 5, { size: LS, fill: INK, weight: 700, anchor: 'middle' }));
         }
         f.lines.forEach((ln, i) => {
             const big = ['title', 'number', 'revision', 'company'].includes(f.id);
-            cell.appendChild(text(ln, r.x + (f.id === 'revision' ? r.w / 2 : 5 * k), r.y + (big ? 29 : 21 + i * 15) * k,
-                { size: (big ? 13 : 8.5) * k, fill: INK, weight: 700, anchor: f.id === 'revision' ? 'middle' : 'start', mono: f.id !== 'company' && f.id !== 'title' }));
+            const ty = big ? r.y + r.h - (r.h - LS - BS) / 2 - 2 : r.y + LS + 5 + VS + i * VS * 1.3;
+            const t = text(ln, r.x + (f.id === 'revision' ? r.w / 2 : 5 * k), ty,
+                { size: big ? BS : VS, fill: INK, weight: 700, anchor: f.id === 'revision' ? 'middle' : 'start', mono: f.id !== 'company' && f.id !== 'title' });
+            t.style.whiteSpace = 'pre';               // keep the gaps in "X ±0.5   X.X ±0.2"
+            cell.appendChild(t);
         });
         if (opts.onClick) cell.addEventListener('click', () => opts.onClick(f.id));
         g.appendChild(cell);

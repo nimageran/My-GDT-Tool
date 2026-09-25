@@ -440,8 +440,17 @@ function drawCard(s, i) {
         fill: active ? '#eff6ff' : COLORS.card, stroke: active ? COLORS.zoneStroke : COLORS.cardBorder, 'stroke-width': active ? 2 : 1.2
     }));
     g.appendChild(s.draw(x + GRID.w / 2, y + 40, 40));
-    const label = wrapText(s.name, x + GRID.w / 2, y + GRID.h - 28, 16, 12.5, { size: 10.5, weight: 600, fill: COLORS.text, anchor: 'middle' });
-    if (label.childNodes.length > 2) label.setAttribute('transform', `translate(0,-6)`);
+    // Sized here to stay readable on small screens (skips the automatic
+    // enlargement); a long word like "Perpendicularity" is squeezed to fit.
+    const label = wrapText(s.name, x + GRID.w / 2, y + GRID.h - 30, 14, 14.5, { size: 13.5, weight: 600, fill: COLORS.text, anchor: 'middle' });
+    label.setAttribute('data-fixed-size', '');
+    for (const t of label.childNodes) {
+        if (t.textContent.length * 13.5 * 0.56 > GRID.w - 8) {
+            t.setAttribute('textLength', GRID.w - 8);
+            t.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+        }
+    }
+    if (label.childNodes.length > 2) label.setAttribute('transform', `translate(0,-8)`);
     g.appendChild(label);
     g.addEventListener('click', () => { state.selected = s.name; renderScene(); renderLinks(); });
     svgContainer.appendChild(g);

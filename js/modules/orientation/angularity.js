@@ -104,7 +104,7 @@ function drawDatumA() {
     }
     
     // Label
-    const textStyle = { fill: '#1e293b', 'font-family': 'JetBrains Mono', 'font-weight': '900', 'font-size': '20' };
+    const textStyle = { fill: '#1e293b', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-weight': '900', 'font-size': '20' };
     const label = createSVG('text', { x: 60, y: center.y - 15, ...textStyle });
     label.textContent = "DATUM PLANE A";
     group.appendChild(label);
@@ -312,7 +312,7 @@ function drawFuturisticHUD() {
     }));
 
     const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': 'JetBrains Mono', 'font-size': size, 'font-weight': weight });
+        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
         t.textContent = txt;
         return t;
     };
