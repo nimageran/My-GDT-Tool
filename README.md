@@ -25,7 +25,7 @@ The tool opens on a **Home** page ("What do you need to do?" start points and a 
 | **Material Condition** | Modifiers and the boundaries they create | Bonus tolerance (MMC / LMC / RFS), Rule #1 envelope (and independency), virtual & resultant condition (will the pin always fit the hole?), datum shift (MMB) | |
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D), datum targets (points, lines, areas; drawing and fixture views) | |
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas, ISO fits (ISO 286: H7/g6 → limits, clearance or interference, preferred fits) | |
-| **Inspection** | What quality does with the drawing | CMM position calculator, measurement methods | Functional gauge designer |
+| **Inspection** | What quality does with the drawing | CMM position calculator, measurement methods, functional gauge designer | |
 | **Learn** | Standards, practice and your own notes | My Notebook (your notes: company rules, decoded callouts, lessons learned; "+ Note" from any tool, tags, pins, found by search, backup export / import), learning path (6 lessons, 30 quiz questions from real callouts, progress saved; shown on Home), glossary (searchable), ASME vs ISO GPS, Y14.5-2009 vs 2018 (which edition, what changed and what did not) | |
 | **Manufacturing** | Can the shop make it, and at what cost | Process capability guide (which process holds a tolerance and finish, cost rule of thumb), Cp / Cpk calculator (paste measurements, histogram, advice), ± to position (57% more zone, drag the hole) | |
 

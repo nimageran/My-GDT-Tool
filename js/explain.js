@@ -502,6 +502,29 @@ export const EXPLAIN = {
         tool: 'Pick "What to check" or "Equipment I have", then search or filter by shop floor, gauge or lab.'
     },
 
+    functional_gauge: {
+        title: 'Functional Gauge Designer',
+        terms: [
+            ['Virtual condition (VC)', 'The worst mating size: for a hole, MMC minus the position tolerance. The gauge pin is made at this size.'],
+            ['MMB', 'Maximum material boundary: the size the datum pin is made at when the datum letter has Ⓜ.'],
+            ['Datum shift', 'With a datum at MMB, a bigger datum bore lets the part slide on its pin; that extra movement is allowed.'],
+            ['Gauge tolerance', 'The gauge maker\'s own tolerance, usually 5–10% of the part tolerance, put on the side that never accepts a bad part.']
+        ],
+        simple: [
+            'A **functional gauge** is a **fake mating part**: pins where the holes should be.',
+            'Each pin is made at **virtual condition** (hole **MMC minus the position tolerance**), placed at **true position**.',
+            'The gauge base and stops (or a **datum pin at MMB**) hold the part the way the **datums** say.',
+            'If the part **drops on**, the hole pattern is good: **bonus and datum shift** are included automatically.',
+            'It only works with **Ⓜ**, and it **does not check hole size**: use a plug gauge for that.'
+        ],
+        example: [
+            '4X Ø8.2–8.4 holes with position Ø0.2 Ⓜ: the pin is 8.2 − 0.2 = Ø8.0.',
+            'A hole made at Ø8.4 and 0.36 off still drops on: it has 0.2 bonus, so 0.4 is allowed.',
+            'A hole 0.54 off hits the pin: the part is rejected, exactly as a CMM would say.'
+        ],
+        tool: 'Set the callout, pick the datums, then use "Try a part" or the presets and watch the magnified circles.'
+    },
+
     cmm_position: {
         title: 'CMM Position Calculator',
         terms: [
