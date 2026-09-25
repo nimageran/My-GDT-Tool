@@ -47,6 +47,7 @@ export function loadControls(container) {
                 <li>The menus at the top list every tool, with a line on what each one does.</li>
                 <li>Each tool has an <b>Explain</b> button with the idea in simple words.</li>
                 <li><b>mm | inch</b> (top bar) sets the units for every tool.</li>
+                <li>On a phone or tablet, switch between <b>Drawing</b> and <b>Controls</b> at the bottom; <b>2×</b> zooms the drawing.</li>
                 <li>Words with a dotted underline show their meaning when you point at them.</li>
                 <li><b>+ Note</b> (top right) saves what you learn to <button data-go="LEARN:notebook" class="font-semibold text-blue-700 hover:underline">My Notebook</button>, linked to the tool.</li>
             </ul>

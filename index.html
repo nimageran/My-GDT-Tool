@@ -8,16 +8,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-slate-100 h-screen flex flex-col overflow-hidden font-sans">
+<body class="bg-slate-100 h-[100dvh] flex flex-col overflow-hidden font-sans" data-mview="drawing">
 
-    <header class="bg-slate-900 text-white shrink-0 flex items-center gap-4 px-4 py-2 shadow-md z-40 relative">
+    <header class="bg-slate-900 text-white shrink-0 flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 shadow-md z-40 relative">
         <button id="homeLogo" class="shrink-0 text-left" title="Start page">
-            <h1 class="text-xl font-black tracking-wider text-yellow-500">ASME<span class="text-white">Y14.5</span></h1>
+            <h1 class="text-lg md:text-xl font-black tracking-wider text-yellow-500">ASME<span class="text-white">Y14.5</span></h1>
         </button>
         <button id="searchBtn" class="shrink-0 flex items-center gap-2 text-sm text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg pl-3 pr-2 py-1.5 transition-colors" title="Search everything (/ or Ctrl+K)">
             <i class="fa-solid fa-magnifying-glass"></i>
             <span class="hidden 2xl:inline">Search</span>
-            <kbd class="text-[11px] text-slate-400 border border-slate-600 rounded px-1.5 font-mono">/</kbd>
+            <kbd class="hidden md:inline text-[11px] text-slate-400 border border-slate-600 rounded px-1.5 font-mono">/</kbd>
         </button>
         <!-- Units for every tool (js/units.js) -->
         <div id="unitsToggle" class="shrink-0 flex rounded-lg border border-slate-700 overflow-hidden text-xs font-bold" role="group" aria-label="Units" title="Units for every tool: mm or inch">
@@ -25,16 +25,18 @@
             <button data-u="in" class="px-2.5 py-1.5 transition-colors">inch</button>
         </div>
         <!-- Menu bar: each tab opens a drop-down of its tools (js/main.js) -->
-        <nav id="categoryNav" role="menubar" class="flex items-center gap-0.5 ml-auto min-w-0 overflow-x-auto"></nav>
+        <nav id="categoryNav" role="menubar" class="flex items-center gap-0 ml-auto min-w-0 overflow-x-auto"></nav>
+        <!-- When the tabs do not fit (phones, tablets, small laptops): one button opens the full list (js/menu.js) -->
+        <button id="mobileMenuBtn" class="hidden ml-auto shrink-0 w-10 h-9 rounded-lg text-slate-200 hover:bg-slate-800 border border-slate-700" aria-label="All tools" title="All tools"><i class="fa-solid fa-bars"></i></button>
     </header>
 
     <!-- Where you are, and the previous / next tool in this tab -->
-    <nav id="pathBar" class="bg-white border-b border-slate-200 px-4 h-10 flex items-center gap-2 text-sm shrink-0 z-30" aria-label="Current tool">
+    <nav id="pathBar" class="bg-white border-b border-slate-200 px-3 md:px-4 h-10 flex items-center gap-2 text-sm shrink-0 z-30" aria-label="Current tool">
         <ol id="pathCrumbs" class="flex items-center gap-1.5 min-w-0 text-slate-500"></ol>
         <div class="ml-auto flex items-center gap-1 shrink-0">
-            <button id="addNoteBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-700 hover:bg-blue-50 border border-slate-200 rounded-md px-2.5 py-1" title="Write a note about what you are looking at (saved in My Notebook)"><i class="fa-solid fa-plus"></i> Note</button>
+            <button id="addNoteBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-700 hover:bg-blue-50 border border-slate-200 rounded-md px-2.5 py-1" title="Write a note about what you are looking at (saved in My Notebook)"><i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Note</span></button>
             <button id="notebookBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-md px-2.5 py-1 mr-2" title="Open My Notebook"><i class="fa-solid fa-book"></i> <span class="hidden md:inline">Notebook</span></button>
-            <span id="pathCount" class="text-xs text-slate-400 mr-1"></span>
+            <span id="pathCount" class="hidden sm:inline text-xs text-slate-400 mr-1"></span>
             <button id="prevTool" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-500 disabled:opacity-30" title="Previous tool in this tab"><i class="fa-solid fa-chevron-left"></i></button>
             <button id="nextTool" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-500 disabled:opacity-30" title="Next tool in this tab"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
@@ -71,10 +73,19 @@
 
              <div id="canvas-container" class="flex-1 relative blueprint-grid overflow-hidden flex items-center justify-center shadow-inner">
                 <svg id="mainCanvas" viewBox="0 0 1000 800" class="w-full h-full"></svg>
+                <!-- Phones and tablets: the drawing fits the width; 2× makes its text readable (scroll to pan) -->
+                <button id="zoomBtn" class="lg:hidden absolute top-2 right-2 z-40 bg-white/95 border border-slate-300 shadow rounded-full px-3 py-1.5 text-xs font-bold text-slate-700"><i class="fa-solid fa-magnifying-glass-plus"></i> <span>2×</span></button>
             </div>
         </main>
 
     </div>
+
+    <!-- Phones and tablets: switch between the drawing and its controls -->
+    <nav id="mobileBar" class="lg:hidden shrink-0 bg-white border-t border-slate-200 grid grid-cols-3 text-xs font-bold" aria-label="View">
+        <button data-mview="drawing" class="py-2.5 flex flex-col items-center gap-0.5"><i class="fa-solid fa-compass-drafting text-base"></i> Drawing</button>
+        <button data-mview="controls" class="py-2.5 flex flex-col items-center gap-0.5"><i class="fa-solid fa-sliders text-base"></i> Controls</button>
+        <button id="mobileExplainBtn" class="py-2.5 flex flex-col items-center gap-0.5 text-slate-600"><i class="fa-solid fa-circle-question text-base"></i> Explain</button>
+    </nav>
 
     <!-- three.js for the 3D tools; only downloaded when a 3D tool is opened -->
     <script type="importmap">

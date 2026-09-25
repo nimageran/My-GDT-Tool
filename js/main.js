@@ -2,7 +2,7 @@
 import { watchCanvas } from './legibility.js';
 import { setFocus } from './focus.js';
 import { initSearch } from './search.js';
-import { initMenu, setActive, getActive } from './menu.js';
+import { initMenu, setActive, getActive, openMobileMenu } from './menu.js';
 import { openNoteEditor } from './notes.js';
 import { GDT_HIERARCHY } from './config.js';
 import { createSVG } from './drawing_utils.js';
@@ -37,6 +37,7 @@ function init() {
     };
     document.getElementById('notebookBtn').onclick = () => loadSymbolModule('LEARN', 'notebook');
     setupUnitsToggle();
+    setupPhone();
     // Open on the start page, never straight into a specialist tool
     loadSymbolModule('HOME', 'home');
 }
@@ -77,6 +78,10 @@ async function loadSymbolModule(catKey, symKey) {
     // Explain button: shown when this tool has a plain-language explanation
     closeExplain();
     explainBtn.classList.toggle('hidden', !hasExplanation(symKey));
+    // Phones: open each tool on its drawing, fitted to the screen
+    mobileExplainBtn.classList.toggle('invisible', !hasExplanation(symKey));
+    setPhoneView('drawing');
+    setPhoneZoom(false);
 
     // Remove anything a module mounted beside the canvas (e.g. a 3D view)
     document.querySelectorAll('[data-module-overlay]').forEach(el => el.remove());
@@ -113,6 +118,29 @@ async function loadSymbolModule(catKey, symKey) {
         console.error(error);
         controlsContent.innerHTML = `<p class="text-red-500">Error loading ${symData.name}</p>`;
     }
+}
+
+// --- PHONES: drawing / controls switch, 2× zoom, full-screen tool list ---
+const mobileExplainBtn = document.getElementById('mobileExplainBtn');
+const zoomBtn = document.getElementById('zoomBtn');
+
+function setPhoneView(view) {
+    document.body.dataset.mview = view;
+}
+
+function setPhoneZoom(on) {
+    document.body.dataset.mzoom = on ? '2' : '1';
+    zoomBtn.innerHTML = on ? '<i class="fa-solid fa-magnifying-glass-minus"></i> <span>Fit</span>'
+        : '<i class="fa-solid fa-magnifying-glass-plus"></i> <span>2×</span>';
+    zoomBtn.title = on ? 'Fit the drawing to the screen' : 'Zoom in to read the text (scroll to move around)';
+    document.getElementById('canvas-container').scrollTo(0, 0);
+}
+
+function setupPhone() {
+    document.querySelectorAll('#mobileBar [data-mview]').forEach(b => b.onclick = () => setPhoneView(b.dataset.mview));
+    mobileExplainBtn.onclick = () => openExplain(activeSymbolKey);
+    zoomBtn.onclick = () => setPhoneZoom(document.body.dataset.mzoom !== '2');
+    document.getElementById('mobileMenuBtn').onclick = openMobileMenu;
 }
 
 // --- UNITS: one mm / inch switch; the open tool reloads in the new unit ---

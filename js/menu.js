@@ -36,7 +36,7 @@ const single = cat => tools(cat).length === 1;
 // Menu bar
 // --------------------------------------------------------------------------
 
-const TAB = 'shrink-0 px-2.5 py-1.5 rounded-md text-[13px] font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors';
+const TAB = 'shrink-0 px-2 py-1.5 rounded-md text-[13px] font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors';
 const TAB_IDLE = 'text-slate-300 hover:text-white hover:bg-slate-800';
 const TAB_OPEN = 'bg-slate-700 text-white';
 const TAB_ACTIVE = 'bg-blue-600 text-white';
@@ -65,7 +65,19 @@ function renderBar() {
         nav.appendChild(b);
     }
     styleBar();
+    fitBar();
 }
+
+// Show the tabs only when they all fit on one line; otherwise the ☰ button
+// opens the same tools as a full-screen list.
+const menuBtn = document.getElementById('mobileMenuBtn');
+function fitBar() {
+    nav.classList.remove('hidden');
+    const fits = nav.scrollWidth <= nav.clientWidth + 1;
+    nav.classList.toggle('hidden', !fits);
+    menuBtn.classList.toggle('hidden', fits);
+}
+new ResizeObserver(() => fitBar()).observe(document.querySelector('header'));
 
 function styleBar() {
     nav.querySelectorAll('button[data-cat]').forEach(b => {
@@ -167,6 +179,64 @@ document.addEventListener('keydown', e => {
 window.addEventListener('resize', () => close());
 
 // --------------------------------------------------------------------------
+// Phones: every tab and tool in one full-screen list (tabs open like an accordion)
+// --------------------------------------------------------------------------
+
+let sheet = null;
+
+export function openMobileMenu() {
+    closeMobileMenu();
+    let expanded = active.cat && !single(active.cat) ? active.cat : null;
+    sheet = document.createElement('div');
+    sheet.id = 'mobileMenu';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-label', 'All tools');
+    sheet.className = 'fixed inset-0 z-50 bg-white flex flex-col';
+    const render = () => {
+        sheet.innerHTML = `
+          <div class="shrink-0 flex items-center justify-between px-4 h-12 border-b border-slate-200 bg-slate-900 text-white">
+            <span class="font-bold">All tools</span>
+            <button data-close class="w-10 h-10 -mr-2 text-slate-200" aria-label="Close"><i class="fa-solid fa-xmark text-lg"></i></button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-2">
+            ${Object.entries(GDT_HIERARCHY).map(([cat, tab]) => {
+                const one = single(cat), open = cat === expanded, on = cat === active.cat;
+                return `
+                  <div class="border-b border-slate-100">
+                    <button data-tab="${cat}" class="w-full flex items-center justify-between px-3 py-3 text-left font-semibold ${on ? 'text-blue-700' : 'text-slate-800'}" aria-expanded="${open}">
+                      <span>${esc(tab.label)} ${one ? '' : `<span class="text-xs font-normal text-slate-400 ml-1">${tools(cat).length}</span>`}</span>
+                      <i class="fa-solid ${one ? 'fa-chevron-right' : open ? 'fa-chevron-up' : 'fa-chevron-down'} text-xs text-slate-400"></i>
+                    </button>
+                    ${open ? `<div class="pb-2">${tools(cat).map(([sym, d]) => item(cat, sym, d)).join('')}</div>` : ''}
+                  </div>`;
+            }).join('')}
+          </div>`;
+        sheet.querySelector('[data-close]').onclick = closeMobileMenu;
+        sheet.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
+            const cat = b.dataset.tab;
+            if (single(cat)) { closeMobileMenu(); pick(cat, tools(cat)[0][0]); return; }
+            expanded = expanded === cat ? null : cat;
+            render();
+            sheet.querySelector(`[data-tab="${cat}"]`)?.scrollIntoView({ block: 'nearest' });
+        });
+        sheet.querySelectorAll('.menu-item').forEach(b => b.onclick = () => {
+            const cat = b.closest('div.border-b').querySelector('[data-tab]').dataset.tab;
+            closeMobileMenu();
+            pick(cat, b.dataset.sym);
+        });
+    };
+    render();
+    document.body.appendChild(sheet);
+}
+
+export function closeMobileMenu() {
+    sheet?.remove();
+    sheet = null;
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheet) closeMobileMenu(); });
+
+// --------------------------------------------------------------------------
 // Path bar
 // --------------------------------------------------------------------------
 
@@ -178,8 +248,8 @@ function renderPath() {
     const sep = '<li class="text-slate-300"><i class="fa-solid fa-chevron-right text-[10px]"></i></li>';
     const parts = [`<li><button data-home class="hover:text-blue-700" title="Start page"><i class="fa-solid fa-house"></i></button></li>`];
     if (cat !== 'HOME') {
-        parts.push(sep, `<li><button data-open-tab="${cat}" class="hover:text-blue-700 hover:underline">${esc(tab.label)}</button></li>`);
-        if (d.group) parts.push(sep, `<li class="hidden md:block">${esc(d.group)}</li>`);
+        parts.push(sep.replace('class="text-slate-300"', 'class="hidden sm:block text-slate-300"'), `<li class="hidden sm:block"><button data-open-tab="${cat}" class="hover:text-blue-700 hover:underline">${esc(tab.label)}</button></li>`);
+        if (d.group) parts.push(sep.replace('class="text-slate-300"', 'class="hidden md:block text-slate-300"'), `<li class="hidden md:block">${esc(d.group)}</li>`);
     }
     parts.push(sep, `<li class="font-semibold text-slate-900 truncate">${esc(d.name)}</li>`);
     crumbs.innerHTML = parts.join('');
