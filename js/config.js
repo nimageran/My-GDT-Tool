@@ -60,10 +60,8 @@ export const GDT_HIERARCHY = {
         label: "Datums",
         icon: "fa-cube",
         symbols: {
-            drf: { name: "Datum Reference Frame", iconChar: "⌗", planned: true,
-                summary: "Pick primary, secondary and tertiary datum features and watch the six degrees of freedom lock one by one (3-2-1)." },
-            precedence: { name: "Datum Precedence", iconChar: "⇅", planned: true,
-                summary: "Swap A|B|C to B|A|C and see how the part sits differently in the fixture and how the results change." },
+            drf: { name: "Datum Reference Frame (3D)", iconChar: "⌗", filePath: './modules/datums/drf.js' },
+            precedence: { name: "Datum Precedence (3D)", iconChar: "⇅", filePath: './modules/datums/drf.js' },
             datum_targets: { name: "Datum Targets", iconChar: "⊗", planned: true,
                 summary: "Target points, lines and areas for castings, forgings and sheet metal, and how to build the fixture that simulates them." }
         }

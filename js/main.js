@@ -149,8 +149,12 @@ async function loadSymbolModule(catKey, symKey) {
     }
     currentModule = null;
 
+    // Remove anything a module mounted beside the canvas (e.g. a 3D view)
+    document.querySelectorAll('[data-module-overlay]').forEach(el => el.remove());
+
     // Fresh canvas element: drops mouse listeners the old module attached
     const freshCanvas = canvas.cloneNode(false);
+    freshCanvas.style.display = '';
     canvas.replaceWith(freshCanvas);
     canvas = freshCanvas;
 
