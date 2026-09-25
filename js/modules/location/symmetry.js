@@ -1,6 +1,9 @@
 // js/modules/location/symmetry.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { COLORS, resultsCard } from '../../theme.js';
+
+const f4 = v => `${v.toFixed(4)}"`;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -56,8 +59,8 @@ function renderScene() {
     // 5. The Median Plane Visuals (The "Virtual" geometry)
     drawMedianAnalysis();
 
-    // 6. The HUD
-    drawFuturisticHUD();
+    // 6. Results card
+    drawResultsCard();
 
 
     // 8. Sync UI
@@ -253,86 +256,18 @@ function drawMedianAnalysis() {
     svgContainer.appendChild(group);
 }
 
-function drawFuturisticHUD() {
+function drawResultsCard() {
     const { deviation, toleranceWidth } = state;
-    
-    const limit = toleranceWidth / 2;
-    const isPass = Math.abs(deviation) <= limit;
-    
-    const panelBg = '#0f172a'; 
-    const accent = isPass ? '#22c55e' : '#ef4444'; 
-    
-    const group = createSVG('g', {});
-    
-    // Background Box
-    const bx = 20, by = 20, bw = 400, bh = 220;
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: panelBg, stroke: accent, 'stroke-width': 2
-    }));
-
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    // Header
-    group.appendChild(addText('SYMMETRY CHECK', bx+20, by+35, 20, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    // Data
-    const col1 = bx+20;
-    const col2 = bx+260;
-    
-    group.appendChild(addText('DATUM CENTER:', col1, by+80, 14, '#cbd5e1'));
-    group.appendChild(addText('0.0000"', col2, by+80, 14, '#cbd5e1'));
-    
-    group.appendChild(addText('MIDPOINT OFF CENTRE:', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(Math.abs(deviation).toFixed(4)+'"', col2, by+105, 14, accent));
-
-    group.appendChild(addText('ALLOWED OFFSET:', col1, by+130, 14, '#cbd5e1'));
-    group.appendChild(addText((toleranceWidth/2).toFixed(4)+'"', col2, by+130, 14, '#white'));
-
-    // Status
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`);
-    group.appendChild(status);
-
-    // Visual Bar
-    const barY = by + 170;
-    const barW = 360;
-    const maxVal = limit * 2; // Scale bar range
-    const centerBar = bx + 20 + (barW/2);
-    
-    // Draw Center Line of Bar
-    group.appendChild(createSVG('line', { x1: centerBar, y1: barY-10, x2: centerBar, y2: barY+25, stroke: '#64748b' }));
-
-    // Draw Deviation Indicator
-    const pixOffset = (deviation / maxVal) * barW;
-    const markerX = centerBar + pixOffset;
-    
-    // Marker
-    group.appendChild(createSVG('polygon', {
-        points: `${markerX},${barY} ${markerX-6},${barY-10} ${markerX+6},${barY-10}`,
-        fill: accent
-    }));
-    
-    // Bar Track
-    group.appendChild(createSVG('rect', {
-        x: bx+20, y: barY, width: barW, height: 8, fill: '#1e293b', rx: 4
-    }));
-    // Tolerance Range on Bar (The "Green Zone")
-    const tolPix = (toleranceWidth / maxVal) * barW;
-    group.appendChild(createSVG('rect', {
-        x: centerBar - (tolPix/2), y: barY+2, width: tolPix, height: 4, fill: '#22c55e', opacity: 0.5
-    }));
-    
-    // Actual Dot
-    group.appendChild(createSVG('circle', { cx: markerX, cy: barY+4, r: 6, fill: accent, stroke: 'white' }));
-
-    svgContainer.appendChild(group);
+    const limit = toleranceWidth / 2, off = Math.abs(deviation);
+    const pass = off <= limit;
+    svgContainer.appendChild(resultsCard({
+        title: 'Symmetry', pass,
+        rows: [['Midpoint off centre', f4(off), { strong: true, color: pass ? COLORS.pass : COLORS.fail }],
+            ['Allowed each side', f4(limit)], ['Tolerance in the frame', f4(toleranceWidth)]],
+        measured: off, allowed: limit,
+        sentence: pass ? `The midpoints stay within ${f4(limit)} of the datum centre plane: it passes.`
+            : `The midpoints are ${f4(off)} off the datum centre plane; only ${f4(limit)} is allowed: it fails.`
+    }).g);
 }
 
 // --- INTERACTION LOGIC ---

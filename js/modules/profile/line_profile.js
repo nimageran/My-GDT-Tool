@@ -1,6 +1,9 @@
 // js/modules/profile/line_profile.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { COLORS, resultsCard } from '../../theme.js';
+
+const f4 = v => `${v.toFixed(4)}"`;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -63,8 +66,8 @@ function renderScene() {
     // 5. Interactive Handles
     drawHandles();
 
-    // 6. HUD
-    drawFuturisticHUD();
+    // 6. Results card
+    drawResultsCard();
 
 }
 
@@ -302,79 +305,19 @@ function drawHandles() {
     svgContainer.appendChild(group);
 }
 
-function drawFuturisticHUD() {
-    // Determine Max Deviation
+function drawResultsCard() {
     let maxDev = 0;
-    // Sample a few points
-    for(let t=0; t<=1; t+=0.05) maxDev = Math.max(maxDev, Math.abs(getDeformationAt(t)));
-
-    const { toleranceWidth } = state;
-    const isPass = maxDev <= (toleranceWidth/2);
-    
-    const panelBg = '#0f172a'; 
-    const accent = isPass ? '#22c55e' : '#ef4444'; 
-    
-    const group = createSVG('g', {});
-    
-    const bx = 20, by = 20, bw = 380, bh = 220;
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: panelBg, stroke: accent, 'stroke-width': 2
-    }));
-
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    group.appendChild(addText('LINE PROFILE CHECK', bx+20, by+35, 18, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    const col1 = bx+20;
-    const col2 = bx+240;
-    
-    group.appendChild(addText('LARGEST ERROR:', col1, by+80, 14, '#cbd5e1'));
-    group.appendChild(addText(maxDev.toFixed(4)+'"', col2, by+80, 14, accent));
-    
-    group.appendChild(addText('TOLERANCE (FRAME):', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+105, 14, 'white'));
-
-    group.appendChild(addText('ALLOWED EACH SIDE:', col1, by+130, 14, '#cbd5e1'));
-    group.appendChild(addText((toleranceWidth/2).toFixed(4)+'"', col2, by+130, 14, 'white'));
-
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`);
-    group.appendChild(status);
-
-    // Profile Bar
-    const barY = by + 170;
-    const barW = 340;
-    const maxScale = toleranceWidth;
-    
-    // Bar Background
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY, width: barW, height: 10, fill: '#1e293b', rx: 5 }));
-    
-    // Limit Lines on Bar
-    const limitPix = ((toleranceWidth/2) / maxScale) * barW;
-    // Center is 0
-    const centerX = bx + 20 + barW/2;
-    
-    // Draw Limits
-    group.appendChild(createSVG('line', { x1: centerX - limitPix, y1: barY-5, x2: centerX - limitPix, y2: barY+15, stroke: '#6366f1', 'stroke-width': 2 }));
-    group.appendChild(createSVG('line', { x1: centerX + limitPix, y1: barY-5, x2: centerX + limitPix, y2: barY+15, stroke: '#6366f1', 'stroke-width': 2 }));
-
-    // Actual Indicator (Dot)
-    // We show the max deviation relative to center
-    const dotX = centerX + (maxDev / maxScale) * barW; // Just visualizing magnitude on right side
-    
-    group.appendChild(createSVG('circle', { cx: dotX, cy: barY+5, r: 6, fill: accent, stroke: 'white' }));
-    
-    // Fill region
-    group.appendChild(createSVG('rect', { x: centerX, y: barY+3, width: dotX-centerX, height: 4, fill: accent }));
-
-    svgContainer.appendChild(group);
+    for (let t = 0; t <= 1; t += 0.05) maxDev = Math.max(maxDev, Math.abs(getDeformationAt(t)));
+    const tol = state.toleranceWidth, side = tol / 2;
+    const pass = maxDev <= side;
+    svgContainer.appendChild(resultsCard({
+        title: 'Profile of a line', pass,
+        rows: [['Largest error', f4(maxDev), { strong: true, color: pass ? COLORS.pass : COLORS.fail }],
+            ['Allowed each side', f4(side)], ['Tolerance in the frame', f4(tol)]],
+        measured: maxDev, allowed: side,
+        sentence: pass ? `Every point is within ${f4(side)} of the true profile: it passes.`
+            : `One point is ${f4(maxDev)} off the true profile; only ${f4(side)} each side is allowed: it fails.`
+    }).g);
 }
 
 // --- INTERACTION LOGIC ---

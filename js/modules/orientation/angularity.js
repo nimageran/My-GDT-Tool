@@ -1,6 +1,9 @@
 // js/modules/orientation/angularity.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { COLORS, resultsCard } from '../../theme.js';
+
+const f4 = v => `${v.toFixed(4)}"`;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -62,8 +65,8 @@ function renderScene() {
     // 5. Analysis (Basic Angle Dimension)
     drawDimensions();
 
-    // 6. HUD
-    drawFuturisticHUD();
+    // 6. Results card
+    drawResultsCard();
 
     // 7. Guide
 }
@@ -204,7 +207,7 @@ function drawPart() {
     
     // Pass/Fail: the floating zone must contain both ends of the surface,
     // i.e. their spread across the zone must not exceed the tolerance width.
-    // Same rule as the HUD (L * sin(angle error)).
+    // Same rule as the results card (L * sin(angle error)).
     const { dStart, dEnd } = getSurfaceOffsets();
     const isPass = Math.abs(dEnd - dStart) <= state.toleranceWidth * scale;
     
@@ -286,74 +289,20 @@ function drawDimensions() {
     svgContainer.appendChild(group);
 }
 
-function drawFuturisticHUD() {
+function drawResultsCard() {
     const { angleDeviation, toleranceWidth, surfaceLength } = state;
-    
-    // Calculate "Actual Angularity" (Linear)
-    // Angularity error is the width of the zone needed to contain the surface.
-    // If the surface is flat but tilted by theta_error, the width W = L * sin(theta_error)
-    const errorRad = Math.abs(angleDeviation * Math.PI / 180);
-    const actualLinear = surfaceLength * Math.sin(errorRad);
-    
-    // The angularity zone floats (orientation only), so offset does not count;
-    // location would be controlled separately (e.g. by profile or position).
-    
-    const isPass = actualLinear <= toleranceWidth;
-    
-    const panelBg = '#0f172a'; 
-    const accent = isPass ? '#22c55e' : '#ef4444'; 
-    
-    const group = createSVG('g', {});
-    const bx = 20, by = 20, bw = 380, bh = 220;
-    
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: panelBg, stroke: accent, 'stroke-width': 2
-    }));
-
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    group.appendChild(addText('ANGULARITY CHECK', bx+20, by+35, 18, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    const col1 = bx+20;
-    const col2 = bx+240;
-    
-    group.appendChild(addText('ANGLE ERROR:', col1, by+80, 14, '#cbd5e1'));
-    group.appendChild(addText(angleDeviation.toFixed(2)+'°', col2, by+80, 16, accent));
-    
-    group.appendChild(addText('ZONE NEEDED:', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(actualLinear.toFixed(4)+'"', col2, by+105, 14, 'white'));
-    
-    group.appendChild(addText('ALLOWED:', col1, by+130, 14, '#cbd5e1'));
-    group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+130, 14, 'white'));
-
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`);
-    group.appendChild(status);
-
-    // Sine Bar Viz
-    const barY = by + 160;
-    const barW = 340;
-    const maxScale = toleranceWidth * 2;
-    
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY, width: barW, height: 12, fill: '#1e293b', rx: 6 }));
-    
-    const limitPix = (toleranceWidth / maxScale) * barW;
-    group.appendChild(createSVG('line', { x1: bx+20+limitPix, y1: barY-5, x2: bx+20+limitPix, y2: barY+17, stroke: 'white', 'stroke-width': 2 }));
-    
-    const fillPix = Math.min(barW, (actualLinear / maxScale) * barW);
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY+2, width: fillPix, height: 8, fill: accent, rx: 4 }));
-    
-    // Formula
-    group.appendChild(addText('Zone needed = length × sin(angle error)', bx+20, by+190, 10, '#64748b', 'normal'));
-
-    svgContainer.appendChild(group);
+    // Zone needed = width that holds the tilted surface: L × sin(angle error).
+    // The zone floats (orientation only), so offset does not count.
+    const needed = surfaceLength * Math.sin(Math.abs(angleDeviation * Math.PI / 180));
+    const pass = needed <= toleranceWidth;
+    svgContainer.appendChild(resultsCard({
+        title: 'Angularity', pass,
+        rows: [['Angle error', `${angleDeviation.toFixed(2)}°`], ['Zone needed', f4(needed), { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed', f4(toleranceWidth)]],
+        measured: needed, allowed: toleranceWidth,
+        sentence: pass ? `Tilted ${Math.abs(angleDeviation).toFixed(2)}°, the surface still fits in the ${f4(toleranceWidth)} zone: it passes.`
+            : `Tilted ${Math.abs(angleDeviation).toFixed(2)}°, the surface needs ${f4(needed)}, more than the ${f4(toleranceWidth)} allowed: it fails.`,
+        note: 'Zone needed = length × sin(angle error)'
+    }).g);
 }
 
 // --- INTERACTION LOGIC ---

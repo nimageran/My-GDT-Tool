@@ -1,6 +1,9 @@
 // js/modules/location/concentricity.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { COLORS, resultsCard } from '../../theme.js';
+
+const f4 = v => `${v.toFixed(4)}"`;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -148,7 +151,7 @@ function renderScene() {
     drawPartShape();
     drawScanningProbes(); // The "Lasers"
     drawMicroscopeView(); // The Zoomed tolerance check
-    drawFuturisticHUD();
+    drawResultsCard();
     
 }
 
@@ -272,7 +275,7 @@ function drawMicroscopeView() {
     const magR = 150;
     group.appendChild(createSVG('circle', {
         cx: center.x, cy: center.y, r: magR,
-        fill: '#0f172a', stroke: '#cbd5e1', 'stroke-width': 4
+        fill: '#ffffff', stroke: '#94a3b8', 'stroke-width': 3
     }));
     
     // 2. Tolerance Zone (Scaled)
@@ -281,15 +284,15 @@ function drawMicroscopeView() {
     
     group.appendChild(createSVG('circle', {
         cx: center.x, cy: center.y, r: zoneR,
-        fill: 'rgba(34, 197, 94, 0.1)', // Green tint
-        stroke: '#22c55e', 'stroke-width': 2, 'stroke-dasharray': '4,2'
+        fill: 'rgba(59, 130, 246, 0.14)', // tolerance zone, blue as in the other tools
+        stroke: '#2563eb', 'stroke-width': 2, 'stroke-dasharray': '8,5'
     }));
     
     // Label Zone
     group.appendChild(createSVG('text', {
         x: center.x, y: center.y - zoneR - 10,
-        fill: '#22c55e', 'text-anchor': 'middle', 'font-size': '12', 'font-weight': 'bold'
-    })).textContent = `TOLERANCE Ø${toleranceDiam}"`;
+        fill: '#1d4ed8', 'text-anchor': 'middle', 'font-size': '13', 'font-weight': 'bold'
+    })).textContent = `Tolerance zone Ø${toleranceDiam}"`;
     
     // 3. Plot the Median Points Cloud
     let maxDev = 0;
@@ -302,7 +305,7 @@ function drawMicroscopeView() {
         // Pass/Fail color
         // pt.dev is the positional diameter deviation (2 * radius)
         const isPass = pt.dev <= toleranceDiam;
-        const color = isPass ? '#22c55e' : '#ef4444';
+        const color = isPass ? '#16a34a' : '#dc2626';
         
         // Trail effect
         group.appendChild(createSVG('circle', {
@@ -323,90 +326,41 @@ function drawMicroscopeView() {
         const ly = center.y - last.y * errorScale;
         
         // Crosshair on the current spot
-        group.appendChild(createSVG('line', { x1: lx-10, y1: ly, x2: lx+10, y2: ly, stroke: 'white' }));
-        group.appendChild(createSVG('line', { x1: lx, y1: ly-10, x2: lx, y2: ly+10, stroke: 'white' }));
+        group.appendChild(createSVG('line', { x1: lx-10, y1: ly, x2: lx+10, y2: ly, stroke: '#0f172a' }));
+        group.appendChild(createSVG('line', { x1: lx, y1: ly-10, x2: lx, y2: ly+10, stroke: '#0f172a' }));
         
         // Label Value
         const lbl = createSVG('text', {
-            x: lx + 12, y: ly, fill: 'white', 'font-family': 'monospace', 'font-size': '12'
+            x: lx + 12, y: ly, fill: '#0f172a', 'font-family': '"JetBrains Mono", ui-monospace, monospace', 'font-size': '12'
         });
-        lbl.textContent = `DEV: ${last.dev.toFixed(5)}"`;
+        lbl.textContent = `off by Ø${last.dev.toFixed(5)}"`;
         group.appendChild(lbl);
     }
     
     // 5. Title
     const title = createSVG('text', {
         x: center.x, y: center.y + magR - 20, 
-        fill: '#94a3b8', 'text-anchor': 'middle', 'font-family': 'sans-serif', 'font-size': '10', 'letter-spacing': '2px'
+        fill: '#64748b', 'text-anchor': 'middle', 'font-family': 'sans-serif', 'font-size': '12'
     });
-    title.textContent = "MEDIAN POINT MICROSCOPE (3000x)";
+    title.textContent = "Midpoints, magnified 3000×";
     group.appendChild(title);
 
     svgContainer.appendChild(group);
 }
 
-function drawFuturisticHUD() {
+function drawResultsCard() {
     const { midpoints, toleranceDiam } = state;
-    
-    // Find worst deviation in current buffer
     let maxDev = 0;
     midpoints.forEach(p => maxDev = Math.max(maxDev, p.dev));
-    
-    const isPass = maxDev <= toleranceDiam;
-    const accent = isPass ? '#22c55e' : '#ef4444'; 
-    
-    const group = createSVG('g', {});
-    const bx = 20, by = 20, bw = 380, bh = 240;
-    
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: '#0f172a', stroke: accent, 'stroke-width': 2
-    }));
-
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    group.appendChild(addText('CONCENTRICITY CHECK', bx+20, by+35, 18, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    const col1 = bx+20;
-    const col2 = bx+240;
-    
-    group.appendChild(addText('MIDPOINTS OFF AXIS (Ø):', col1, by+80, 14, '#cbd5e1'));
-    group.appendChild(addText(maxDev.toFixed(5)+'"', col2, by+80, 16, accent));
-    
-    group.appendChild(addText('ALLOWED ZONE (Ø):', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(toleranceDiam.toFixed(4)+'"', col2, by+105, 14, 'white'));
-
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`);
-    group.appendChild(status);
-
-    // Bar Graph
-    const barY = by + 150;
-    const barW = 340;
-    const maxScale = toleranceDiam * 2.0;
-    
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY, width: barW, height: 12, fill: '#1e293b', rx: 6 }));
-    
-    const limitPix = (toleranceDiam / maxScale) * barW;
-    group.appendChild(createSVG('line', { x1: bx+20+limitPix, y1: barY-5, x2: bx+20+limitPix, y2: barY+17, stroke: 'white', 'stroke-width': 2 }));
-    
-    const fillPix = Math.min(barW, (maxDev / maxScale) * barW);
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY+2, width: fillPix, height: 8, fill: accent, rx: 4 }));
-    
-    // Explanation
-    const noteX = bx+20;
-    const noteY = by+190;
-    group.appendChild(addText("How it is measured:", noteX, noteY, 10, '#64748b'));
-    group.appendChild(addText("1. Measure two opposite points (P1, P2)", noteX, noteY+15, 10, '#64748b', 'normal'));
-    group.appendChild(addText("2. Take their midpoint M = (P1 + P2) / 2", noteX, noteY+30, 10, '#64748b', 'normal'));
-
-    svgContainer.appendChild(group);
+    const pass = maxDev <= toleranceDiam;
+    svgContainer.appendChild(resultsCard({
+        title: 'Concentricity', pass,
+        rows: [['Midpoints off the axis (Ø)', `${maxDev.toFixed(5)}"`, { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed zone (Ø)', f4(toleranceDiam)]],
+        measured: maxDev, allowed: toleranceDiam,
+        sentence: pass ? `Every midpoint of opposite points lies inside the Ø${toleranceDiam.toFixed(4)}" zone: it passes.`
+            : `Some midpoints of opposite points fall outside the Ø${toleranceDiam.toFixed(4)}" zone: it fails.`,
+        note: 'Midpoint: halfway between opposite points'
+    }).g);
 }
 
 // --- INTERACTION LOGIC ---

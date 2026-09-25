@@ -1,6 +1,9 @@
 // js/modules/form/flatness.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { COLORS, resultsCard } from '../../theme.js';
+
+const f4 = v => `${v.toFixed(4)}"`;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -122,7 +125,7 @@ function renderScene() {
     drawSurfaceMesh();
     drawErrorVectors();
     drawHandles();
-    drawFuturisticHUD();
+    drawResultsCard();
     
 }
 
@@ -306,67 +309,17 @@ function drawHandles() {
     svgContainer.appendChild(group);
 }
 
-function drawFuturisticHUD() {
+function drawResultsCard() {
     const { peak, valley, error, isPass } = state.stats;
-    const { toleranceWidth } = state;
-    
-    const panelBg = '#0f172a'; 
-    const accent = isPass ? '#22c55e' : '#ef4444'; 
-    
-    const group = createSVG('g', {});
-    const bx = 20, by = 20, bw = 380, bh = 240;
-    
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: panelBg, stroke: accent, 'stroke-width': 2
-    }));
-
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    group.appendChild(addText('FLATNESS CHECK', bx+20, by+35, 18, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    const col1 = bx+20;
-    const col2 = bx+240;
-    
-    // Stats
-    group.appendChild(addText('HIGHEST POINT:', col1, by+80, 14, '#cbd5e1'));
-    group.appendChild(addText(peak.toFixed(4)+'"', col2, by+80, 14, '#ef4444'));
-    
-    group.appendChild(addText('LOWEST POINT:', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(valley.toFixed(4)+'"', col2, by+105, 14, '#3b82f6'));
-
-    group.appendChild(createSVG('line', { x1: col1, y1: by+115, x2: col2+60, y2: by+115, stroke: '#334155', 'stroke-dasharray': '2,2' }));
-
-    group.appendChild(addText('MEASURED (HIGH − LOW):', col1, by+135, 14, '#cbd5e1'));
-    group.appendChild(addText(error.toFixed(4)+'"', col2, by+135, 16, accent));
-    
-    group.appendChild(addText('ALLOWED:', col1, by+155, 14, '#cbd5e1'));
-    group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+155, 14, 'white'));
-
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`);
-    group.appendChild(status);
-
-    // Visual Bar
-    const barY = by + 190;
-    const barW = 340;
-    const maxScale = toleranceWidth * 1.5;
-    
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY, width: barW, height: 12, fill: '#1e293b', rx: 6 }));
-    
-    const limitPix = (toleranceWidth / maxScale) * barW;
-    group.appendChild(createSVG('line', { x1: bx+20+limitPix, y1: barY-5, x2: bx+20+limitPix, y2: barY+17, stroke: 'white', 'stroke-width': 2 }));
-    
-    const fillPix = Math.min(barW, (error / maxScale) * barW);
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY+2, width: fillPix, height: 8, fill: accent, rx: 4 }));
-
-    svgContainer.appendChild(group);
+    const tol = state.toleranceWidth;
+    svgContainer.appendChild(resultsCard({
+        title: 'Flatness', pass: isPass,
+        rows: [['Highest point', f4(peak)], ['Lowest point', f4(valley)],
+            ['Highest − lowest', f4(error), { strong: true, color: isPass ? COLORS.pass : COLORS.fail }], ['Allowed', f4(tol)]],
+        measured: error, allowed: tol,
+        sentence: isPass ? `The whole surface fits between two parallel planes ${f4(tol)} apart: it passes.`
+            : `The surface needs ${f4(error)} between the planes, more than the ${f4(tol)} allowed: it fails.`
+    }).g);
 }
 
 // --- INTERACTION LOGIC ---

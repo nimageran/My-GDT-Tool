@@ -385,6 +385,54 @@ export function resultsStrip(results) {
     return g;
 }
 
+/**
+ * Light results card, for tools whose drawing fills the canvas (the card
+ * sits in a corner instead of the strip at the bottom).
+ * opts: {
+ *   x, y, w, title, pass,
+ *   rows: [[label, value, { color, strong }]],
+ *   measured, allowed: numbers for the gauge (omit both to hide it),
+ *   sentence: plain-English result, note: small italic line
+ * }
+ * Returns { g, height }.
+ */
+export function resultsCard({ x = 20, y = 20, w = 340, title, pass, rows = [], measured = null, allowed = null, sentence = '', note = '' }) {
+    const g = createSVG('g', {});
+    const accent = pass ? COLORS.pass : COLORS.fail;
+    const bg = createSVG('rect', { x, y, width: w, height: 10, rx: 10, fill: 'rgba(255,255,255,0.96)', stroke: COLORS.cardBorder, 'stroke-width': 1.5 });
+    const bar = createSVG('rect', { x, y, width: 5, height: 10, rx: 2, fill: accent });
+    g.appendChild(bg);
+    g.appendChild(bar);
+
+    g.appendChild(text(title, x + 18, y + 29, { size: 15, weight: 800, fill: COLORS.ink }));
+    g.appendChild(createSVG('rect', { x: x + w - 82, y: y + 12, width: 64, height: 24, rx: 12, fill: pass ? COLORS.passTint : COLORS.failTint, stroke: accent, 'stroke-width': 1.5 }));
+    g.appendChild(text(pass ? 'PASS' : 'FAIL', x + w - 50, y + 28.5, { size: 12.5, weight: 800, fill: accent, anchor: 'middle', letterSpacing: '0.05em' }));
+
+    let cy = y + 60;
+    for (const [label, value, opt = {}] of rows) {
+        g.appendChild(text(label, x + 18, cy, { size: 13.5, fill: opt.strong ? COLORS.ink : COLORS.muted, weight: opt.strong ? 700 : 400 }));
+        g.appendChild(text(value, x + w - 18, cy, { size: 14, weight: 700, fill: opt.color ?? COLORS.ink, anchor: 'end', mono: true }));
+        cy += 22;
+    }
+    if (measured != null && allowed != null) {
+        g.appendChild(gauge(x + 18, cy - 4, w - 36, measured, allowed, accent));
+        cy += 42;
+    }
+    if (sentence) {
+        const wt = wrapText(sentence, x + 18, cy + 6, Math.floor((w - 36) / 7), 17, { size: 13, fill: COLORS.text });
+        g.appendChild(wt);
+        cy += wt.childNodes.length * 17 + 2;
+    }
+    if (note) {
+        g.appendChild(text(note, x + 18, cy + 6, { size: 12, italic: true, fill: COLORS.muted }));
+        cy += 20;
+    }
+    const height = cy - y + 6;
+    bg.setAttribute('height', height);
+    bar.setAttribute('height', height);
+    return { g, height };
+}
+
 /** Horizontal gauge: bar fills to value; tick marks the limit (scale 0–1.5×limit). */
 export function gauge(x, y, w, value, limit, accent) {
     const g = createSVG('g', {});

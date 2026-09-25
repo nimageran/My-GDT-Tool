@@ -1,6 +1,9 @@
 // js/modules/form/cylindricity.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { COLORS, resultsCard } from '../../theme.js';
+
+const f4 = v => `${v.toFixed(4)}"`;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -209,8 +212,8 @@ function renderScene() {
     // 4. Axis Line
     drawAxis();
 
-    // 5. HUD
-    drawFuturisticHUD();
+    // 5. Results card
+    drawResultsCard();
 
     // 6. Guide
 }
@@ -387,69 +390,19 @@ function drawAxis() {
     svgContainer.appendChild(group);
 }
 
-function drawFuturisticHUD() {
+function drawResultsCard() {
     // Form error = width of the narrowest zone that holds the whole surface
-    const maxDev = fit.width;
-    const isPass = maxDev <= state.toleranceRadial + FIT_SLACK;
-
-    const panelBg = '#0f172a'; 
-    const accent = isPass ? '#22c55e' : '#ef4444'; 
-    
-    const group = createSVG('g', {});
-    const bx = 20, by = 20, bw = 380, bh = 240;
-    
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: panelBg, stroke: accent, 'stroke-width': 2
-    }));
-
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    group.appendChild(addText('CYLINDRICITY CHECK', bx+20, by+35, 18, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    const col1 = bx+20;
-    const col2 = bx+240;
-    
-    group.appendChild(addText('BAND NEEDED:', col1, by+80, 14, '#cbd5e1'));
-    group.appendChild(addText(maxDev.toFixed(4)+'"', col2, by+80, 14, accent));
-    
-    group.appendChild(addText('TOLERANCE (BAND):', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(state.toleranceRadial.toFixed(4)+'"', col2, by+105, 14, 'white'));
-    
-    group.appendChild(addText('Best-fit axis, any size', col1, by+130, 12, '#94a3b8', 'normal'));
-
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`);
-    group.appendChild(status);
-
-    // Error Component Breakdown (Mini bars)
-    const subY = by + 160;
-    const labels = ['Taper', 'Bend', 'Oval', 'Barrl'];
-    const vals = [state.deformTaper, state.deformBend, state.deformOval, state.deformBarrel];
-    
-    vals.forEach((v, i) => {
-        const lx = col1 + (i * 90);
-        const barH = Math.min(40, Math.abs(v) * 2000); // Scale factor for visuals
-        const color = Math.abs(v) > 0.005 ? '#f59e0b' : '#334155';
-        
-        group.appendChild(addText(labels[i], lx, subY, 10, '#64748b'));
-        group.appendChild(createSVG('rect', {
-            x: lx, y: subY + 10 + (40-barH), width: 15, height: barH,
-            fill: color
-        }));
-        group.appendChild(createSVG('rect', {
-            x: lx, y: subY + 10, width: 15, height: 40,
-            fill: 'none', stroke: '#334155'
-        }));
-    });
-
-    svgContainer.appendChild(group);
+    const band = fit.width;
+    const tol = state.toleranceRadial;
+    const pass = band <= tol + FIT_SLACK;
+    svgContainer.appendChild(resultsCard({
+        title: 'Cylindricity', pass,
+        rows: [['Band needed', f4(band), { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed (band)', f4(tol)]],
+        measured: band, allowed: tol,
+        sentence: pass ? `The whole surface fits between two cylinders ${f4(tol)} apart: it passes.`
+            : `The surface needs two cylinders ${f4(band)} apart, more than the ${f4(tol)} allowed: it fails.`,
+        note: 'Measured from the best-fit axis, at any size'
+    }).g);
 }
 
 // --- INTERACTION LOGIC ---
