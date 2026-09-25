@@ -13,7 +13,7 @@
 //   - examples use the same units as the tool and end with pass / fail / action
 // ============================================================================
 
-const EXPLAIN = {
+export const EXPLAIN = {
     straightness: {
         title: 'Straightness',
         terms: [
@@ -712,7 +712,7 @@ const EXPLAIN = {
 import { GLOSSARY, linkify } from './glossary.js';
 
 // Tools that share another tool's explanation
-const ALIASES = { bonus: 'position', precedence: 'drf' };
+export const ALIASES = { bonus: 'position', precedence: 'drf' };
 
 export function hasExplanation(symKey) {
     return !!EXPLAIN[ALIASES[symKey] ?? symKey];

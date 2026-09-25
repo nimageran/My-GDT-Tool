@@ -6,6 +6,7 @@
 // (constructed geometry, no Unicode as rendered content: DECODER_SPEC §4).
 // ============================================================================
 
+import { takeFocus } from '../../focus.js';
 import {
     el, gdtChar, circledMod, diaSymbol, cboreSymbol, csinkSymbol, depthSymbol,
     filletWeld, squareGroove, vGroove, bevelGroove, uGroove, jGroove, flareVGroove, flareBevelGroove,
@@ -120,7 +121,7 @@ const WELD_LINK = { label: 'Decode a welding symbol', cat: DEC, sym: 'welding' }
 const HOLE_LINK = { label: 'Decode a hole callout', cat: DEC, sym: 'hole_callouts' };
 const SURF_LINK = { label: 'Decode a surface finish callout', cat: DEC, sym: 'surface_finish' };
 
-const FAMILIES = [
+export const FAMILIES = [
     { key: 'characteristics', label: 'Geometric characteristics', std: 'ASME Y14.5-2018' },
     { key: 'modifiers', label: 'Modifiers in a frame', std: 'ASME Y14.5-2018' },
     { key: 'datums', label: 'Datums and targets', std: 'ASME Y14.5-2018' },
@@ -130,7 +131,7 @@ const FAMILIES = [
     { key: 'iso', label: 'ISO-only symbols', std: 'ISO 1101 / ISO 8015' }
 ];
 
-const SYMBOLS = [
+export const SYMBOLS = [
     // Geometric characteristics
     { family: 'characteristics', name: 'Straightness', draw: char('straightness'), aliases: 'form line axis',
       meaning: 'Each line element of the surface must lie between two parallel lines t apart. With Ø before the value it controls the axis instead, within a cylinder of diameter t.',
@@ -388,6 +389,9 @@ let controlsContainer = null;
 
 export function draw(svg) {
     svgContainer = svg;
+    const f = takeFocus('symbol_finder');                 // opened from the search
+    const hit = f && SYMBOLS.find(s => s.name === f);
+    if (hit) Object.assign(state, { selected: hit.name, family: hit.family, search: '' });
     renderScene();
 }
 

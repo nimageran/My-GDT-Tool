@@ -9,6 +9,7 @@
 // ============================================================================
 
 import { el, diaSymbol, cboreSymbol, csinkSymbol, depthSymbol, HOLE_W } from './symbols.js';
+import { takeFocus } from '../../focus.js';
 
 // --------------------------------------------------------------------------
 // STATE
@@ -32,7 +33,8 @@ const state = {
 };
 
 // Coarse pitch table (ISO 261) — powers the "pitch omitted = coarse" gotcha.
-const COARSE = { 3: 0.5, 4: 0.7, 5: 0.8, 6: 1, 8: 1.25, 10: 1.5, 12: 1.75, 14: 2, 16: 2, 20: 2.5, 24: 3, 30: 3.5 };
+// ISO 261 coarse pitch (mm) by nominal size
+export const COARSE = { 1.6: 0.35, 2: 0.4, 2.5: 0.45, 3: 0.5, 4: 0.7, 5: 0.8, 6: 1, 8: 1.25, 10: 1.5, 12: 1.75, 14: 2, 16: 2, 18: 2.5, 20: 2.5, 22: 2.5, 24: 3, 27: 3, 30: 3.5, 36: 4 };
 
 // --------------------------------------------------------------------------
 // GOTCHAS (spec §5)
@@ -63,6 +65,9 @@ let canvasRef = null, zones = null, controlsRoot = null;
 
 export function draw(canvas) {
     canvasRef = canvas;
+    // From the search: { thread: { size, pitch } }, e.g. typed "M8x1"
+    const f = takeFocus('hole_callouts');
+    if (f?.thread) Object.assign(state, { threaded: true, system: 'metric', mSize: f.thread.size, mPitch: f.thread.pitch });
     const defs = el('defs');
     const mk = el('marker', { id: 'hc-arrow', viewBox: '0 0 10 10', refX: 8, refY: 5,
         markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });

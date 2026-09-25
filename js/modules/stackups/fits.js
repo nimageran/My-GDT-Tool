@@ -8,6 +8,7 @@ import { COLORS, addDefs, text, wrapText } from '../../theme.js';
 import {
     GRADES, SHAFT_LETTERS, HOLE_LETTERS, PREFERRED, computeFit, mainRange, parseClass
 } from './iso286.js';
+import { takeFocus } from '../../focus.js';
 
 const state = { size: 20, hole: { letter: 'H', grade: 7 }, shaft: { letter: 'g', grade: 6 } };
 let svgRef = null, controlsRoot = null;
@@ -23,6 +24,13 @@ const TYPE = {
 
 export function draw(svg) {
     svgRef = svg;
+    // From the search: { size?, hole?, shaft? }, e.g. typed "25 H7/p6"
+    const f = takeFocus('fits');
+    if (f) {
+        if (f.size) state.size = f.size;
+        if (f.hole) state.hole = { ...f.hole };
+        if (f.shaft) state.shaft = { ...f.shaft };
+    }
     render();
 }
 
