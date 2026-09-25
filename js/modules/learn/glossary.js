@@ -109,6 +109,6 @@ function renderControls() {
     search.oninput = () => { state.search = search.value; renderList(); };
     controlsRoot.querySelectorAll('[data-letter]').forEach(b => b.onclick = () => {
         if (state.search) { state.search = ''; search.value = ''; renderList(); }
-        overlay?.querySelector(`#gl-${b.dataset.letter}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        overlay?.querySelector(`#${CSS.escape(`gl-${b.dataset.letter}`)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 }
