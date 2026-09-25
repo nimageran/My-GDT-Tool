@@ -323,3 +323,134 @@ export function circledMod(x, y, r, letter) {
     g.appendChild(t);
     return g;
 }
+
+// ---------------------------------------------------------------------------
+// SURFACE TEXTURE MARKS (ISO 1302 / ASME Y14.36) and more DIMENSIONING and
+// DATUM symbols (ASME Y14.5-2018). Appended for symbol_finder.js.
+// Unless noted, (x, y) is the CENTER of the glyph and h its overall height.
+// ---------------------------------------------------------------------------
+
+/** Surface texture symbol. (x, y) is the vertex touching the surface; the
+ *  symbol rises upward. opts.removal: 'any' | 'required' | 'prohibited';
+ *  opts.allAround adds the extension line and circle (ISO 1302). */
+export function surfaceTexture(x, y, h, opts = {}) {
+    const g = el('g', { transform: `translate(${x},${y})` });
+    const L1 = h * 0.55, L2 = h * 1.1;               // short / long legs at 60 degrees
+    const c = Math.cos(Math.PI / 3), s = Math.sin(Math.PI / 3);
+    const long = [L2 * c, -L2 * s];
+    g.appendChild(el('path', { ...GSTROKE, d: `M${-L1 * c} ${-L1 * s} L0 0 L${long[0]} ${long[1]}` }));
+    if (opts.removal === 'required') {
+        g.appendChild(el('line', { ...GSTROKE, x1: -L1 * c, y1: -L1 * s, x2: L1 * c, y2: -L1 * s }));
+    }
+    if (opts.removal === 'prohibited') {
+        const r = L1 / (2 * Math.sqrt(3));
+        g.appendChild(el('circle', { ...GSTROKE, cx: 0, cy: -2 * r, r }));
+    }
+    if (opts.allAround) {
+        g.appendChild(el('line', { ...GSTROKE, x1: long[0], y1: long[1], x2: long[0] + L1 * 1.2, y2: long[1] }));
+        g.appendChild(el('circle', { ...GSTROKE, cx: long[0], cy: long[1], r: h * 0.1 }));
+    }
+    return g;
+}
+
+/** Lay direction symbols (ISO 1302): '=', 'perp', 'X', 'M', 'C', 'R', 'P'. */
+export function laySymbol(kind, x, y, h) {
+    const g = el('g', { transform: `translate(${x},${y})` });
+    const a = h * 0.4;
+    if (kind === '=') {
+        g.appendChild(el('path', { ...GSTROKE, d: `M${-a} ${-a * 0.35} H${a} M${-a} ${a * 0.35} H${a}` }));
+    } else if (kind === 'perp') {
+        g.appendChild(el('path', { ...GSTROKE, d: `M${-a} ${a} H${a} M0 ${a} V${-a}` }));
+    } else if (kind === 'X') {
+        g.appendChild(el('path', { ...GSTROKE, d: `M${-a} ${-a} L${a} ${a} M${a} ${-a} L${-a} ${a}` }));
+    } else {
+        const t = el('text', {
+            x: 0, y: 0, 'font-size': h * 0.95, 'font-weight': 700, fill: '#0f172a', 'text-anchor': 'middle',
+            'dominant-baseline': 'central', 'font-family': 'ui-sans-serif, system-ui, sans-serif'
+        });
+        t.textContent = kind;
+        g.appendChild(t);
+    }
+    return g;
+}
+
+/** Square (dimensioning): square outline. */
+export function squareSymbol(x, y, h) {
+    return el('rect', { ...GSTROKE, x: x - h * 0.32, y: y - h * 0.32, width: h * 0.64, height: h * 0.64 });
+}
+
+/** Arc length: arc drawn over the dimension value. */
+export function arcLengthSymbol(x, y, h) {
+    return el('path', { ...GSTROKE, d: `M${x - h * 0.5} ${y + h * 0.15} A ${h * 0.55} ${h * 0.55} 0 0 1 ${x + h * 0.5} ${y + h * 0.15}` });
+}
+
+/** Slope: right triangle; its hypotenuse follows the direction of the slope. */
+export function slopeSymbol(x, y, h) {
+    const a = h * 0.45;
+    return el('path', { ...GSTROKE, d: `M${x - a} ${y - a * 0.6} L${x - a} ${y + a * 0.6} L${x + a} ${y + a * 0.6} Z` });
+}
+
+/** Conical taper: isosceles triangle pointing along the taper. */
+export function conicalTaperSymbol(x, y, h) {
+    const a = h * 0.45;
+    return el('path', { ...GSTROKE, d: `M${x - a} ${y - a * 0.7} L${x - a} ${y + a * 0.7} L${x + a} ${y} Z` });
+}
+
+/** Dimension origin: dimension line starting from a small circle. */
+export function dimensionOriginSymbol(x, y, h) {
+    const g = el('g');
+    const a = h * 0.7;
+    g.appendChild(el('circle', { ...GSTROKE, cx: x - a, cy: y, r: h * 0.12 }));
+    g.appendChild(el('line', { ...GSTROKE, x1: x - a + h * 0.12, y1: y, x2: x + a, y2: y }));
+    g.appendChild(arrowTip(x - a, y, x + a, y));
+    return g;
+}
+
+/** Datum target symbol: circle split horizontally, target size above,
+ *  datum letter + target number below (e.g. 'Ø6' / 'A1'). */
+export function datumTargetSymbol(x, y, r, top, bottom) {
+    const g = el('g');
+    g.appendChild(el('circle', { ...GSTROKE, cx: x, cy: y, r, fill: '#ffffff' }));
+    g.appendChild(el('line', { ...GSTROKE, x1: x - r, y1: y, x2: x + r, y2: y }));
+    const t = (str, ty) => {
+        const e = el('text', {
+            x, y: ty, 'font-size': r * 0.62, 'font-weight': 700, fill: '#0f172a', 'text-anchor': 'middle',
+            'dominant-baseline': 'central', 'font-family': 'ui-sans-serif, system-ui, sans-serif'
+        });
+        e.textContent = str;
+        g.appendChild(e);
+    };
+    if (top) t(top, y - r * 0.45);
+    t(bottom, y + r * 0.45);
+    return g;
+}
+
+/** Datum target point: an X. */
+export function datumTargetPoint(x, y, h) {
+    const a = h * 0.35;
+    return el('path', { ...GSTROKE, d: `M${x - a} ${y - a} L${x + a} ${y + a} M${x + a} ${y - a} L${x - a} ${y + a}` });
+}
+
+/** Between: double-headed arrow (applies from one point to another). */
+export function betweenSymbol(x, y, h) {
+    const g = el('g');
+    const a = h * 0.6;
+    g.appendChild(el('line', { ...GSTROKE, x1: x - a, y1: y, x2: x + a, y2: y }));
+    g.appendChild(arrowTip(x, y, x + a, y));
+    g.appendChild(arrowTip(x, y, x - a, y));
+    return g;
+}
+
+/** Statistical tolerance: 'ST' in an elongated hexagon. */
+export function statisticalSymbol(x, y, h) {
+    const g = el('g');
+    const w = h * 0.8, v = h * 0.32;
+    g.appendChild(el('path', { ...GSTROKE, d: `M${x - w} ${y} L${x - w + v} ${y - v} H${x + w - v} L${x + w} ${y} L${x + w - v} ${y + v} H${x - w + v} Z` }));
+    const t = el('text', {
+        x, y, 'font-size': h * 0.45, 'font-weight': 700, fill: '#0f172a', 'text-anchor': 'middle',
+        'dominant-baseline': 'central', 'font-family': 'ui-sans-serif, system-ui, sans-serif'
+    });
+    t.textContent = 'ST';
+    g.appendChild(t);
+    return g;
+}

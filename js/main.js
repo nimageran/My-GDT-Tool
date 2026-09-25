@@ -207,4 +207,12 @@ function setupSidebarToggle() {
     expandControlsBtn.onclick = toggleSidebar;
 }
 
+// Tools can open another tool: window.dispatchEvent(new CustomEvent('gdt:navigate', { detail: { cat, sym } }))
+window.addEventListener('gdt:navigate', (e) => {
+    const { cat, sym } = e.detail || {};
+    if (!GDT_HIERARCHY[cat]?.symbols[sym]) return;
+    selectCategory(cat);
+    loadSymbolModule(cat, sym);
+});
+
 init();
