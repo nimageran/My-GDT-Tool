@@ -1,6 +1,9 @@
 // js/modules/form/circularity.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { COLORS, resultsCard } from '../../theme.js';
+
+const f4 = v => `${v.toFixed(4)}"`;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -140,8 +143,8 @@ function renderScene() {
     // 4. Center Marker
     drawCenterMarker();
 
-    // 5. HUD
-    drawFuturisticHUD();
+    // 5. Results card
+    drawResultsCard();
 
     // 6. Guide
 }
@@ -250,75 +253,19 @@ function drawCenterMarker() {
     svgContainer.appendChild(group);
 }
 
-function drawFuturisticHUD() {
+function drawResultsCard() {
     const { stats, toleranceRadial } = state;
     const { error } = stats;
-    const isPass = error <= toleranceRadial;
-    
-    const panelBg = '#0f172a'; 
-    const accent = isPass ? '#22c55e' : '#ef4444'; 
-    
-    const group = createSVG('g', {});
-    const bx = 20, by = 20, bw = 380, bh = 240;
-    
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: panelBg, stroke: accent, 'stroke-width': 2
-    }));
-
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    group.appendChild(addText('ROUNDNESS CHECK', bx+20, by+35, 18, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    const col1 = bx+20;
-    const col2 = bx+240;
-    
-    // Stats
-    group.appendChild(addText('MEASURED (RADIAL BAND):', col1, by+80, 14, '#cbd5e1'));
-    group.appendChild(addText(error.toFixed(5)+'"', col2, by+80, 16, accent));
-    
-    group.appendChild(addText('ALLOWED:', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(toleranceRadial.toFixed(4)+'"', col2, by+105, 14, 'white'));
-    
-    // MIC/MCC (Inner/Outer radii relative to nominal isn't strictly needed for GD&T check, just the gap)
-    
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`);
-    group.appendChild(status);
-
-    // Bar Graph
-    const barY = by + 150;
-    const barW = 340;
-    const maxScale = toleranceRadial * 1.5;
-    
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY, width: barW, height: 12, fill: '#1e293b', rx: 6 }));
-    
-    const limitPix = (toleranceRadial / maxScale) * barW;
-    group.appendChild(createSVG('line', { x1: bx+20+limitPix, y1: barY-5, x2: bx+20+limitPix, y2: barY+17, stroke: 'white', 'stroke-width': 2 }));
-    
-    const fillPix = Math.min(barW, (error / maxScale) * barW);
-    group.appendChild(createSVG('rect', { x: bx+20, y: barY+2, width: fillPix, height: 8, fill: accent, rx: 4 }));
-    
-    // Visual Aids for Deformation
-    const subY = by + 190;
-    // Simple indicators if Oval or Tri is active
-    const drawInd = (lbl, val, x) => {
-        const c = Math.abs(val) > 0.0001 ? '#f59e0b' : '#334155';
-        group.appendChild(addText(lbl, x, subY, 10, '#64748b'));
-        group.appendChild(createSVG('circle', { cx: x+10, cy: subY+15, r: 6, fill: c }));
-    };
-    
-    drawInd('OVAL', state.ampOval, bx+20);
-    drawInd('LOBING', state.ampTri, bx+100);
-    drawInd('NOISE', state.ampNoise, bx+180);
-
-    svgContainer.appendChild(group);
+    const pass = error <= toleranceRadial;
+    const on = [['oval', state.ampOval], ['lobing', state.ampTri], ['noise', state.ampNoise]].filter(([, v]) => Math.abs(v) > 0.0001).map(([n]) => n);
+    svgContainer.appendChild(resultsCard({
+        title: 'Circularity (roundness)', pass,
+        rows: [['Band needed (radial)', `${error.toFixed(5)}"`, { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed', f4(toleranceRadial)]],
+        measured: error, allowed: toleranceRadial,
+        sentence: pass ? `This slice fits between two circles ${f4(toleranceRadial)} apart: it passes.`
+            : `This slice needs two circles ${error.toFixed(5)}" apart, more than the ${f4(toleranceRadial)} allowed: it fails.`,
+        note: on.length ? `Shape errors added: ${on.join(', ')}` : 'No shape errors added'
+    }).g);
 }
 
 // --- INTERACTION LOGIC ---

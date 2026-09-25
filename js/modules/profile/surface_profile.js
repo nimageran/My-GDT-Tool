@@ -1,6 +1,9 @@
 // js/modules/profile/surface_profile.js
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { COLORS, resultsCard } from '../../theme.js';
+
+const f4 = v => `${v.toFixed(4)}"`;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -87,8 +90,8 @@ function renderScene() {
     // 5. Interactive Handles
     drawHandles();
 
-    // 6. HUD
-    drawFuturisticHUD();
+    // 6. Results card
+    drawResultsCard();
 
     // 7. Guide
 }
@@ -244,77 +247,19 @@ function drawHandles() {
     svgContainer.appendChild(group);
 }
 
-function drawFuturisticHUD() {
+function drawResultsCard() {
     const maxDev = Math.max(...state.zValues.map(Math.abs));
-    const { toleranceWidth } = state;
-    const limit = toleranceWidth / 2;
-    const isPass = maxDev <= limit;
-    
-    const panelBg = '#0f172a'; 
-    const accent = isPass ? '#22c55e' : '#ef4444'; 
-    
-    const group = createSVG('g', {});
-    
-    // Panel Box
-    const bx = 20, by = 20, bw = 380, bh = 240;
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: panelBg, stroke: accent, 'stroke-width': 2
-    }));
-
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    group.appendChild(addText('SURFACE PROFILE CHECK', bx+20, by+35, 18, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    const col1 = bx+20;
-    const col2 = bx+240;
-    
-    group.appendChild(addText('LARGEST ERROR:', col1, by+80, 14, '#cbd5e1'));
-    group.appendChild(addText(maxDev.toFixed(4)+'"', col2, by+80, 14, accent));
-    
-    group.appendChild(addText('ALLOWED EACH SIDE:', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(limit.toFixed(4)+'"', col2, by+105, 14, 'white'));
-
-    group.appendChild(addText('TOLERANCE (FRAME):', col1, by+130, 14, '#cbd5e1'));
-    group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+130, 14, 'white'));
-
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`);
-    group.appendChild(status);
-
-    // 3D Visualizer Bar
-    const barY = by + 180;
-    const barW = 340;
-    
-    // Grid representation in HUD
-    const hudGridSize = 20;
-    const startX = bx + 20;
-    
-    // Draw a mini grid representing the 16 points status
-    state.zValues.forEach((z, i) => {
-        const r = Math.floor(i / state.gridSize);
-        const c = i % state.gridSize;
-        
-        const ptPass = Math.abs(z) <= limit;
-        const color = ptPass ? '#22c55e' : '#ef4444';
-        
-        group.appendChild(createSVG('rect', {
-            x: startX + (c * 30), 
-            y: barY + (r * 10), 
-            width: 25, height: 8,
-            fill: color, rx: 2
-        }));
-    });
-    
-    group.appendChild(addText('MEASURED POINTS', startX + 130, barY + 20, 12, '#64748b'));
-
-    svgContainer.appendChild(group);
+    const tol = state.toleranceWidth, side = tol / 2;
+    const pass = maxDev <= side;
+    const out = state.zValues.filter(z => Math.abs(z) > side).length;
+    svgContainer.appendChild(resultsCard({
+        title: 'Profile of a surface', pass,
+        rows: [['Largest error', f4(maxDev), { strong: true, color: pass ? COLORS.pass : COLORS.fail }],
+            ['Allowed each side', f4(side)], ['Tolerance in the frame', f4(tol)]],
+        measured: maxDev, allowed: side,
+        sentence: pass ? `All ${state.zValues.length} measured points are within ${f4(side)} of the true surface: it passes.`
+            : `${out} of ${state.zValues.length} measured points are more than ${f4(side)} off the true surface: it fails.`
+    }).g);
 }
 
 // --- INTERACTION LOGIC ---
