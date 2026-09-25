@@ -5,6 +5,7 @@
 
 import { linkify } from '../../glossary.js';
 import { UI, esc, goTo } from './sheet.js';
+import { takeFocus } from '../../focus.js';
 
 /**
  * Create a dictionary tool.
@@ -90,6 +91,8 @@ export function makeDictionary(cfg) {
     return {
         draw(svg) {
             svgRef = svg;
+            const f = takeFocus(cfg.id);                     // entry name, from the search
+            if (f) Object.assign(state, { search: f, group: 'all' });
             svg.style.display = 'none';
             overlay = document.createElement('div');
             overlay.dataset.moduleOverlay = cfg.id;

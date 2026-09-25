@@ -6,6 +6,7 @@
 import { createSVG } from '../../drawing_utils.js';
 import { COLORS, addDefs, text, featureControlFrame } from '../../theme.js';
 import { surfaceTexture } from '../decode/symbols.js';
+import { takeFocus } from '../../focus.js';
 import { INK, LINE, line, titleBlock, dimH, dimV, datumTag, UI, esc, goTo } from './sheet.js';
 
 // --------------------------------------------------------------------------
@@ -88,6 +89,8 @@ let svgRef = null, controlsRoot = null;
 
 export function draw(svg) {
     svgRef = svg;
+    const f = takeFocus('read_checklist');
+    if (Number.isInteger(f) && STEPS[f]) state.step = f;
     render();
 }
 

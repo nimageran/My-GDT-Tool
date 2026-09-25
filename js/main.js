@@ -1,5 +1,7 @@
 // js/main.js
 import { watchCanvas } from './legibility.js';
+import { setFocus } from './focus.js';
+import { initSearch } from './search.js';
 import { GDT_HIERARCHY } from './config.js';
 import { createSVG } from './drawing_utils.js';
 import { COLORS, text, wrapText } from './theme.js';
@@ -241,12 +243,15 @@ const glossObserver = new MutationObserver(() => {
 });
 glossObserver.observe(controlsContent, { childList: true, subtree: true });
 
-// Tools can open another tool: window.dispatchEvent(new CustomEvent('gdt:navigate', { detail: { cat, sym } }))
+// Tools can open another tool: window.dispatchEvent(new CustomEvent('gdt:navigate', { detail: { cat, sym, focus } }))
+// focus (optional): the item the tool should show first (see js/focus.js)
 window.addEventListener('gdt:navigate', (e) => {
-    const { cat, sym } = e.detail || {};
+    const { cat, sym, focus } = e.detail || {};
     if (!GDT_HIERARCHY[cat]?.symbols[sym]) return;
+    if (focus !== undefined) setFocus(sym, focus);
     selectCategory(cat);
     loadSymbolModule(cat, sym);
 });
 
 init();
+initSearch();

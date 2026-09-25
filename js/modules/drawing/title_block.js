@@ -6,6 +6,7 @@
 import { createSVG } from '../../drawing_utils.js';
 import { COLORS, text, wrapText } from '../../theme.js';
 import { titleBlock, TITLE_FIELDS, UI, esc, goTo } from './sheet.js';
+import { takeFocus } from '../../focus.js';
 
 // Plain-language notes for each field
 export const FIELD_INFO = {
@@ -96,6 +97,8 @@ let svgRef = null, controlsRoot = null;
 
 export function draw(svg) {
     svgRef = svg;
+    const f = takeFocus('title_block');
+    if (FIELD_INFO[f]) state.selected = f;
     render();
 }
 

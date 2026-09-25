@@ -15,7 +15,7 @@ python3 -m http.server 8000
 
 ## Tabs
 
-Tabs are grouped by what you're trying to do. Tools marked *planned* appear greyed with a "soon" badge and a description of their scope.
+Tabs are grouped by what you're trying to do. **Search** (header, or press `/`) finds any tool, symbol, term, note, line type, fit (`25 H7/g6`) or thread (`M8x1`) and opens it. Tools marked *planned* appear greyed with a "soon" badge and a description of their scope.
 
 | Tab | What it covers | Built | Planned |
 |---|---|---|---|
@@ -39,6 +39,9 @@ js/drawing_utils.js        createSVG(), readTolerance()
 js/gdt_math.js             Shared calculations (position, bonus, virtual condition)
 js/explain.js              Plain-language Explain panel content for every tool
 js/glossary.js             Glossary terms + dotted-underline hover definitions
+js/search.js               Search everything (header button, / or Ctrl+K); results open a tool on the right item
+js/focus.js                Hand-off of that item to the tool (setFocus / takeFocus)
+js/legibility.js           Keeps canvas text readable when the canvas is scaled down
 js/modules/<area>/*.js     One file per tool
 js/modules/decode/         Decoders, symbols.js geometry library, DECODER_SPEC.md
 js/modules/drawing/        Drawing basics; sheet.js (line styles, title block, dims) and dictionary.js (searchable card pages)
