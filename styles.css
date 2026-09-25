@@ -44,3 +44,24 @@
 #controlsContent :is(p, li, div, span).text-slate-400 { color: #64748b; }
 #controlsContent :is(p, li, div, span).text-slate-500 { color: #475569; }
 #controlsContent .opacity-90 { opacity: 1; }
+
+/* ------------------------------------------------------------------------
+   Phones and tablets (below the lg breakpoint): the controls and the drawing
+   each fill the screen; the bar at the bottom switches between them (js/main.js).
+   ------------------------------------------------------------------------ */
+@media (max-width: 1023px) {
+    #controlsPanel {
+        position: absolute; inset: 0; z-index: 30;
+        width: 100% !important; border: none !important; box-shadow: none;
+    }
+    body[data-mview="drawing"] #controlsPanel { display: none; }
+    #toggleControlsBtn, #expandControlsBtn { display: none !important; }
+    #mobileBar button[data-mview] { color: #64748b; }
+    body[data-mview="drawing"] #mobileBar [data-mview="drawing"],
+    body[data-mview="controls"] #mobileBar [data-mview="controls"] { color: #1d4ed8; background: #eff6ff; }
+    /* 2×: the drawing is twice the screen width; scroll to pan */
+    body[data-mzoom="2"] #canvas-container { overflow: auto; display: block; }
+    body[data-mzoom="2"] #mainCanvas { width: 200%; height: auto; aspect-ratio: 5 / 4; }
+    /* Text pages and 3D views manage their own size */
+    #canvas-container:has([data-module-overlay]) #zoomBtn { display: none; }
+}

@@ -43,6 +43,7 @@ js/explain.js              Plain-language Explain panel content for every tool
 js/glossary.js             Glossary terms + dotted-underline hover definitions
 js/search.js               Search everything (header button, / or Ctrl+K); results open a tool on the right item
 js/units.js                One mm / inch setting (top bar) for every tool; tools convert their numbers when it changes
+styles.css                 Phones and tablets (< 1024 px): Drawing / Controls switch at the bottom, 2× drawing zoom; the tab row turns into a ☰ list when it does not fit
 js/notes.js                My Notebook storage, note editor, backup export / import
 js/focus.js                Hand-off of that item to the tool (setFocus / takeFocus)
 js/legibility.js           Keeps canvas text readable when the canvas is scaled down
