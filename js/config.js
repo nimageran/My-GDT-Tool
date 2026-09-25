@@ -128,6 +128,7 @@ export const GDT_HIERARCHY = {
         label: "Learn",
         icon: "fa-graduation-cap",
         symbols: {
+            notebook: { name: "My Notebook", iconChar: "✎", filePath: './modules/learn/notebook.js', desc: "Your own notes: company rules, decoded callouts, lessons learned." },
             glossary: { name: "Glossary", iconChar: "Aa", filePath: './modules/learn/glossary.js', desc: "Every term in plain words, A to Z." },
             practice: { name: "Learning Path & Quizzes", iconChar: "?", filePath: './modules/learn/practice.js', desc: "Six short lessons in order, each with a quiz to check yourself." },
             y14_changes: { name: "Y14.5-2009 vs 2018", iconChar: "Δ", planned: true,

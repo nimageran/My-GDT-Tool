@@ -27,6 +27,8 @@
     <nav id="pathBar" class="bg-white border-b border-slate-200 px-4 h-10 flex items-center gap-2 text-sm shrink-0 z-30" aria-label="Current tool">
         <ol id="pathCrumbs" class="flex items-center gap-1.5 min-w-0 text-slate-500"></ol>
         <div class="ml-auto flex items-center gap-1 shrink-0">
+            <button id="addNoteBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-700 hover:bg-blue-50 border border-slate-200 rounded-md px-2.5 py-1" title="Write a note about what you are looking at (saved in My Notebook)"><i class="fa-solid fa-plus"></i> Note</button>
+            <button id="notebookBtn" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-md px-2.5 py-1 mr-2" title="Open My Notebook"><i class="fa-solid fa-book"></i> <span class="hidden md:inline">Notebook</span></button>
             <span id="pathCount" class="text-xs text-slate-400 mr-1"></span>
             <button id="prevTool" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-500 disabled:opacity-30" title="Previous tool in this tab"><i class="fa-solid fa-chevron-left"></i></button>
             <button id="nextTool" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-500 disabled:opacity-30" title="Next tool in this tab"><i class="fa-solid fa-chevron-right"></i></button>

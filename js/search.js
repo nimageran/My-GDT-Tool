@@ -5,6 +5,7 @@
 // Opens from the header button, or with "/" or Ctrl+K anywhere.
 
 import { GDT_HIERARCHY } from './config.js';
+import { loadNotes } from './notes.js';
 
 let index = null;          // built on first open (loads the data modules)
 let results = [];
@@ -22,6 +23,7 @@ const TYPES = {
     field: { label: 'Title block', cls: 'bg-sky-100 text-sky-800' },
     step: { label: 'How to read', cls: 'bg-violet-100 text-violet-800' },
     compare: { label: 'ASME vs ISO', cls: 'bg-lime-100 text-lime-800' },
+    mine: { label: 'My note', cls: 'bg-orange-100 text-orange-800' },
     planned: { label: 'Coming soon', cls: 'bg-slate-100 text-slate-500' }
 };
 
@@ -180,7 +182,13 @@ async function search(q) {
     const phrase = q.trim().toLowerCase().replace(/\s+/g, ' ');
     if (!phrase) return [];
     const words = phrase.split(' ');
-    const ranked = index.map(it => ({ it, s: score(it, phrase, words) })).filter(r => r.s > 0).sort((a, b) => b.s - a.s);
+    // Your own notes change often, so they are read fresh on every search
+    const mine = loadNotes().map(n => ({
+        type: 'mine', title: n.title || '(no title)', sub: `My Notebook${n.ref ? ' · ' + n.ref : ''}`,
+        keys: [n.ref ?? '', ...(n.tags ?? [])], text: n.body ?? '', snippet: (n.body ?? '').replace(/\s+/g, ' ').slice(0, 140), boost: 8,
+        open: () => go('LEARN', 'notebook', n.id)
+    }));
+    const ranked = [...mine, ...index].map(it => ({ it, s: score(it, phrase, words) })).filter(r => r.s > 0).sort((a, b) => b.s - a.s);
     // Keep the first few whatever they are (a passing mention can still be the
     // useful one), then drop weak matches when strong ones exist
     const cut = ranked.length ? ranked[0].s * 0.2 : 0;
@@ -235,7 +243,7 @@ async function open(prefill = '') {
         <div class="px-4 py-2 border-t border-slate-100 text-xs text-slate-500 flex gap-4">
           <span><kbd class="border border-slate-200 rounded px-1">↑</kbd> <kbd class="border border-slate-200 rounded px-1">↓</kbd> move</span>
           <span><kbd class="border border-slate-200 rounded px-1">Enter</kbd> open</span>
-          <span class="ml-auto">Searches tools, symbols, glossary, notes, lines &amp; views, ASME vs ISO, fits and threads</span>
+          <span class="ml-auto">Searches tools, symbols, glossary, notes, ASME vs ISO, fits, threads and your notebook</span>
         </div>
       </div>`;
     document.body.appendChild(modal);

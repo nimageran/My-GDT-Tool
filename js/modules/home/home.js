@@ -47,6 +47,7 @@ export function loadControls(container) {
                 <li>The menus at the top list every tool, with a line on what each one does.</li>
                 <li>Each tool has an <b>Explain</b> button with the idea in simple words.</li>
                 <li>Words with a dotted underline show their meaning when you point at them.</li>
+                <li><b>+ Note</b> (top right) saves what you learn to <button data-go="LEARN:notebook" class="font-semibold text-blue-700 hover:underline">My Notebook</button>, linked to the tool.</li>
             </ul>
         </div>`;
     container.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(...b.dataset.go.split(':')));
