@@ -616,6 +616,27 @@ export const EXPLAIN = {
         tool: 'Change B\'s size, switch B Ⓜ and B (RMB), edit the hole offsets, or try the presets.'
     },
 
+    practice: {
+        title: 'Learning path & quizzes',
+        terms: [
+            ['Lesson', 'A short topic with the tools to study and five questions.'],
+            ['Pass mark', '4 of 5 right completes a lesson.'],
+            ['Progress', 'Your answers, saved in this browser so you can continue later.']
+        ],
+        simple: [
+            'The path has **six lessons in order**: the sheet, symbols and frames, size and bonus, datums, fits, and ASME vs ISO.',
+            'For each lesson, **look at the tools listed first**, then **take the quiz**.',
+            'Every question comes from a **real callout**, and after answering you see **why**, with a link to the tool that teaches it.',
+            'Get **4 of 5** to complete a lesson; retry as often as you like.'
+        ],
+        example: [
+            'Lesson 3 asks: a hole Ø10 +0.1/0 with position Ø0.2 Ⓜ measures Ø10.06; how much position is allowed?',
+            'You pick Ø0.20 and see: not quite, it earns 0.06 bonus, so Ø0.26.',
+            'One click on "Bonus Tolerance" shows you the same case on the zone diagram.'
+        ],
+        tool: 'Pick a lesson, study its tools, then press "Take the quiz". Keys 1 to 4 answer, Enter goes on.'
+    },
+
     asme_iso: {
         title: 'ASME vs ISO GPS',
         terms: [

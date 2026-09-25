@@ -6,6 +6,7 @@
 import { GDT_HIERARCHY } from '../../config.js';
 import { openSearch } from '../../search.js';
 import { toolDesc } from '../../menu.js';
+import { LESSONS, loadProgress, lessonStatus } from '../learn/lessons.js';
 
 // Common jobs, in the words someone would use at their desk
 const TASKS = [
@@ -37,7 +38,7 @@ export function loadControls(container) {
     container.innerHTML = `
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">New here?</h4>
-            <p class="text-sm text-slate-700 leading-relaxed">Start with <button data-go="DECODE:read_checklist" class="font-semibold text-blue-700 hover:underline">How to Read a Drawing</button>. It walks through a whole drawing in 11 steps and links to every tool you need along the way.</p>
+            <p class="text-sm text-slate-700 leading-relaxed">Follow the <button data-go="LEARN:practice" class="font-semibold text-blue-700 hover:underline">learning path</button>: six short lessons, each with a quiz. Or, with a drawing in front of you, open <button data-go="DECODE:read_checklist" class="font-semibold text-blue-700 hover:underline">How to Read a Drawing</button> and go through it in 11 steps.</p>
         </div>
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Getting around</h4>
@@ -55,6 +56,30 @@ export function unload() {
     overlay?.remove();
     if (svgRef) svgRef.style.display = '';
     overlay = svgRef = null;
+}
+
+// Trainer: where you are on the learning path, with one click to continue
+function learningBanner() {
+    const p = loadProgress();
+    const stats = LESSONS.map(l => lessonStatus(l, p));
+    const done = stats.filter(s => s.done).length;
+    const next = stats.findIndex(s => !s.done);
+    const started = stats.some(s => s.answered);
+    const title = next < 0 ? 'You have finished the learning path.' : started
+        ? `Learning path: ${done} of ${LESSONS.length} lessons done` : 'Learn GD&T step by step';
+    const sub = next < 0 ? 'Retry any quiz to keep it fresh.' : started
+        ? `Next: lesson ${next + 1}, ${LESSONS[next].title}.` : 'Six short lessons, each with a five-question quiz from real drawings.';
+    return `
+        <div class="bg-white border border-slate-200 rounded-xl p-4 mb-10 flex flex-wrap items-center gap-4">
+          <span class="w-10 h-10 rounded-lg bg-green-50 text-green-700 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></span>
+          <div class="flex-1 min-w-[14rem]">
+            <div class="font-bold text-slate-900">${esc(title)}</div>
+            <div class="text-sm text-slate-500">${esc(sub)}</div>
+            <div class="h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden max-w-sm"><div class="h-full bg-green-500" style="width:${done / LESSONS.length * 100}%"></div></div>
+          </div>
+          <button id="home-path" class="text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg px-4 py-2">See the path</button>
+          ${next >= 0 ? `<button id="home-learn" data-lesson="${LESSONS[next].id}" class="text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-4 py-2">${started ? 'Continue' : 'Start lesson 1'} <i class="fa-solid fa-arrow-right ml-1"></i></button>` : ''}
+        </div>`;
 }
 
 function render() {
@@ -80,6 +105,8 @@ function render() {
             </button>`).join('')}
         </div>
 
+        ${learningBanner()}
+
         <h3 class="text-sm font-extrabold text-slate-500 uppercase tracking-widest mb-3">All tools</h3>
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           ${tabs.map(([cat, tab]) => `
@@ -94,6 +121,10 @@ function render() {
         </div>
       </div>`;
     overlay.querySelector('#home-search').onclick = () => openSearch();
+    const cont = overlay.querySelector('#home-learn');
+    if (cont) cont.onclick = () => window.dispatchEvent(new CustomEvent('gdt:navigate', { detail: { cat: 'LEARN', sym: 'practice', focus: cont.dataset.lesson } }));
+    const path = overlay.querySelector('#home-path');
+    if (path) path.onclick = () => go('LEARN', 'practice');
     overlay.querySelectorAll('[data-task]').forEach(b => b.onclick = () => { const t = TASKS[+b.dataset.task]; go(t.cat, t.sym); });
     overlay.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => go(...b.dataset.tool.split(':')));
 }

@@ -129,8 +129,7 @@ export const GDT_HIERARCHY = {
         icon: "fa-graduation-cap",
         symbols: {
             glossary: { name: "Glossary", iconChar: "Aa", filePath: './modules/learn/glossary.js', desc: "Every term in plain words, A to Z." },
-            practice: { name: "Practice Scenarios", iconChar: "?", planned: true,
-                summary: "Pass or fail, and why? Scenario quizzes built from real drawing callouts." },
+            practice: { name: "Learning Path & Quizzes", iconChar: "?", filePath: './modules/learn/practice.js', desc: "Six short lessons in order, each with a quiz to check yourself." },
             y14_changes: { name: "Y14.5-2009 vs 2018", iconChar: "Δ", planned: true,
                 summary: "What changed between editions, including the removal of concentricity and symmetry and what to use instead." },
             asme_iso: { name: "ASME vs ISO GPS", iconChar: "≠", filePath: './modules/learn/asme_iso.js', desc: "Which rulebook a drawing uses, and what that changes." }

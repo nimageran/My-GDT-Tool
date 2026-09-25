@@ -26,7 +26,7 @@ The tool opens on a **Home** page ("What do you need to do?" start points and a 
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D) | Datum targets |
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas, ISO fits (ISO 286: H7/g6 → limits, clearance or interference, preferred fits) | |
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
-| **Learn** | Standards and practice | Glossary (103 terms, searchable), ASME vs ISO GPS (which rulebook, and the differences that change pass / fail) | Practice scenarios, Y14.5-2009 vs 2018 |
+| **Learn** | Standards and practice | Learning path (6 lessons, 30 quiz questions from real callouts, progress saved; shown on Home), glossary (103 terms, searchable), ASME vs ISO GPS | Y14.5-2009 vs 2018 |
 | **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
 
 ## Structure
