@@ -22,7 +22,7 @@ const TYPES = {
     line: { label: 'Line / view', cls: 'bg-slate-200 text-slate-800' },
     field: { label: 'Title block', cls: 'bg-sky-100 text-sky-800' },
     step: { label: 'How to read', cls: 'bg-violet-100 text-violet-800' },
-    compare: { label: 'ASME vs ISO', cls: 'bg-lime-100 text-lime-800' },
+    compare: { label: 'Compare', cls: 'bg-lime-100 text-lime-800' },
     mine: { label: 'My note', cls: 'bg-orange-100 text-orange-800' },
     planned: { label: 'Coming soon', cls: 'bg-slate-100 text-slate-500' }
 };
@@ -37,11 +37,11 @@ const go = (cat, sym, focus) => window.dispatchEvent(new CustomEvent('gdt:naviga
 // --------------------------------------------------------------------------
 
 async function buildIndex() {
-    const [ex, gl, sf, notes, lines, tb, rc, ai] = await Promise.all([
+    const [ex, gl, sf, notes, lines, tb, rc, ai, yc] = await Promise.all([
         import('./explain.js'), import('./glossary.js'), import('./modules/decode/symbol_finder.js'),
         import('./modules/drawing/drawing_notes.js'), import('./modules/drawing/lines_views.js'),
         import('./modules/drawing/title_block.js'), import('./modules/drawing/read_checklist.js'),
-        import('./modules/learn/asme_iso.js')
+        import('./modules/learn/asme_iso.js'), import('./modules/learn/y14_changes.js')
     ]);
     const items = [];
 
@@ -101,6 +101,13 @@ async function buildIndex() {
         items.push({
             type: 'compare', title: t.title, sub: 'ASME vs ISO GPS', keys: [], text: `${t.asme} ${t.iso} ${t.you}`, snippet: t.you,
             open: () => go('LEARN', 'asme_iso', t.id)
+        });
+    }
+    // Y14.5-2009 vs 2018 changes
+    for (const t of yc.TOPICS) {
+        items.push({
+            type: 'compare', title: t.title, sub: 'Y14.5-2009 vs 2018', keys: [], text: `${t.y2009} ${t.y2018} ${t.you}`, snippet: t.you,
+            open: () => go('LEARN', 'y14_changes', t.id)
         });
     }
     return items;

@@ -730,6 +730,29 @@ export const EXPLAIN = {
         tool: 'Press New note or Company cheat sheet; search, filter by type or tag, pin the important ones, and export a backup.'
     },
 
+    y14_changes: {
+        title: 'Y14.5-2009 vs 2018',
+        terms: [
+            ['Edition', 'The year of the standard the drawing follows, written in the title block or notes.'],
+            ['Concentricity / symmetry', 'Controls on the centre points of a round feature or a slot. Removed in 2018.'],
+            ['Ⓘ', 'Independency: switches off Rule #1 for that size (new symbol in 2018).'],
+            ['Dynamic profile', 'A triangle in a profile frame: controls the shape of a surface, not its size or location (new in 2018).']
+        ],
+        simple: [
+            'A drawing is **always read by the edition it names**, even if a newer one exists.',
+            'The **2018** edition **removed concentricity and symmetry**; newer drawings use **position, runout or profile** instead.',
+            'On a **2009 drawing**, those two symbols are **still valid** and must be **inspected as written**.',
+            '2018 **added a few symbols**: **Ⓘ**, the **all-over** double circle, and **dynamic profile**.',
+            '**Everything else**, including Rule #1, bonus, datums and frames, **reads the same**.'
+        ],
+        example: [
+            'A 2009 drawing shows ◎ Ø0.05 A on a shaft.',
+            'The inspector must check the centre points of the shaft sections against datum axis A, not just its runout.',
+            'If the customer wants runout instead (easier to check), that is a drawing change: a new revision, approved by them.'
+        ],
+        tool: 'Start with the clues at the top, then read or search the cards.'
+    },
+
     practice: {
         title: 'Learning path & quizzes',
         terms: [

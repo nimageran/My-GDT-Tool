@@ -241,6 +241,10 @@ export const GLOSSARY = [
       example: '0.3 UZ−0.05 is the same zone as ASME 0.3 Ⓤ 0.1: 0.1 outside, 0.2 inside.',
       see: tool('LEARN', 'asme_iso', 'ASME vs ISO GPS') },
 
+    { term: 'Dynamic profile', match: ['dynamic profile'],
+      meaning: 'ASME Y14.5-2018: a small triangle after the tolerance in a profile frame. It controls the shape of the surface; its zone may grow or shrink evenly, so it does not control size or location.',
+      see: tool('LEARN', 'y14_changes', 'Y14.5-2009 vs 2018') },
+
     // Manufacturing
     { term: 'Cp / Cpk', match: ['Cpk', 'Cp', 'process capability index'],
       meaning: 'Numbers that say whether a process can hold a tolerance. Cp compares the tolerance with the spread; Cpk also checks how centred the process is. 1.33 or more is the usual target.',

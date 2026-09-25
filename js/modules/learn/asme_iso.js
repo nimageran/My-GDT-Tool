@@ -3,8 +3,7 @@
 // the differences that change how you read it. Side-by-side cards with a
 // "what it means for you" line. HTML beside the (hidden) canvas.
 
-import { linkify } from '../../glossary.js';
-import { takeFocus } from '../../focus.js';
+import { makeComparePage } from './compare_page.js';
 
 // Clues on a drawing, and which standard they point to
 export const CLUES = [
@@ -90,118 +89,20 @@ export const TOPICS = [
 ];
 const GROUPS = ['Big differences', 'Symbols and notation', 'Same idea, different name'];
 
-const state = { search: '', group: 'all' };
-let svgRef = null, overlay = null, controlsRoot = null;
+const page = makeComparePage({
+    id: 'asme_iso',
+    title: 'ASME vs ISO GPS',
+    intro: 'Most symbols look the same in both systems, but a few rules are different, and they can turn a pass into a fail. First find out <b>which rulebook the drawing uses</b>, then read it with that rulebook\'s defaults.',
+    cluesTitle: 'Which rulebook is this drawing? Look for these clues',
+    clues: CLUES.map(([c, s]) => [c, s, s.includes('ISO') ? 'green' : 'blue']),
+    cluesNote: 'No standard named at all? Ask the customer. Do not assume: a European supplier drawing is often ISO even when your company works to ASME.',
+    cols: [{ key: 'asme', label: 'ASME Y14.5', colour: 'blue' }, { key: 'iso', label: 'ISO GPS', colour: 'green' }],
+    topics: TOPICS,
+    groups: GROUPS,
+    bigLabel: 'Changes pass / fail',
+    placeholder: 'e.g. envelope, CZ, threads',
+    remember: { title: 'The one to remember', text: 'ISO drawings do not have Rule #1. A size tolerance alone does not limit bending, bowing or out-of-round. If form matters and there is no form tolerance, no general geometric tolerance and no Ⓔ, ask before you accept the part.' },
+    footnote: 'This page covers the differences you meet most when reading drawings. The full ISO GPS system is spread over many standards (ISO 8015, 1101, 5459, 14405, 2768, 22081 and more).'
+});
 
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const go = (cat, sym) => window.dispatchEvent(new CustomEvent('gdt:navigate', { detail: { cat, sym } }));
-
-export function draw(svg) {
-    svgRef = svg;
-    svg.style.display = 'none';
-    overlay = document.createElement('div');
-    overlay.dataset.moduleOverlay = 'asme_iso';
-    overlay.className = 'absolute inset-0 overflow-y-auto bg-slate-50';
-    svg.parentElement.appendChild(overlay);
-    const f = takeFocus('asme_iso');                     // topic id, from the search
-    const t = TOPICS.find(x => x.id === f);
-    if (t) Object.assign(state, { search: t.title, group: 'all' });
-    renderPage();
-}
-
-export function loadControls(container) {
-    controlsRoot = container;
-    renderControls();
-}
-
-export function unload() {
-    overlay?.remove();
-    if (svgRef) svgRef.style.display = '';
-    overlay = svgRef = null;
-}
-
-function visible() {
-    const q = state.search.trim().toLowerCase();
-    return TOPICS.filter(t => (state.group === 'all' || t.group === state.group) &&
-        (!q || `${t.title} ${t.asme} ${t.iso} ${t.you}`.toLowerCase().includes(q)));
-}
-
-function card(t) {
-    return `
-      <article class="bg-white border ${t.big ? 'border-amber-300' : 'border-slate-200'} rounded-lg p-4" data-entry="${esc(t.title)}">
-        <div class="flex items-baseline justify-between gap-3 mb-2">
-          <h4 class="text-lg font-bold text-slate-900">${esc(t.title)}
-            ${t.big ? '<span class="ml-2 align-middle text-[11px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 rounded px-1.5 py-0.5">Changes pass / fail</span>' : ''}</h4>
-          ${t.link ? `<button data-link="${t.id}" class="text-xs font-bold text-blue-700 hover:underline shrink-0">${esc(t.link[2])} ▶</button>` : ''}
-        </div>
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div class="rounded bg-blue-50 px-3 py-2"><div class="text-[11px] font-extrabold tracking-widest text-blue-800 mb-1">ASME Y14.5</div><p class="ai-text text-sm text-slate-800 leading-relaxed">${esc(t.asme)}</p></div>
-          <div class="rounded bg-emerald-50 px-3 py-2"><div class="text-[11px] font-extrabold tracking-widest text-emerald-800 mb-1">ISO GPS</div><p class="ai-text text-sm text-slate-800 leading-relaxed">${esc(t.iso)}</p></div>
-        </div>
-        <p class="ai-text mt-3 text-sm text-slate-700"><span class="font-bold text-slate-900">What it means for you:</span> ${esc(t.you)}</p>
-      </article>`;
-}
-
-function renderPage() {
-    if (!overlay) return;
-    const list = visible();
-    const showClues = !state.search && state.group === 'all';
-    overlay.innerHTML = `
-      <div class="max-w-4xl mx-auto px-6 py-8">
-        <div class="text-[11px] font-bold tracking-widest text-slate-400 uppercase">Learn</div>
-        <h2 class="text-3xl font-extrabold text-slate-900 mb-1">ASME vs ISO GPS</h2>
-        <p class="text-slate-600 mb-6 leading-relaxed">Most symbols look the same in both systems, but a few rules are different, and they can turn a pass into a fail. First find out <b>which rulebook the drawing uses</b>, then read it with that rulebook's defaults.</p>
-        ${showClues ? `
-        <section class="bg-white border border-slate-200 rounded-lg p-4 mb-8">
-          <h3 class="text-sm font-extrabold text-slate-800 mb-3">Which rulebook is this drawing? Look for these clues</h3>
-          <table class="w-full text-sm">
-            ${CLUES.map(([c, s]) => `<tr class="border-t border-slate-100"><td class="py-1.5 pr-3 text-slate-700">${esc(c)}</td>
-              <td class="py-1.5 text-right whitespace-nowrap"><span class="text-xs font-bold rounded px-2 py-0.5 ${s.includes('ISO') ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">${esc(s)}</span></td></tr>`).join('')}
-          </table>
-          <p class="text-sm text-slate-500 mt-3">No standard named at all? Ask the customer. Do not assume: a European supplier drawing is often ISO even when your company works to ASME.</p>
-        </section>` : ''}
-        ${list.length === 0 ? '<p class="text-slate-500">Nothing found. Try a shorter word.</p>' : ''}
-        ${GROUPS.map(g => {
-            const items = list.filter(t => t.group === g);
-            return items.length ? `
-              <section class="mb-8">
-                <h3 class="text-sm font-extrabold text-blue-700 border-b border-blue-100 pb-1 mb-3 uppercase tracking-wide">${esc(g)}</h3>
-                <div class="space-y-3">${items.map(card).join('')}</div>
-              </section>` : '';
-        }).join('')}
-      </div>`;
-    overlay.querySelectorAll('article').forEach(a => a.querySelectorAll('.ai-text').forEach(p => linkify(p, { skipTerms: [a.dataset.entry] })));
-    overlay.querySelectorAll('[data-link]').forEach(b => {
-        const t = TOPICS.find(x => x.id === b.dataset.link);
-        b.onclick = () => go(t.link[0], t.link[1]);
-    });
-    overlay.scrollTop = 0;
-}
-
-function renderControls() {
-    if (!controlsRoot) return;
-    const segBtn = 'px-2 py-1.5 text-xs font-bold rounded border transition-colors';
-    const seg = (v, label) => `<button data-group="${esc(v)}" class="${segBtn} ${state.group === v ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${esc(label)}</button>`;
-    controlsRoot.innerHTML = `
-        <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Search</h4>
-            <input id="ai-search" type="search" value="${esc(state.search)}" placeholder="e.g. envelope, CZ, threads"
-                class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Show</h4>
-            <div class="flex flex-wrap gap-1.5">${seg('all', 'All')}${GROUPS.map(g => seg(g, g)).join('')}</div>
-        </div>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
-            <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> The one to remember</div>
-            <div class="text-xs leading-relaxed">ISO drawings do not have Rule #1. A size tolerance alone does not limit bending, bowing or out-of-round. If form matters and there is no form tolerance, no general geometric tolerance and no Ⓔ, ask before you accept the part.</div>
-        </div>
-        <p class="text-xs text-slate-500 leading-relaxed">This page covers the differences you meet most when reading drawings. The full ISO GPS system is spread over many standards (ISO 8015, 1101, 5459, 14405, 2768, 22081 and more).</p>`;
-    const s = controlsRoot.querySelector('#ai-search');
-    s.oninput = () => { state.search = s.value; renderPage(); };
-    controlsRoot.querySelectorAll('[data-group]').forEach(b => b.onclick = () => {
-        state.group = b.dataset.group;
-        renderPage();
-        renderControls();
-    });
-}
+export const { draw, loadControls, unload } = page;
