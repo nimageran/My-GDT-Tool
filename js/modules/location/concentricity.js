@@ -2,8 +2,13 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName, decimals } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', lengths: ['toleranceDiam', 'partRadius', 'eccentricity', 'asymmetry', 'lobing'], perLength: ['visualScale', 'errorScale'],
+    nice: { mm: { toleranceDiam: 0.12, partRadius: 38, visualScale: 7.9, errorScale: 118 } } };
+
+const f4 = v => fmt(v);
+const f5 = v => fmt(v, decimals() + 1);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -41,6 +46,7 @@ let animationFrameId = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     state.midpoints = []; // Reset history
@@ -48,6 +54,7 @@ export function draw(svg) {
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -285,7 +292,7 @@ function drawMicroscopeView() {
     group.appendChild(createSVG('text', {
         x: center.x, y: center.y - zoneR - 10,
         fill: '#1d4ed8', 'text-anchor': 'middle', 'font-size': '13', 'font-weight': 'bold'
-    })).textContent = `Tolerance zone Ø${toleranceDiam}"`;
+    })).textContent = `Tolerance zone Ø${toleranceDiam}${suffix()}`;
     
     // 3. Plot the Median Points Cloud
     let maxDev = 0;
@@ -326,7 +333,7 @@ function drawMicroscopeView() {
         const lbl = createSVG('text', {
             x: lx + 12, y: ly, fill: '#0f172a', 'font-family': '"JetBrains Mono", ui-monospace, monospace', 'font-size': '12'
         });
-        lbl.textContent = `off by Ø${last.dev.toFixed(5)}"`;
+        lbl.textContent = `off by Ø${f5(last.dev)}`;
         group.appendChild(lbl);
     }
     
@@ -348,10 +355,10 @@ function drawResultsCard() {
     const pass = maxDev <= toleranceDiam;
     svgContainer.appendChild(resultsCard({
         title: 'Concentricity', pass,
-        rows: [['Midpoints off the axis (Ø)', `${maxDev.toFixed(5)}"`, { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed zone (Ø)', f4(toleranceDiam)]],
+        rows: [['Midpoints off the axis (Ø)', f5(maxDev), { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed zone (Ø)', f4(toleranceDiam)]],
         measured: maxDev, allowed: toleranceDiam,
-        sentence: pass ? `Every midpoint of opposite points lies inside the Ø${toleranceDiam.toFixed(4)}" zone: it passes.`
-            : `Some midpoints of opposite points fall outside the Ø${toleranceDiam.toFixed(4)}" zone: it fails.`,
+        sentence: pass ? `Every midpoint of opposite points lies inside the Ø${f4(toleranceDiam)} zone: it passes.`
+            : `Some midpoints of opposite points fall outside the Ø${f4(toleranceDiam)} zone: it fails.`,
         note: 'Midpoint: halfway between opposite points'
     }).g);
 }
@@ -378,7 +385,7 @@ function renderControls() {
                     <span class="text-3xl">◎</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceDiam}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceDiam}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400">A</div>
@@ -387,7 +394,7 @@ function renderControls() {
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Add errors (in)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Add errors (${unitName()})</h4>
             
             <div class="space-y-4">
                 <div>
@@ -395,7 +402,7 @@ function renderControls() {
                         <span>Off-centre (eccentricity)</span>
                         <span id="val-ecc">0.000</span>
                     </div>
-                    <input type="range" id="slide-ecc" min="0" max="0.005" step="0.0001" value="${state.eccentricity}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-ecc" min="0" max="${fromIn(0.005)}" step="${fromIn(0.0001)}" value="${state.eccentricity}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
                 
                 <div>
@@ -403,7 +410,7 @@ function renderControls() {
                         <span>3-lobe (triangle-like)</span>
                         <span id="val-lobe">0.000</span>
                     </div>
-                    <input type="range" id="slide-lobe" min="0" max="0.005" step="0.0001" value="${state.lobing}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-lobe" min="0" max="${fromIn(0.005)}" step="${fromIn(0.0001)}" value="${state.lobing}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
 
                 <div>
@@ -411,7 +418,7 @@ function renderControls() {
                         <span>Asymmetry (Bulge)</span>
                         <span id="val-asym">0.000</span>
                     </div>
-                    <input type="range" id="slide-asym" min="0" max="0.005" step="0.0001" value="${state.asymmetry}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-asym" min="0" max="${fromIn(0.005)}" step="${fromIn(0.0001)}" value="${state.asymmetry}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
             
@@ -445,9 +452,9 @@ function bindControlEvents() {
         state.lobing = parseFloat(sLobe.value);
         state.asymmetry = parseFloat(sAsym.value);
         
-        vEcc.innerText = state.eccentricity.toFixed(4);
-        vLobe.innerText = state.lobing.toFixed(4);
-        vAsym.innerText = state.asymmetry.toFixed(4);
+        vEcc.innerText = state.eccentricity.toFixed(decimals());
+        vLobe.innerText = state.lobing.toFixed(decimals());
+        vAsym.innerText = state.asymmetry.toFixed(decimals());
         
         state.midpoints = []; // Clear history on change
     };

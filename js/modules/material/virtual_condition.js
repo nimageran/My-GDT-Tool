@@ -7,6 +7,10 @@
 import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, addDefs, text, wrapText, legend, resultsStrip, featureControlFrame } from '../../theme.js';
+import { syncUnits, step, suffix, decimals } from '../../units.js';
+
+const INCH_START = { hole: { nominal: 0.500, plus: 0.004, minus: 0, tol: 0.008, mod: 'MMC' }, pin: { nominal: 0.484, plus: 0, minus: 0.004, tol: 0.004, mod: 'MMC' } };
+const UNITS = { native: 'mm', lengths: ['hole', 'pin'], nice: { in: INCH_START } };
 
 const state = {
     hole: { nominal: 10, plus: 0.1, minus: 0, tol: 0.2, mod: 'MMC' },
@@ -14,14 +18,16 @@ const state = {
 };
 
 let svgRef = null, controlsRoot = null;
-const f3 = v => v.toFixed(3);
+const f3 = v => v.toFixed(decimals());
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgRef = svg;
     render();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsRoot = container;
     renderControls();
 }
@@ -124,7 +130,7 @@ function drawTables(svg, r) {
         svg.appendChild(text(title, x + 18, y + 28, { size: 14, weight: 800, fill: color }));
         const tolStr = f.plus === f.minus ? `±${f.plus}` : `+${f.plus}/−${f.minus}`;
         svg.appendChild(text(`Ø${f.nominal} ${tolStr}`, x + 18, y + 56, { size: 15, weight: 700, fill: COLORS.ink, mono: true }));
-        const fcf = featureControlFrame(x + 200, y + 38, { symbol: 'position', tolerance: f.tol.toFixed(2), diameter: true, modifier: { MMC: 'M', LMC: 'L', RFS: null }[f.mod], datums: ['A', 'B'], h: 28 });
+        const fcf = featureControlFrame(x + 200, y + 38, { symbol: 'position', tolerance: f.tol.toFixed(state.units === 'in' ? 3 : 2), diameter: true, modifier: { MMC: 'M', LMC: 'L', RFS: null }[f.mod], datums: ['A', 'B'], h: 28 });
         svg.appendChild(fcf.g);
         const hole = kind === 'hole';
         const rows = [
@@ -160,10 +166,10 @@ function label(B, side, hole) {
 function drawResults(svg, r) {
     const { H, P } = r;
     const sentence = r.pass
-        ? `The hole never leaves less than Ø${f3(H.inner)} of space, and the pin never takes more than Ø${f3(P.outer)}. That leaves at least ${f3(r.clearance)} mm, so the parts always assemble, whatever sizes and positions they are made at within tolerance.`
-        : `The hole can leave as little as Ø${f3(H.inner)}, but the pin can take up to Ø${f3(P.outer)}. In the worst case they clash by ${f3(-r.clearance)} mm. Make the pin smaller, the hole bigger, or tighten a position tolerance.`;
+        ? `The hole never leaves less than Ø${f3(H.inner)} of space, and the pin never takes more than Ø${f3(P.outer)}. That leaves at least ${f3(r.clearance)}${suffix()}, so the parts always assemble, whatever sizes and positions they are made at within tolerance.`
+        : `The hole can leave as little as Ø${f3(H.inner)}, but the pin can take up to Ø${f3(P.outer)}. In the worst case they clash by ${f3(-r.clearance)}${suffix()}. Make the pin smaller, the hole bigger, or tighten a position tolerance.`;
     svg.appendChild(resultsStrip({
-        pass: r.pass, unit: ' mm', decimals: 3, compact: true,
+        pass: r.pass, compact: true,
         measured: { label: 'Pin takes (max)', value: P.outer },
         allowed: { label: 'Hole leaves (min)', value: H.inner },
         gauge: false, sentence
@@ -180,11 +186,17 @@ const segOff = 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50';
 const input = 'w-full px-2 py-1.5 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500';
 const smallBtn = 'text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold text-left';
 
-const PRESETS = [
+const PRESETS_MM = [
     { label: 'Always assembles (gap 0.100)', hole: { nominal: 10, plus: 0.1, minus: 0, tol: 0.2, mod: 'MMC' }, pin: { nominal: 9.6, plus: 0, minus: 0.1, tol: 0.1, mod: 'MMC' } },
     { label: 'Zero clearance: boundaries equal', hole: { nominal: 10, plus: 0.1, minus: 0, tol: 0.2, mod: 'MMC' }, pin: { nominal: 9.7, plus: 0, minus: 0.1, tol: 0.1, mod: 'MMC' } },
     { label: 'Can clash in the worst case', hole: { nominal: 10, plus: 0.1, minus: 0, tol: 0.3, mod: 'MMC' }, pin: { nominal: 9.8, plus: 0, minus: 0.1, tol: 0.1, mod: 'MMC' } }
 ];
+const PRESETS_IN = [
+    { label: 'Always assembles (gap 0.004")', ...INCH_START },
+    { label: 'Zero clearance: boundaries equal', hole: INCH_START.hole, pin: { ...INCH_START.pin, nominal: 0.488 } },
+    { label: 'Can clash in the worst case', hole: { ...INCH_START.hole, tol: 0.012 }, pin: { ...INCH_START.pin, nominal: 0.492 } }
+];
+const presets = () => (state.units === 'in' ? PRESETS_IN : PRESETS_MM);
 
 function partCard(kind) {
     const f = state[kind];
@@ -194,7 +206,7 @@ function partCard(kind) {
     return `
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200 space-y-2">
             <h4 class="font-bold text-xs text-slate-500 uppercase">${kind === 'hole' ? 'Hole (part 1)' : 'Pin (part 2)'}</h4>
-            <div class="grid grid-cols-4 gap-2">${num('nominal', 'Ø', 0.1)}${num('plus', '+ TOL', 0.01)}${num('minus', '− TOL', 0.01)}${num('tol', 'POS Ø', 0.01)}</div>
+            <div class="grid grid-cols-4 gap-2">${num('nominal', 'Ø', state.units === 'in' ? 0.01 : 0.1)}${num('plus', '+ TOL', step())}${num('minus', '− TOL', step())}${num('tol', 'POS Ø', step())}</div>
             <div class="flex gap-1.5">${seg('MMC')}${seg('RFS')}${seg('LMC')}</div>
         </div>`;
 }
@@ -206,7 +218,7 @@ function renderControls() {
         ${partCard('pin')}
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Try these</h4>
-            <div class="flex flex-col gap-1.5">${PRESETS.map((p, i) => `<button data-preset="${i}" class="${smallBtn}">${p.label}</button>`).join('')}</div>
+            <div class="flex flex-col gap-1.5">${presets().map((p, i) => `<button data-preset="${i}" class="${smallBtn}">${p.label}</button>`).join('')}</div>
         </div>
         <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> How to use the numbers</div>
@@ -227,7 +239,7 @@ function renderControls() {
         if (Number.isFinite(v) && v >= 0) { state[k][key] = v; render(); }
     });
     controlsRoot.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
-        const p = PRESETS[+b.dataset.preset];
+        const p = presets()[+b.dataset.preset];
         state.hole = { ...p.hole };
         state.pin = { ...p.pin };
         update();

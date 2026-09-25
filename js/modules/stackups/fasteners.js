@@ -7,6 +7,10 @@
 import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, text, wrapText, addDefs, dimension, nominalLine, featureControlFrame, legend, resultsStrip } from '../../theme.js';
+import { syncUnits, fromMm } from '../../units.js';
+
+const UNITS = { native: 'mm', lengths: ['F', 'H', 'holeTol', 'T', 'T1', 'T2', 'projected'],
+    nice: { in: { screw: 'custom', F: 0.3125, H: 0.344, holeTol: 0.008, T: 0.031, T1: 0.015, T2: 0.015, projected: 0.375 } } };
 
 // ISO 273 clearance holes (mm): fine / medium / coarse
 const ISO273 = {
@@ -19,7 +23,6 @@ const CLASS_NAMES = ['fine', 'medium', 'coarse'];
 // --- STATE ---
 const state = {
     mode: 'floating',        // 'floating' | 'fixed'
-    units: 'mm',
     screw: 'M8',             // preset or 'custom'
     fit: 1,                  // ISO 273 class index
     F: 8.0,                  // Max fastener diameter (MMC)
@@ -44,11 +47,13 @@ let svgContainer = null;
 let controlsContainer = null;
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -272,9 +277,9 @@ function renderControls() {
     const floating = state.mode === 'floating';
     const seg = (attr, key, value, label) =>
         `<button data-${attr}="${value}" class="${segBtn} ${state[key] === value ? segOn : segOff}">${label}</button>`;
-    const num = (id, label, value, step = 0.01) => `
+    const num = (id, label, value, stepMm = 0.01) => `
         <div><label class="block text-xs font-bold text-slate-500 mb-1">${label}</label>
-        <input type="number" id="${id}" step="${step}" min="0" value="${value}" class="${numInput}"></div>`;
+        <input type="number" id="${id}" step="${state.units === 'in' ? stepMm / 10 : stepMm}" min="0" value="${value}" class="${numInput}"></div>`;
 
     controlsContainer.innerHTML = `
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
@@ -295,17 +300,13 @@ function renderControls() {
                     </select></div>
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">ISO 273 HOLE</label>
                     <select id="fx-fit" class="${numInput}" ${state.screw === 'custom' ? 'disabled' : ''}>
-                        ${CLASS_NAMES.map((n, i) => `<option value="${i}" ${state.fit === i ? 'selected' : ''}>${n}${state.screw !== 'custom' ? ` (Ø${ISO273[state.screw][i]})` : ''}</option>`).join('')}
+                        ${CLASS_NAMES.map((n, i) => `<option value="${i}" ${state.fit === i ? 'selected' : ''}>${n}${state.screw !== 'custom' ? ` (Ø${ISO273[state.screw][i]} mm)` : ''}</option>`).join('')}
                     </select></div>
             </div>
             <div class="grid grid-cols-3 gap-2">
                 ${num('fx-F', 'F: MAX FASTENER Ø', state.F)}
                 ${num('fx-H', 'H: MIN HOLE Ø', state.H)}
                 ${num('fx-htol', 'HOLE + TOL', state.holeTol)}
-            </div>
-            <div class="flex items-center justify-between mt-3">
-                <span class="text-xs font-bold text-slate-500">UNITS</span>
-                <div class="flex gap-2 w-40">${seg('units', 'units', 'mm', 'mm')}${seg('units', 'units', 'in', 'inch')}</div>
             </div>
         </div>
 
@@ -344,13 +345,11 @@ function bindControls() {
     const rerender = (controls = false) => { if (controls) renderControls(); renderScene(); };
 
     c.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { state.mode = b.dataset.mode; rerender(true); });
-    c.querySelectorAll('[data-units]').forEach(b => b.onclick = () => { state.units = b.dataset.units; rerender(true); });
 
     const applyPreset = () => {
         if (state.screw === 'custom') return;
-        state.F = parseFloat(state.screw.slice(1));
-        state.H = ISO273[state.screw][state.fit];
-        state.units = 'mm';
+        state.F = +fromMm(parseFloat(state.screw.slice(1))).toFixed(5);   // metric sizes, shown in the current unit
+        state.H = +fromMm(ISO273[state.screw][state.fit]).toFixed(5);
     };
     $('fx-screw').onchange = e => { state.screw = e.target.value; applyPreset(); rerender(true); };
     $('fx-fit').onchange = e => { state.fit = +e.target.value; applyPreset(); rerender(true); };

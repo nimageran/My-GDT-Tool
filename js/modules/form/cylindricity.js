@@ -2,8 +2,13 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', perLength: ['scale'],
+    lengths: ['toleranceRadial', 'nominalRadius', 'height', 'deformTaper', 'deformBend', 'deformBarrel', 'deformOval'],
+    nice: { mm: { toleranceRadial: 0.5, nominalRadius: 20, height: 45, scale: 12 } } };
+
+const f4 = v => fmt(v);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -39,12 +44,14 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -172,25 +179,29 @@ function minimumZone(pts) {
 
 // The search stops within about a millionth of an inch; allow for that so a
 // shape exactly at the limit reads as a pass
-const FIT_SLACK = 5e-6;
+const FIT_SLACK_IN = 5e-6;
+const FIT_SLACK = () => fromIn(FIT_SLACK_IN);
 
 let fit = null, fitKey = '';   // result for the current shape (rotating the view does not change it)
 
 function computeFit() {
-    const key = [state.deformTaper, state.deformBend, state.deformBarrel, state.deformOval].join();
+    const key = [state.units, state.deformTaper, state.deformBend, state.deformBarrel, state.deformOval].join();
     if (fit && key === fitKey) return fit;
     fitKey = key;
     const pts = [];
     for (let r = 0; r <= FIT_RINGS; r++) {
         for (let a = 0; a < FIT_SEGMENTS; a++) pts.push(surfacePoint(r / FIT_RINGS - 0.5, (a / FIT_SEGMENTS) * Math.PI * 2));
     }
-    return minimumZone(pts);
+    // The search is tuned for inch-sized numbers: solve in inches, report in the current unit
+    const k = fromIn(1);
+    const z = minimumZone(pts.map(p => ({ x: p.x / k, y: p.y / k, z: p.z / k })));
+    return { axis: { ...z.axis, x0: z.axis.x0 * k, z0: z.axis.z0 * k }, min: z.min * k, max: z.max * k, width: z.width * k, mid: z.mid * k };
 }
 
 // Inside the tolerance zone centred on the best-fit cylinder?
 function inZone(p) {
     const d = distToAxis(p, fit.axis);
-    return Math.abs(d - fit.mid) <= state.toleranceRadial / 2 + FIT_SLACK;
+    return Math.abs(d - fit.mid) <= state.toleranceRadial / 2 + FIT_SLACK();
 }
 
 // --- RENDERING ORCHESTRATION ---
@@ -394,7 +405,7 @@ function drawResultsCard() {
     // Form error = width of the narrowest zone that holds the whole surface
     const band = fit.width;
     const tol = state.toleranceRadial;
-    const pass = band <= tol + FIT_SLACK;
+    const pass = band <= tol + FIT_SLACK();
     svgContainer.appendChild(resultsCard({
         title: 'Cylindricity', pass,
         rows: [['Band needed', f4(band), { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed (band)', f4(tol)]],
@@ -449,7 +460,7 @@ function renderControls() {
                     <span class="text-3xl">⌭</span>
                 </div>
                 <div class="px-3 py-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceRadial}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceRadial}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
             </div>
@@ -466,7 +477,7 @@ function renderControls() {
                         <span>Taper (one end bigger)</span>
                         <span id="val-taper">0.000</span>
                     </div>
-                    <input type="range" id="slide-taper" min="-0.03" max="0.03" step="0.001" value="${state.deformTaper}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-taper" min="${-fromIn(0.03)}" max="${fromIn(0.03)}" step="${fromIn(0.001)}" value="${state.deformTaper}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
                 
                 <div>
@@ -474,7 +485,7 @@ function renderControls() {
                         <span>Barrel / Hourglass</span>
                         <span id="val-barrel">0.000</span>
                     </div>
-                    <input type="range" id="slide-barrel" min="-0.03" max="0.03" step="0.001" value="${state.deformBarrel}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-barrel" min="${-fromIn(0.03)}" max="${fromIn(0.03)}" step="${fromIn(0.001)}" value="${state.deformBarrel}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
 
                 <div>
@@ -482,7 +493,7 @@ function renderControls() {
                         <span>Bend (curved axis)</span>
                         <span id="val-bend">0.000</span>
                     </div>
-                    <input type="range" id="slide-bend" min="-0.03" max="0.03" step="0.001" value="${state.deformBend}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-bend" min="${-fromIn(0.03)}" max="${fromIn(0.03)}" step="${fromIn(0.001)}" value="${state.deformBend}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
 
                 <div>
@@ -490,7 +501,7 @@ function renderControls() {
                         <span>Oval (out of round)</span>
                         <span id="val-oval">0.000</span>
                     </div>
-                    <input type="range" id="slide-oval" min="0" max="0.03" step="0.001" value="${state.deformOval}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-oval" min="0" max="${fromIn(0.03)}" step="${fromIn(0.001)}" value="${state.deformOval}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
             
@@ -525,10 +536,10 @@ function bindControlEvents() {
         state.deformBend = parseFloat(sBend.value);
         state.deformOval = parseFloat(sOval.value);
         
-        vTaper.innerText = state.deformTaper.toFixed(3);
-        vBarrel.innerText = state.deformBarrel.toFixed(3);
-        vBend.innerText = state.deformBend.toFixed(3);
-        vOval.innerText = state.deformOval.toFixed(3);
+        vTaper.innerText = f4(state.deformTaper);
+        vBarrel.innerText = f4(state.deformBarrel);
+        vBend.innerText = f4(state.deformBend);
+        vOval.innerText = f4(state.deformOval);
         
         renderScene();
     };

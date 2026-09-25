@@ -2,8 +2,13 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName, decimals } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', perLength: ['scale'],
+    lengths: ['toleranceTotal', 'nominalRadius', 'height', 'eccentricity', 'taper', 'bend', 'probeY', 'probeDir'],
+    nice: { mm: { toleranceTotal: 0.3, nominalRadius: 25, height: 56, probeY: -25, probeDir: 0.25, scale: 9.8 } } };
+
+const f4 = v => fmt(v);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -47,6 +52,7 @@ let animationFrameId = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     resetScan(); // Clear old data
@@ -54,6 +60,7 @@ export function draw(svg) {
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -195,17 +202,18 @@ function renderScene() {
 function drawGrid() {
     const group = createSVG('g', { stroke: '#f1f5f9', 'stroke-width': 1 });
     // Floor
-    for(let x=-2; x<=2; x+=0.5) {
-        const p1 = project(x, -1.5, -2);
-        const p2 = project(x, -1.5, 2);
+    for(let i=-4; i<=4; i++) {
+        const x = fromIn(i * 0.5);
+        const p1 = project(x, fromIn(-1.5), fromIn(-2));
+        const p2 = project(x, fromIn(-1.5), fromIn(2));
         group.appendChild(createSVG('line', { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y }));
     }
     svgContainer.appendChild(group);
 }
 
 function drawDatumAxis() {
-    const p1 = project(0, -1.5, 0);
-    const p2 = project(0, 1.5, 0);
+    const p1 = project(0, fromIn(-1.5), 0);
+    const p2 = project(0, fromIn(1.5), 0);
     
     const group = createSVG('g', {});
     group.appendChild(createSVG('line', {
@@ -342,7 +350,7 @@ function drawProbe() {
     const dummyPt = getSurfacePoint(probeY, -Math.PI/2); // Just to get radius
     // Visual position: Slightly offset from surface
     const pSurf = project(dummyPt.x, dummyPt.y, dummyPt.z);
-    const pBody = project(dummyPt.x, dummyPt.y, dummyPt.z + 0.5); // Pull towards camera
+    const pBody = project(dummyPt.x, dummyPt.y, dummyPt.z + fromIn(0.5)); // Pull towards camera
     
     const group = createSVG('g', {});
     
@@ -371,7 +379,7 @@ function drawResultsCard() {
     // Total FIM = highest − lowest reading over the whole surface
     const fim = minReading === Infinity ? 0 : maxReading - minReading;
     const pass = fim <= toleranceTotal;
-    const rd = v => (Number.isFinite(v) ? (Math.abs(v) < 5e-5 ? 0 : v).toFixed(4) : '—');
+    const rd = v => (Number.isFinite(v) ? (Math.abs(v) < fromIn(5e-5) ? 0 : v).toFixed(decimals()) : '—');
     svgContainer.appendChild(resultsCard({
         title: 'Total runout', pass,
         rows: [['Dial movement (FIM)', f4(fim), { strong: true, color: pass ? COLORS.pass : COLORS.fail }], ['Allowed', f4(toleranceTotal)],
@@ -379,7 +387,7 @@ function drawResultsCard() {
         measured: fim, allowed: toleranceTotal,
         sentence: pass ? `Over the whole surface the dial moves ${f4(fim)}, within the ${f4(toleranceTotal)} allowed: it passes.`
             : `Over the whole surface the dial moves ${f4(fim)}, more than the ${f4(toleranceTotal)} allowed: it fails.`,
-        note: `Eccentricity ${state.eccentricity.toFixed(4)}" · taper ${state.taper.toFixed(4)}" · bend ${state.bend.toFixed(4)}"`
+        note: `Eccentricity ${f4(state.eccentricity)} · taper ${f4(state.taper)} · bend ${f4(state.bend)}`
     }).g);
 }
 
@@ -404,7 +412,7 @@ function renderControls() {
                     <span class="text-3xl">⌰</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceTotal}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceTotal}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400">A-B</div>
@@ -421,7 +429,7 @@ function renderControls() {
                         <span>Off-centre (eccentricity)</span>
                         <span id="val-ecc">0.000</span>
                     </div>
-                    <input type="range" id="slide-ecc" min="0" max="0.010" step="0.0001" value="${state.eccentricity}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-ecc" min="0" max="${fromIn(0.010)}" step="${fromIn(0.0001)}" value="${state.eccentricity}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
                 
                 <div>
@@ -429,7 +437,7 @@ function renderControls() {
                         <span>Taper (one end bigger)</span>
                         <span id="val-taper">0.000</span>
                     </div>
-                    <input type="range" id="slide-taper" min="0" max="0.010" step="0.0001" value="${state.taper}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-taper" min="0" max="${fromIn(0.010)}" step="${fromIn(0.0001)}" value="${state.taper}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
 
                 <div>
@@ -437,7 +445,7 @@ function renderControls() {
                         <span>Bend (curved axis)</span>
                         <span id="val-bend">0.000</span>
                     </div>
-                    <input type="range" id="slide-bend" min="0" max="0.010" step="0.0001" value="${state.bend}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="slide-bend" min="0" max="${fromIn(0.010)}" step="${fromIn(0.0001)}" value="${state.bend}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
             
@@ -469,9 +477,9 @@ function bindControlEvents() {
         state.taper = parseFloat(sTaper.value);
         state.bend = parseFloat(sBend.value);
         
-        vEcc.innerText = state.eccentricity.toFixed(4);
-        vTaper.innerText = state.taper.toFixed(4);
-        vBend.innerText = state.bend.toFixed(4);
+        vEcc.innerText = state.eccentricity.toFixed(decimals());
+        vTaper.innerText = state.taper.toFixed(decimals());
+        vBend.innerText = state.bend.toFixed(decimals());
         
         resetScan();
     };

@@ -9,6 +9,10 @@ import {
     COLORS, text, wrapText, addDefs, zoneBand, zoneEdge, nominalLine, datumGround,
     datumFeatureSymbol, featureControlFrame, legend, resultsStrip
 } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
+
+const UNITS = { native: 'in', lengths: ['tolerance', 'tilt', 'wave'], perLength: ['scale'],
+    nice: { mm: { tolerance: 0.25, tilt: 0.1, wave: 0.08, scale: 240 } } };
 
 // --- STATE (inches) ---
 const state = {
@@ -25,7 +29,7 @@ const X1 = 170, X2 = 690;  // part left / right
 const MAX_DEV_PX = 70;     // keep the exaggerated surface on the stage
 const MAX_ZONE_PX = 150;
 const FCF_X = 740, LEADER_Y = 200;
-const MAX_TILT = 0.03, MAX_WAVE = 0.03;
+const maxTilt = () => fromIn(0.03), maxWave = () => fromIn(0.03);
 const N = 104;             // measured points across the face
 
 let svgContainer = null;
@@ -33,12 +37,14 @@ let controlsContainer = null;
 let drag = null;           // 'left' | 'right' while dragging an end
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -89,7 +95,7 @@ function renderScene() {
     // zone width marker at the left
     const zx = X1 - 48;
     svgContainer.appendChild(createSVG('line', { x1: zx, y1: zTop, x2: zx, y2: zBot, stroke: COLORS.zoneText, 'stroke-width': 1.5, 'marker-start': 'url(#thm-arrow-zone)', 'marker-end': 'url(#thm-arrow-zone)' }));
-    svgContainer.appendChild(text(`${fmtTol(state.tolerance)}"`, zx - 8, (zTop + zBot) / 2 + 4, { size: 13, weight: 600, mono: true, fill: COLORS.zoneText, anchor: 'end' }));
+    svgContainer.appendChild(text(`${fmtTol(state.tolerance)}${suffix()}`, zx - 8, (zTop + zBot) / 2 + 4, { size: 13, weight: 600, mono: true, fill: COLORS.zoneText, anchor: 'end' }));
 
     // the part: body up to the measured top face
     const top = r.pts.map((h, i) => `${X(i / N).toFixed(1)},${Y(h).toFixed(1)}`);
@@ -116,8 +122,8 @@ function renderScene() {
         svgContainer.appendChild(text(label, x, ly, { size: 12.5, weight: 600, fill: COLORS.text, anchor: 'middle' }));
     };
     if (r.error > 1e-9) {
-        mark(iHi, `highest ${r.hi >= 0 ? '+' : ''}${r.hi.toFixed(4)}"`, Math.min(zTop, Y(r.hi)) - 10);
-        mark(iLo, `lowest ${r.lo >= 0 ? '+' : ''}${r.lo.toFixed(4)}"`, Math.max(zBot, Y(r.lo)) + 22);
+        mark(iHi, `highest ${r.hi >= 0 ? '+' : ''}${r.hi.toFixed(4)}${suffix()}`, Math.min(zTop, Y(r.hi)) - 10);
+        mark(iLo, `lowest ${r.lo >= 0 ? '+' : ''}${r.lo.toFixed(4)}${suffix()}`, Math.max(zBot, Y(r.lo)) + 22);
     }
 
     // drag handles at the two ends
@@ -127,7 +133,7 @@ function renderScene() {
     svgContainer.appendChild(text('drag an end to tilt', X2 - 14, Math.max(zBot, Y(r.pts[N])) + 44, { size: 12, italic: true, fill: COLORS.muted, anchor: 'end' }));
 
     // legend
-    const ex = k / 100;   // vertical px per inch vs about 100 px per inch along the part
+    const ex = k / perFromIn(100);   // vertical px per unit vs about 100 px per inch along the part
     svgContainer.appendChild(legend(24, 24, [
         { kind: 'zone', label: 'Zone (parallel to A, floats up/down)' },
         { kind: 'actual', label: 'Top face as made' },
@@ -140,7 +146,7 @@ function renderScene() {
     const tx = X(0.85), ty = Y(surfaceAt(0.85, state));
     svgContainer.appendChild(createSVG('path', { d: `M ${FCF_X},${LEADER_Y} L ${tx + 30},${LEADER_Y} L ${tx},${ty - 4}`, fill: 'none', stroke: COLORS.ink, 'stroke-width': 1.5, 'marker-end': 'url(#thm-arrow-ink)' }));
     svgContainer.appendChild(fcf.g);
-    svgContainer.appendChild(wrapText(`Every point of the top face must lie between two planes ${fmtTol(state.tolerance)}" apart, parallel to datum A. The planes may sit at any height.`,
+    svgContainer.appendChild(wrapText(`Every point of the top face must lie between two planes ${fmtTol(state.tolerance)}${suffix()} apart, parallel to datum A. The planes may sit at any height.`,
         FCF_X, LEADER_Y + 44, 30, 17, { size: 12.5, fill: COLORS.muted }));
 
     drawResults(r);
@@ -149,9 +155,9 @@ function renderScene() {
 function drawResults(r) {
     const e = r.error.toFixed(4), t = fmtTol(state.tolerance);
     let sentence;
-    if (r.error <= 1e-9) sentence = `The top face is perfectly parallel to datum A: the dial does not move. It passes with the full ${t}" to spare.`;
-    else if (r.pass) sentence = `Swept across the top, the dial moves ${e}" (highest − lowest). That fits between two planes ${t}" apart, parallel to A, so it passes.`;
-    else sentence = `The dial moves ${e}" across the top, but the planes are only ${t}" apart. ${(r.error - state.tolerance).toFixed(4)}" sticks out, so it fails.`;
+    if (r.error <= 1e-9) sentence = `The top face is perfectly parallel to datum A: the dial does not move. It passes with the full ${t}${suffix()} to spare.`;
+    else if (r.pass) sentence = `Swept across the top, the dial moves ${e}${suffix()} (highest − lowest). That fits between two planes ${t}${suffix()} apart, parallel to A, so it passes.`;
+    else sentence = `The dial moves ${e}${suffix()} across the top, but the planes are only ${t}${suffix()} apart. ${(r.error - state.tolerance).toFixed(4)}${suffix()} sticks out, so it fails.`;
     svgContainer.appendChild(resultsStrip({
         pass: r.pass,
         measured: { label: 'Dial high − low', value: r.error },
@@ -177,7 +183,7 @@ function setupInteractions(svg) {
         // the end's height = ±tilt/2 + wave term (zero at the ends), so tilt = ±2 × height
         const h = (TOP_Y - pos(e).y) / k0;
         const tilt = drag === 'right' ? 2 * h : -2 * h;
-        state.tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, +tilt.toFixed(4)));
+        state.tilt = Math.max(-maxTilt(), Math.min(maxTilt(), +tilt.toFixed(4)));
         renderScene();
         syncInputs();
     });
@@ -198,7 +204,7 @@ function renderControls() {
                     <span class="text-3xl">∥</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.tolerance}" step="0.001" min="0.001"
+                    <input type="number" id="ctrl-tol" value="${state.tolerance}" step="${step()}" min="${step()}"
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400 flex-1 text-center">A</div>
@@ -206,17 +212,17 @@ function renderControls() {
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Top face as made (in)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Top face as made (${unitName()})</h4>
             <div class="flex items-center gap-2 mb-2">
                 <label class="w-20 text-xs font-bold text-slate-500">TILT</label>
-                <input type="number" id="ctrl-tilt" step="0.001" value="${state.tilt}" class="flex-1 px-3 py-2 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500">
+                <input type="number" id="ctrl-tilt" step="${step()}" value="${state.tilt}" class="flex-1 px-3 py-2 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500">
             </div>
-            <input type="range" id="slide-tilt" min="-${MAX_TILT}" max="${MAX_TILT}" step="0.0005" value="${state.tilt}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mb-4">
+            <input type="range" id="slide-tilt" min="-${maxTilt()}" max="${maxTilt()}" step="${fromIn(0.0005)}" value="${state.tilt}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mb-4">
             <div class="flex items-center gap-2 mb-2">
                 <label class="w-20 text-xs font-bold text-slate-500">WAVINESS</label>
-                <input type="number" id="ctrl-wave" step="0.001" min="0" value="${state.wave}" class="flex-1 px-3 py-2 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500">
+                <input type="number" id="ctrl-wave" step="${step()}" min="0" value="${state.wave}" class="flex-1 px-3 py-2 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500">
             </div>
-            <input type="range" id="slide-wave" min="0" max="${MAX_WAVE}" step="0.0005" value="${state.wave}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="slide-wave" min="0" max="${maxWave()}" step="${fromIn(0.0005)}" value="${state.wave}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
             <div class="grid grid-cols-2 gap-2 mt-4">
                 <button data-p="perfect" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Perfect</button>
                 <button data-p="tilt" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Tilted only</button>
@@ -239,8 +245,8 @@ function renderControls() {
         document.getElementById(`ctrl-${key}`).onchange = e => set(e.target.value);
         document.getElementById(`slide-${key}`).oninput = e => set(e.target.value);
     };
-    bind('tilt', MAX_TILT, -MAX_TILT);
-    bind('wave', MAX_WAVE, 0);
+    bind('tilt', maxTilt(), -maxTilt());
+    bind('wave', maxWave(), 0);
     controlsContainer.querySelectorAll('[data-p]').forEach(b => b.onclick = () => {
         const t = state.tolerance;
         const p = { perfect: [0, 0], tilt: [t * 0.8, 0], wave: [0, t * 0.8], fail: [t * 0.8, t * 1.0] }[b.dataset.p];

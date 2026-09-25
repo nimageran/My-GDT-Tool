@@ -5,6 +5,10 @@
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { evaluatePosition, EPS } from '../../gdt_math.js';
 import { COLORS, text, addDefs, featureControlFrame, resultsStrip } from '../../theme.js';
+import { syncUnits, step } from '../../units.js';
+
+const UNITS = { native: 'in', lengths: ['tolerance', 'nominal', 'plusTol', 'minusTol'],
+    custom: (s, conv) => { s.holes = s.holes.map(h => ({ ...h, bx: conv(h.bx), by: conv(h.by), mx: conv(h.mx), my: conv(h.my), dia: conv(h.dia) })); } };
 
 // --- STATE ---
 const STORAGE_KEY = 'cmm_position_v1';
@@ -53,11 +57,13 @@ let pasteMessage = '';
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    if (syncUnits(state, UNITS)) saveState();
     svgContainer = svg;
     renderScene();
 }
 
 export function loadControls(container) {
+    if (syncUnits(state, UNITS)) saveState();
     controlsContainer = container;
     renderControls();
 }
@@ -299,21 +305,17 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Callout on the drawing</h4>
             <div class="flex items-center gap-2 mb-3">
                 <label class="text-sm font-semibold text-slate-700 w-32 shrink-0">Position Ø</label>
-                <input type="number" id="cmm-tol" value="${state.tolerance}" step="0.001" min="0.001" class="${numInput} bg-yellow-50">
+                <input type="number" id="cmm-tol" value="${state.tolerance}" step="${step()}" min="${step()}" class="${numInput} bg-yellow-50">
             </div>
             <div class="flex gap-2 mb-3">${seg('mod', 'modifier', 'RFS', 'RFS')}${seg('mod', 'modifier', 'MMC', 'MMC Ⓜ')}${seg('mod', 'modifier', 'LMC', 'LMC Ⓛ')}</div>
             <div class="flex gap-2 mb-3">${seg('type', 'featureType', 'hole', 'Holes')}${seg('type', 'featureType', 'pin', 'Pins / bosses')}</div>
             <div class="grid grid-cols-3 gap-2">
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">SIZE Ø</label>
-                    <input type="number" id="cmm-nom" step="0.001" value="${state.nominal}" class="${numInput}"></div>
+                    <input type="number" id="cmm-nom" step="${step()}" value="${state.nominal}" class="${numInput}"></div>
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">+ TOL</label>
-                    <input type="number" id="cmm-plus" step="0.001" min="0" value="${state.plusTol}" class="${numInput}"></div>
+                    <input type="number" id="cmm-plus" step="${step()}" min="0" value="${state.plusTol}" class="${numInput}"></div>
                 <div><label class="block text-xs font-bold text-slate-500 mb-1">− TOL</label>
-                    <input type="number" id="cmm-minus" step="0.001" min="0" value="${state.minusTol}" class="${numInput}"></div>
-            </div>
-            <div class="flex items-center justify-between mt-3">
-                <span class="text-xs font-bold text-slate-500">UNITS</span>
-                <div class="flex gap-2 w-40">${seg('units', 'units', 'in', 'inch')}${seg('units', 'units', 'mm', 'mm')}</div>
+                    <input type="number" id="cmm-minus" step="${step()}" min="0" value="${state.minusTol}" class="${numInput}"></div>
             </div>
         </div>
 
@@ -372,7 +374,6 @@ function bindControlEvents() {
     $('cmm-tol').onchange = e => { state.tolerance = readTolerance(e.target.value); changed(); };
     c.querySelectorAll('[data-mod]').forEach(b => { b.onclick = () => { state.modifier = b.dataset.mod; changed({ controls: true }); }; });
     c.querySelectorAll('[data-type]').forEach(b => { b.onclick = () => { state.featureType = b.dataset.type; changed({ controls: true }); }; });
-    c.querySelectorAll('[data-units]').forEach(b => { b.onclick = () => { state.units = b.dataset.units; changed({ controls: true }); }; });
 
     const limit = (id, key, allowZero) => {
         $(id).onchange = e => {
@@ -408,7 +409,7 @@ function bindControlEvents() {
         state.holes.push(next);
         changed({ controls: true });
     };
-    $('cmm-example').onclick = () => { Object.assign(state, structuredClone(DEFAULTS)); pasteMessage = ''; changed({ controls: true }); };
+    $('cmm-example').onclick = () => { Object.assign(state, structuredClone(DEFAULTS)); syncUnits(state, UNITS); pasteMessage = ''; changed({ controls: true }); };
     $('cmm-clear').onclick = () => { state.holes = []; changed({ controls: true }); };
 
     $('cmm-import').onclick = () => {

@@ -9,6 +9,7 @@ import { createSVG } from './drawing_utils.js';
 import { COLORS, text, wrapText } from './theme.js';
 import { hasExplanation, openExplain, closeExplain } from './explain.js';
 import { linkify } from './glossary.js';
+import { getUnits, setUnits } from './units.js';
 
 // --- GLOBAL STATE ---
 let activeSymbolKey = null;
@@ -35,6 +36,7 @@ function init() {
         openNoteEditor(t && t.cat !== 'HOME' && t.sym !== 'notebook' ? { tool: t } : {});
     };
     document.getElementById('notebookBtn').onclick = () => loadSymbolModule('LEARN', 'notebook');
+    setupUnitsToggle();
     // Open on the start page, never straight into a specialist tool
     loadSymbolModule('HOME', 'home');
 }
@@ -111,6 +113,23 @@ async function loadSymbolModule(catKey, symKey) {
         console.error(error);
         controlsContent.innerHTML = `<p class="text-red-500">Error loading ${symData.name}</p>`;
     }
+}
+
+// --- UNITS: one mm / inch switch; the open tool reloads in the new unit ---
+function setupUnitsToggle() {
+    const box = document.getElementById('unitsToggle');
+    const paint = () => box.querySelectorAll('[data-u]').forEach(b => {
+        const on = b.dataset.u === getUnits();
+        b.className = `px-2.5 py-1.5 transition-colors ${on ? 'bg-yellow-500 text-slate-900' : 'text-slate-300 hover:bg-slate-800'}`;
+        b.setAttribute('aria-pressed', on);
+    });
+    box.querySelectorAll('[data-u]').forEach(b => b.onclick = () => setUnits(b.dataset.u));
+    window.addEventListener('gdt:units', () => {
+        paint();
+        const t = getActive();
+        if (t) loadSymbolModule(t.cat, t.sym);
+    });
+    paint();
 }
 
 // --- 5. UI UTILITIES (Sidebar Toggle) ---

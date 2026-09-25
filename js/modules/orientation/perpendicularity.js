@@ -5,6 +5,10 @@ import {
     COLORS, text, wrapText, addDefs, zoneBand, zoneEdge, nominalLine, datumGround,
     datumFeatureSymbol, dimension, featureControlFrame, legend, resultsStrip
 } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
+
+const UNITS = { native: 'in', lengths: ['toleranceWidth', 'featureHeight', 'topDeviation'], perLength: ['scale'],
+    nice: { mm: { toleranceWidth: 0.4, featureHeight: 8, topDeviation: 0.12, scale: 200 } } };
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -26,7 +30,8 @@ const VIEW_H = 340;
 const BASE_Y = 540;        // Datum A surface
 const BASE_X = 560;        // Bottom of the controlled (right) face
 const BLOCK_W = 180;
-const MAX_DEV = 0.03;      // Matches the tilt slider range
+const MAX_DEV_IN = 0.03;   // Matches the tilt slider range
+const maxDev = () => fromIn(MAX_DEV_IN);
 const MAX_LEAN_PX = 170;   // Keep the leaning top clear of the legend and frame
 const MAX_ZONE_PX = 300;
 const FCF_X = 760;
@@ -39,12 +44,14 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -134,7 +141,7 @@ function drawToleranceZone() {
     ]));
     g.appendChild(zoneEdge(x1, BASE_Y, x1, zoneTop));
     g.appendChild(zoneEdge(x2, BASE_Y, x2, zoneTop));
-    g.appendChild(dimension(x1, zoneTop - 14, x2, zoneTop - 14, `${fmtTol(state.toleranceWidth)}" zone`, { color: 'zone' }));
+    g.appendChild(dimension(x1, zoneTop - 14, x2, zoneTop - 14, `${fmtTol(state.toleranceWidth)}${suffix()} zone`, { color: 'zone' }));
     svgContainer.appendChild(g);
 }
 
@@ -195,7 +202,7 @@ function drawAnnotations(result) {
     if (result.lean > 0) {
         const y = topY + 34;
         g.appendChild(dimension(BASE_X, y, topX, y, '', { color: result.pass ? 'muted' : 'fail' }));
-        g.appendChild(text(`lean ${result.lean.toFixed(4)}"`, labelColumnX(), y + 4, {
+        g.appendChild(text(`lean ${result.lean.toFixed(4)}${suffix()}`, labelColumnX(), y + 4, {
             size: 12, weight: 600, mono: true, fill: result.pass ? COLORS.muted : COLORS.fail
         }));
     }
@@ -225,7 +232,7 @@ function drawLegendAndFrame() {
     }));
     svgContainer.appendChild(fcf.g);
     svgContainer.appendChild(wrapText(
-        `Every point of this surface must lie between two parallel planes ${fmtTol(state.toleranceWidth)}" apart, held square to datum A.`,
+        `Every point of this surface must lie between two parallel planes ${fmtTol(state.toleranceWidth)}${suffix()} apart, held square to datum A.`,
         FCF_X, LEADER_Y + 44, 32, 17, { size: 12.5, fill: COLORS.muted }
     ));
 }
@@ -236,12 +243,12 @@ function drawResults(result) {
     const angle = result.angleDeg.toFixed(2);
     let sentence;
     if (result.lean === 0) {
-        sentence = `The surface is perfectly square to datum A, so it passes with the full ${fmtTol(toleranceWidth)}" to spare.`;
+        sentence = `The surface is perfectly square to datum A, so it passes with the full ${fmtTol(toleranceWidth)}${suffix()} to spare.`;
     } else if (result.pass) {
-        sentence = `The surface leans ${lean}" over its ${featureHeight.toFixed(3)}" height (${angle}° off square). That fits inside a ${fmtTol(toleranceWidth)}" zone held square to datum A, so it passes.`;
+        sentence = `The surface leans ${lean}${suffix()} over its ${featureHeight.toFixed(3)}${suffix()} height (${angle}° off square). That fits inside a ${fmtTol(toleranceWidth)}${suffix()} zone held square to datum A, so it passes.`;
     } else {
         const over = (result.lean - toleranceWidth).toFixed(4);
-        sentence = `The surface leans ${lean}" over its ${featureHeight.toFixed(3)}" height (${angle}° off square). The zone is only ${fmtTol(toleranceWidth)}" wide, so ${over}" of lean sticks out. It fails.`;
+        sentence = `The surface leans ${lean}${suffix()} over its ${featureHeight.toFixed(3)}${suffix()} height (${angle}° off square). The zone is only ${fmtTol(toleranceWidth)}${suffix()} wide, so ${over}${suffix()} of lean sticks out. It fails.`;
     }
     svgContainer.appendChild(resultsStrip({
         pass: result.pass,
@@ -280,7 +287,7 @@ function setupInteractions(svg) {
 
         const m = getMousePos(evt);
         const dev = (m.x - BASE_X) / state.dragScale;
-        state.topDeviation = Math.max(-MAX_DEV, Math.min(MAX_DEV, dev));
+        state.topDeviation = Math.max(-maxDev(), Math.min(maxDev(), dev));
         renderScene();
     });
 
@@ -308,7 +315,7 @@ function renderControls() {
                     <span class="text-3xl">⊥</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="0.001" min="0.001"
+                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="${step()}" min="${step()}"
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400 flex-1 text-center">A</div>
@@ -317,28 +324,28 @@ function renderControls() {
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Tilt Deviation (in)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Tilt Deviation (${unitName()})</h4>
             <div class="flex items-center gap-2 mb-2">
                 <label class="w-16 text-xs font-bold text-slate-500">LEAN</label>
-                <input type="number" id="ctrl-dev" step="0.001" value="${state.topDeviation.toFixed(4)}"
+                <input type="number" id="ctrl-dev" step="${step()}" value="${state.topDeviation.toFixed(4)}"
                     class="flex-1 px-3 py-2 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500">
             </div>
-            <input type="range" id="slide-dev" min="-${MAX_DEV}" max="${MAX_DEV}" step="0.001" value="${state.topDeviation}"
+            <input type="range" id="slide-dev" min="-${maxDev()}" max="${maxDev()}" step="${fromIn(0.001)}" value="${state.topDeviation}"
                 class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
 
             <div class="mt-4 pt-4 border-t border-slate-100">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold text-slate-500">SIDEWAYS EXAGGERATION</span>
                 </div>
-                <input type="range" id="ctrl-zoom" min="2000" max="10000" step="500" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+                <input type="range" id="ctrl-zoom" min="${perFromIn(2000)}" max="${perFromIn(10000)}" step="${perFromIn(500)}" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
             </div>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Part Geometry</h4>
             <div class="flex items-center justify-between mb-4">
-                <label class="text-sm font-semibold text-slate-700">Surface Height (in)</label>
-                <input type="number" id="ctrl-height" value="${state.featureHeight}" step="0.010" min="0.010"
+                <label class="text-sm font-semibold text-slate-700">Surface Height (${unitName()})</label>
+                <input type="number" id="ctrl-height" value="${state.featureHeight}" step="${fromIn(0.010)}" min="${fromIn(0.010)}"
                     class="w-24 px-2 py-1 border border-slate-300 rounded text-right font-mono">
             </div>
 
@@ -365,7 +372,7 @@ function bindControlEvents() {
 
     const updateDev = (val) => {
         const v = parseFloat(val) || 0;
-        state.topDeviation = Math.max(-MAX_DEV, Math.min(MAX_DEV, v));
+        state.topDeviation = Math.max(-maxDev(), Math.min(maxDev(), v));
         if(inputDev) inputDev.value = state.topDeviation.toFixed(4);
         if(slideDev) slideDev.value = state.topDeviation;
         renderScene();
@@ -376,7 +383,7 @@ function bindControlEvents() {
 
     inputHeight.oninput = (e) => {
         const h = parseFloat(e.target.value);
-        state.featureHeight = h > 0 ? h : 0.1;
+        state.featureHeight = h > 0 ? h : fromIn(0.1);
         renderScene();
     };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); renderScene(); };

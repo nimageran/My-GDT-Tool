@@ -2,8 +2,12 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', lengths: ['toleranceWidth', 'zValues'], perLength: ['zScale'],
+    nice: { mm: { toleranceWidth: 0.25, zScale: 200 } } };
+
+const f4 = v => fmt(v);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -41,12 +45,14 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -350,7 +356,7 @@ function setupInteractions(svg) {
         // Dragging Y pixels affects Z inches
         const dy = m.y - state.dragStartY;
         // Sensitivity
-        const sensitivity = 0.0002; 
+        const sensitivity = fromIn(0.0002); 
         // Move mouse down (+Y) -> Surface goes down (-Z)
         const newZ = state.dragStartZ - (dy * sensitivity);
         
@@ -377,7 +383,7 @@ function renderControls() {
                     <span class="text-3xl" style="transform: skew(-15deg);">⏥</span>
                 </div>
                 <div class="px-3 py-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
             </div>
@@ -403,7 +409,7 @@ function renderControls() {
         
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">View Zoom</h4>
-            <input type="range" id="ctrl-zoom" min="2000" max="8000" step="100" value="${state.zScale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+            <input type="range" id="ctrl-zoom" min="${perFromIn(2000)}" max="${perFromIn(8000)}" step="${perFromIn(100)}" value="${state.zScale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
         </div>
     `;
 
@@ -430,14 +436,14 @@ function bindControlEvents() {
     document.getElementById('btn-bowl').onclick = () => setGrid((r,c) => {
         // Distance from center (2,2)
         const d = Math.sqrt((r-2)**2 + (c-2)**2);
-        return 0.003 * d;
+        return fromIn(0.003) * d;
     });
     document.getElementById('btn-hill').onclick = () => setGrid((r,c) => {
         const d = Math.sqrt((r-2)**2 + (c-2)**2);
-        return 0.003 * (2 - d);
+        return fromIn(0.003) * (2 - d);
     });
     document.getElementById('btn-twist').onclick = () => setGrid((r,c) => {
-        return 0.002 * (r-2) * (c-2);
+        return fromIn(0.002) * (r-2) * (c-2);
     });
-    document.getElementById('btn-random').onclick = () => setGrid(() => (Math.random() * 0.01) - 0.005);
+    document.getElementById('btn-random').onclick = () => setGrid(() => fromIn((Math.random() * 0.01) - 0.005));
 }

@@ -2,8 +2,12 @@
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
+import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 
-const f4 = v => `${v.toFixed(4)}"`;
+const UNITS = { native: 'in', lengths: ['toleranceWidth', 'surfaceLength', 'offsetDeviation'], perLength: ['scale'],
+    nice: { mm: { toleranceWidth: 0.5, surfaceLength: 7.5, scale: 60 } } };
+
+const f4 = v => fmt(v);
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -34,12 +38,14 @@ let controlsContainer = null;
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    syncUnits(state, UNITS);
     svgContainer = svg;
     setupInteractions(svg);
     renderScene();
 }
 
 export function loadControls(container) {
+    syncUnits(state, UNITS);
     controlsContainer = container;
     renderControls();
 }
@@ -166,7 +172,7 @@ function drawToleranceZone() {
     const midX = (arrStart.x + arrEnd.x) / 2 + 10;
     const midY = (arrStart.y + arrEnd.y) / 2 - 10;
     const txt = createSVG('text', { x: midX, y: midY, fill: '#2563eb', 'font-size': '14', 'font-weight': 'bold' });
-    txt.textContent = `${toleranceWidth}"`;
+    txt.textContent = `${toleranceWidth}${suffix()}`;
     group.appendChild(txt);
 
     svgContainer.appendChild(group);
@@ -375,7 +381,7 @@ function renderControls() {
                     <span class="text-3xl">∠</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
-                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="0.001" 
+                    <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="${step()}" 
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
                 <div class="px-3 py-2 border-black bg-slate-100 text-slate-400">A</div>
