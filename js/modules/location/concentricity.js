@@ -1,6 +1,6 @@
 // js/modules/location/concentricity.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -48,6 +48,13 @@ export function draw(svg) {
 export function loadControls(container) {
     controlsContainer = container;
     renderControls();
+}
+
+// Called by main.js before another module takes over the canvas
+export function unload() {
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+    svgContainer = null;
 }
 
 // --- ANIMATION LOOP ---
@@ -536,7 +543,7 @@ function bindControlEvents() {
     const vLobe = document.getElementById('val-lobe');
     const vAsym = document.getElementById('val-asym');
 
-    inputTol.oninput = (e) => { state.toleranceDiam = parseFloat(e.target.value) || 0; };
+    inputTol.oninput = (e) => { state.toleranceDiam = readTolerance(e.target.value); };
     btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateParams = () => {

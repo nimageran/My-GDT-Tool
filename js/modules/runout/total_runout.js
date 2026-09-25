@@ -1,6 +1,6 @@
 // js/modules/runout/total_runout.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -54,6 +54,13 @@ export function draw(svg) {
 export function loadControls(container) {
     controlsContainer = container;
     renderControls();
+}
+
+// Called by main.js before another module takes over the canvas
+export function unload() {
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+    svgContainer = null;
 }
 
 // --- MATH HELPERS (3D ENGINE) ---
@@ -568,7 +575,7 @@ function bindControlEvents() {
     const vTaper = document.getElementById('val-taper');
     const vBend = document.getElementById('val-bend');
 
-    inputTol.oninput = (e) => { state.toleranceTotal = parseFloat(e.target.value) || 0; };
+    inputTol.oninput = (e) => { state.toleranceTotal = readTolerance(e.target.value); };
     btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateDeforms = () => {

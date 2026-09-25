@@ -1,6 +1,6 @@
 // js/modules/orientation/angularity.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -125,13 +125,17 @@ function drawToleranceZone() {
     const v = getVector(basicAngle); // Direction of the surface
     const n = getNormal(basicAngle); // Direction of the tolerance width
     
-    // We draw the zone relative to the "Perfect" geometry anchored at center
+    // Angularity only controls orientation, so the zone floats: center it on
+    // the actual surface (midway between its two ends, measured along n).
+    const { dStart, dEnd } = getSurfaceOffsets();
+    const shiftPx = (dStart + dEnd) / 2;
+
     // Upper Boundary Point
-    const u1 = { x: center.x + n.x * halfTolPx, y: center.y + n.y * halfTolPx };
+    const u1 = { x: center.x + n.x * (shiftPx + halfTolPx), y: center.y + n.y * (shiftPx + halfTolPx) };
     const u2 = { x: u1.x + v.x * lenPx, y: u1.y + v.y * lenPx };
     
     // Lower Boundary Point
-    const l1 = { x: center.x - n.x * halfTolPx, y: center.y - n.y * halfTolPx };
+    const l1 = { x: center.x + n.x * (shiftPx - halfTolPx), y: center.y + n.y * (shiftPx - halfTolPx) };
     const l2 = { x: l1.x + v.x * lenPx, y: l1.y + v.y * lenPx };
     
     const group = createSVG('g', {});
@@ -168,6 +172,19 @@ function drawToleranceZone() {
     svgContainer.appendChild(group);
 }
 
+// Signed offsets (px) of the actual surface's two ends from the basic-angle
+// line through the datum anchor, measured along the zone normal.
+function getSurfaceOffsets() {
+    const { center, scale, surfaceLength, basicAngle, angleDeviation, offsetDeviation } = state;
+    const v = getVector(basicAngle + angleDeviation);
+    const nBasic = getNormal(basicAngle);
+    const lenPx = surfaceLength * scale;
+    const start = { x: center.x + nBasic.x * offsetDeviation * scale, y: center.y + nBasic.y * offsetDeviation * scale };
+    const end = { x: start.x + v.x * lenPx, y: start.y + v.y * lenPx };
+    const along = (p) => (p.x - center.x) * nBasic.x + (p.y - center.y) * nBasic.y;
+    return { dStart: along(start), dEnd: along(end) };
+}
+
 function drawPart() {
     const { center, scale, surfaceLength, basicAngle, angleDeviation, offsetDeviation } = state;
     
@@ -178,7 +195,7 @@ function drawPart() {
     const v = getVector(actualAngle);
     
     // The part pivots at the center, but can shift (offsetDeviation) perpendicular to the Basic Angle
-    // This simulates the "Zone is fixed, Part moves" visualization.
+    // The zone floats with it (see drawToleranceZone), so offset alone never fails.
     // Offset Direction is the Normal of the BASIC angle
     const nBasic = getNormal(basicAngle);
     const shiftX = nBasic.x * (offsetDeviation * scale);
@@ -187,16 +204,11 @@ function drawPart() {
     const startPt = { x: center.x + shiftX, y: center.y + shiftY };
     const endPt = { x: startPt.x + v.x * lenPx, y: startPt.y + v.y * lenPx };
     
-    // Determine Pass/Fail
-    // We check if startPt and endPt are within the tolerance zone planes.
-    // Distance from Center Plane = Dot Product of (Point - Center) and NormalBasic
-    // Center Plane is defined by Center(200,600) and NormalBasic.
-    
-    const distStart = Math.abs((startPt.x - center.x)*nBasic.x + (startPt.y - center.y)*nBasic.y);
-    const distEnd = Math.abs((endPt.x - center.x)*nBasic.x + (endPt.y - center.y)*nBasic.y);
-    
-    const limit = (state.toleranceWidth / 2) * scale;
-    const isPass = (distStart <= limit) && (distEnd <= limit);
+    // Pass/Fail: the floating zone must contain both ends of the surface,
+    // i.e. their spread across the zone must not exceed the tolerance width.
+    // Same rule as the HUD (L * sin(angle error)).
+    const { dStart, dEnd } = getSurfaceOffsets();
+    const isPass = Math.abs(dEnd - dStart) <= state.toleranceWidth * scale;
     
     const color = isPass ? '#475569' : '#dc2626'; // Slate or Red
     const fillColor = isPass ? '#cbd5e1' : '#fecaca';
@@ -285,12 +297,8 @@ function drawFuturisticHUD() {
     const errorRad = Math.abs(angleDeviation * Math.PI / 180);
     const actualLinear = surfaceLength * Math.sin(errorRad);
     
-    // Include offset deviation? 
-    // In this simulation, we check if it fits in the FIXED zone.
-    // But standard reporting often "floats" the zone to find the minimum value.
-    // If we assume the zone floats, the error is just due to the angle tilt: L * sin(a).
-    // If we assume the zone is fixed (Position + Angularity), offset counts.
-    // Let's report the "Floating Zone" value (Angle only) vs "Current Zone Fit".
+    // The angularity zone floats (orientation only), so offset does not count;
+    // location would be controlled separately (e.g. by profile or position).
     
     const isPass = actualLinear <= toleranceWidth;
     
@@ -518,7 +526,7 @@ function bindControlEvents() {
     const vBasic = document.getElementById('val-basic');
     const vDev = document.getElementById('val-dev');
 
-    inputTol.oninput = (e) => { state.toleranceWidth = parseFloat(e.target.value) || 0; renderScene(); };
+    inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateParams = () => {

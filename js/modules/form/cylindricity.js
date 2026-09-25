@@ -1,6 +1,6 @@
 // js/modules/form/cylindricity.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -563,7 +563,7 @@ function bindControlEvents() {
     const vBend = document.getElementById('val-bend');
     const vOval = document.getElementById('val-oval');
 
-    inputTol.oninput = (e) => { state.toleranceRadial = parseFloat(e.target.value) || 0; renderScene(); };
+    inputTol.oninput = (e) => { state.toleranceRadial = readTolerance(e.target.value); renderScene(); };
     btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateDeforms = () => {

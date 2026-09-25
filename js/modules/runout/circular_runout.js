@@ -1,6 +1,6 @@
 // js/modules/runout/circular_runout.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -47,6 +47,13 @@ export function draw(svg) {
 export function loadControls(container) {
     controlsContainer = container;
     renderControls();
+}
+
+// Called by main.js before another module takes over the canvas
+export function unload() {
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+    svgContainer = null;
 }
 
 // --- ANIMATION LOOP ---
@@ -525,7 +532,7 @@ function bindControlEvents() {
     const vEcc = document.getElementById('val-ecc');
     const vOval = document.getElementById('val-oval');
 
-    inputTol.oninput = (e) => { state.toleranceRunout = parseFloat(e.target.value) || 0; };
+    inputTol.oninput = (e) => { state.toleranceRunout = readTolerance(e.target.value); };
     inputSpeed.oninput = (e) => { state.speed = parseFloat(e.target.value); };
     btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 

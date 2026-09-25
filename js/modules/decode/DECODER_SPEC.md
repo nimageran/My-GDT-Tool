@@ -7,22 +7,24 @@
 
 ## 1. Host shell contract (DO NOT CHANGE THE SHELL)
 
-The shell (`main.js`) dynamically imports modules and calls exactly two exported functions:
+The shell (`main.js`) dynamically imports modules and calls these exported functions:
 
 ```js
 export function draw(canvas)            // canvas = the <svg id="mainCanvas"> element, viewBox "0 0 1000 800"
 export function loadControls(container) // container = the controls sidebar <div id="controlsContent">
+export function unload()                // OPTIONAL: stop animation loops/timers before the next module loads
 ```
 
-- Modules are registered in `config.js` under the `DECODE` category:
+- The shell gives each module a fresh `<svg>` element, so listeners added to `canvas` never leak between modules.
+- Modules are registered in `config.js` under the `DECODE` tab ("Decode Drawings"). Tools not built yet are listed there as `planned: true` entries with a `summary`; they show greyed in the ribbon. To ship one, add its `filePath` and delete `planned` / `summary`:
 
 ```js
 DECODE: {
-    label: "Decode",
+    label: "Decode Drawings",
     icon: "fa-magnifying-glass",
     symbols: {
-        welding: { name: "Welding Symbol", iconChar: "▷", filePath: './modules/decode/welding.js' },
-        // future modules appended here
+        welding: { name: "Welding Symbols", iconChar: "▷", filePath: './modules/decode/welding.js' },
+        surface_finish: { name: "Surface Finish", iconChar: "√", planned: true, summary: "..." },
     }
 }
 ```
@@ -82,13 +84,13 @@ export function filletWeld(x, y, h, opts = {})   // returns an SVG <g> element, 
 2. **hole_callouts.js** — ⌀, ⌴ counterbore, spotface, ⌵ countersink (dia × angle), ↧ depth, THRU, multiplicity (nX scope rule), EQ SP, bolt circles (B.C.), thread callouts (metric M__×pitch-class and UNC/UNF decoded field-by-field). Preview: bolt-circle pattern + sectioned hole stack.
 3. **surface_finish.js** — full ISO 1302 grammar: basic/removal-required/removal-prohibited marks, Ra/Rz values, sampling length, lay direction symbols, machining allowance, all-around. Preview: surface patch with lay texture.
 4. **composite_frames.js** — composite vs multi-single-segment position frames, pattern-locating vs feature-relating, datum feature modifiers, Ⓤ Ⓕ Ⓟ, 2X / SIM / ALL OVER / between symbol. Preview: pattern with two tolerance zone sets.
-5. **fits.js** — ISO 286 fit decoder: input nominal + fit (e.g., H7/g6), output limit dimensions, clearance/interference range, fit character. Preview: shaft-in-hole zone diagram.
+5. **fits.js** — lives in the **Stack-ups & Fits** tab (`STACKUPS` in `config.js`). ISO 286 fit decoder: input nominal + fit (e.g., H7/g6), output limit dimensions, clearance/interference range, fit character. Preview: shaft-in-hole zone diagram.
 
 ## 7. Session workflow (for the human)
 
 1. New conversation → upload: `DECODER_SPEC.md`, current `symbols.js`, one finished decode module (style reference).
 2. Ask: "Build `<module>.js` per the spec, next on the roadmap."
-3. Save the delivered module into `modules/decode/`, save the updated `symbols.js` (append-only), add the one config entry if new.
+3. Save the delivered module into `modules/decode/`, save the updated `symbols.js` (append-only), and in `config.js` turn the module's `planned` entry into a real one (add `filePath`, remove `planned` and `summary`).
 4. Test against a real drawing callout; anything wrong or missing → next conversation fixes/extends that module before moving down the roadmap.
 5. Real hard callouts encountered at work become test cases: reconstruct in the tool, verify, and record in LOCAL NOTES.
 
@@ -96,6 +98,6 @@ export function filletWeld(x, y, h, opts = {})   // returns an SVG <g> element, 
 
 - Symbol geometry verifiable against the cited standard figure.
 - No Unicode in rendered content; all constructed SVG paths.
-- Module runs standalone with only `symbols.js` + `drawing_utils.js` imports; zero shell edits.
+- Module runs standalone with only `symbols.js` + `drawing_utils.js` imports (the GD&T tabs may also use `theme.js`); zero shell edits beyond its config entry.
 - Every state field reachable from controls; every control change re-renders all three zones.
 - Sentence always grammatically complete and unit-explicit; gotchas fire on the exact conditions listed in the module's GOTCHAS array.

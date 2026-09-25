@@ -1,6 +1,6 @@
 // js/modules/form/circularity.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -476,7 +476,7 @@ function bindControlEvents() {
     const vTri = document.getElementById('val-tri');
     const vNoise = document.getElementById('val-noise');
 
-    inputTol.oninput = (e) => { state.toleranceRadial = parseFloat(e.target.value) || 0; recalculateProfile(); renderScene(); };
+    inputTol.oninput = (e) => { state.toleranceRadial = readTolerance(e.target.value); recalculateProfile(); renderScene(); };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); recalculateProfile(); renderScene(); };
     btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 

@@ -1,24 +1,40 @@
 // js/modules/location/position.js
+// Position with material condition modifiers (RFS / MMC / LMC):
+// size limits, bonus tolerance, allowed zone and virtual condition.
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
+import {
+    COLORS, text, wrapText, addDefs, nominalLine, callout,
+    featureControlFrame, legend, resultsStrip
+} from '../../theme.js';
 
 // --- STATE MANAGEMENT ---
+// Engineering Parameters (INCHES)
+const DEFAULT_SIZES = {
+    hole: { nominal: 0.500, plusTol: 0.010, minusTol: 0.000, actualSize: 0.506 },
+    pin:  { nominal: 0.490, plusTol: 0.000, minusTol: 0.010, actualSize: 0.484 }
+};
+
 const state = {
-    // Canvas dimensions
-    viewBox: { width: 1000, height: 800 },
-    center: { x: 500, y: 400 },
-    
-    // Engineering Parameters (INCHES)
-    scale: 2000,        // Zoom level
-    toleranceDiam: 0.030, 
-    holeDiam: 0.200,      
-    deviationX: 0.008,    
-    deviationY: 0.006,    
-    
+    featureType: 'hole',     // 'hole' | 'pin'
+    modifier: 'MMC',         // 'RFS' | 'MMC' | 'LMC'
+    toleranceDiam: 0.030,    // Stated position tolerance (diameter)
+    ...DEFAULT_SIZES.hole,
+    deviationX: 0.012,       // Measured axis offset from true position
+    deviationY: 0.012,
+
     // UI State
     isDragging: false,
-    showGuide: false // New Toggle for Help Screen
+    dragScale: null,         // Scale frozen at drag start so the point tracks the mouse
+    showGuide: false
 };
+
+// --- DRAWING GEOMETRY (px) ---
+const ZC = { x: 320, y: 410 };   // True position in the zone view
+const R_MAX = 180;               // Largest zone radius drawn
+const PANEL_X = 620;             // Right-hand size / bonus panel
+const PANEL_W = 330;
+const EPS = 1e-9;
 
 // --- DOM REFERENCES ---
 let svgContainer = null;
@@ -37,357 +53,379 @@ export function loadControls(container) {
     renderControls();
 }
 
+// --- EVALUATION ---
+
+const f4 = v => v.toFixed(4);
+
+function evaluate() {
+    const { featureType, modifier, toleranceDiam, nominal, plusTol, minusTol, actualSize, deviationX, deviationY } = state;
+    const isHole = featureType === 'hole';
+    const lower = nominal - minusTol;
+    const upper = nominal + plusTol;
+    const mmc = isHole ? lower : upper;          // Most material: smallest hole, largest pin
+    const lmc = isHole ? upper : lower;
+    const sizeRange = upper - lower;
+    const sizeOK = actualSize >= lower - EPS && actualSize <= upper + EPS;
+
+    // Bonus = how far the actual size has departed from the modifier's condition
+    let bonusRaw = 0;
+    if (modifier === 'MMC') bonusRaw = isHole ? actualSize - mmc : mmc - actualSize;
+    if (modifier === 'LMC') bonusRaw = isHole ? lmc - actualSize : actualSize - lmc;
+    const bonus = Math.min(Math.max(bonusRaw, 0), sizeRange);
+    const maxBonus = modifier === 'RFS' ? 0 : sizeRange;
+
+    const allowed = toleranceDiam + bonus;
+    const radial = Math.hypot(deviationX, deviationY);
+    const position = 2 * radial;
+    const posOK = position <= allowed + EPS;
+
+    // Virtual condition: the constant worst-case boundary (not defined for RFS)
+    let vc = null;
+    if (modifier === 'MMC') vc = isHole ? mmc - toleranceDiam : mmc + toleranceDiam;
+    if (modifier === 'LMC') vc = isHole ? lmc + toleranceDiam : lmc - toleranceDiam;
+
+    return {
+        isHole, lower, upper, mmc, lmc, sizeRange, sizeOK,
+        bonus, maxBonus, allowed, radial, position, posOK, vc,
+        pass: sizeOK && posOK
+    };
+}
+
+// px per inch in the zone view: fits the largest zone the size range can
+// produce (so the zone visibly grows with bonus) and the measured point.
+function drawScale(r = evaluate()) {
+    if (state.dragScale) return state.dragScale;
+    const maxZoneR = (state.toleranceDiam + r.maxBonus) / 2;
+    return R_MAX / Math.max(maxZoneR, r.radial * 1.1);
+}
+
 // --- RENDERING ORCHESTRATION ---
 
 function renderScene() {
     if (!svgContainer) return;
-    svgContainer.innerHTML = ''; 
+    svgContainer.innerHTML = '';
+    addDefs(svgContainer);
 
-    // 1. Engineering Grid (Background)
-    drawGrid();
+    const r = evaluate();
+    const s = drawScale(r);
 
-    // 2. Coordinate System (Datums)
-    drawDatums();
+    drawZoneView(r, s);
+    drawActualAxis(r, s);
+    drawLegendAndFrame();
+    drawSizePanel(r);
+    drawToleranceSum(r);
+    drawVirtualCondition(r);
+    drawResults(r);
 
-    // 3. The Tolerance Zone (Boundary)
-    drawToleranceZone();
+    if (state.showGuide) drawGuideOverlay();
 
-    // 4. The Deviation Visuals (Triangulation & Dimensions)
-    drawDeviationDetails();
-
-    // 5. The Physical Feature (Hole)
-    drawActualHole();
-
-    // 6. The Futuristic HUD (Results)
-    drawFuturisticHUD();
-
-    // 7. The Guide Overlay (If active)
-    if (state.showGuide) {
-        drawGuideOverlay();
-    }
-
-    // 8. Sync Inputs
     updateReadouts();
 }
 
 // --- DRAWING HELPERS ---
 
-function drawGrid() {
-    const { center, scale } = state;
-    const gridSize = 0.010 * scale; 
-    
-    const group = createSVG('g', { stroke: '#e2e8f0', 'stroke-width': 1 });
-    
-    // Dynamic Grid generation based on viewport
-    for (let x = center.x % gridSize; x < 1000; x += gridSize) {
-        group.appendChild(createSVG('line', { x1: x, y1: 0, x2: x, y2: 800 }));
+function circlePath(cx, cy, rad) {
+    return `M ${cx - rad},${cy} a ${rad},${rad} 0 1,0 ${rad * 2},0 a ${rad},${rad} 0 1,0 ${-rad * 2},0 Z`;
+}
+
+function drawZoneView(r, s) {
+    const g = createSVG('g', {});
+    const Rs = (state.toleranceDiam / 2) * s;
+    const Ra = (r.allowed / 2) * s;
+    const Rmax = ((state.toleranceDiam + r.maxBonus) / 2) * s;
+
+    // True position center lines
+    g.appendChild(nominalLine(ZC.x - 200, ZC.y, ZC.x + 200, ZC.y));
+    g.appendChild(nominalLine(ZC.x, ZC.y - R_MAX - 10, ZC.x, ZC.y + R_MAX + 10));
+    g.appendChild(text('true position (basic dims from B and C)', ZC.x + 8, ZC.y - R_MAX - 12, { size: 12, fill: COLORS.muted }));
+
+    // Ceiling: the largest zone possible at the far size limit
+    if (r.maxBonus > 0 && Rmax - Ra > 2) {
+        g.appendChild(createSVG('circle', {
+            cx: ZC.x, cy: ZC.y, r: Rmax, fill: 'none',
+            stroke: COLORS.nominal, 'stroke-width': 1, 'stroke-dasharray': '2 4'
+        }));
+        const at = { x: ZC.x + Rmax * Math.cos(-2 * Math.PI / 3), y: ZC.y + Rmax * Math.sin(-2 * Math.PI / 3) };
+        const farLimit = state.modifier === 'MMC' ? 'LMC' : 'MMC';
+        g.appendChild(callout(`max Ø${f4(state.toleranceDiam + r.maxBonus)} at ${farLimit}`, at.x - 30, at.y + 4, at.x, at.y,
+            { anchor: 'end', size: 11.5, fill: COLORS.muted, weight: 400 }));
     }
-    for (let y = center.y % gridSize; y < 800; y += gridSize) {
-        group.appendChild(createSVG('line', { x1: 0, y1: y, x2: 1000, y2: y }));
-    }
-    
-    // Quadrant Markers
-    const quadStyle = { fill: '#cbd5e1', 'font-family': 'Impact, sans-serif', 'font-size': '60', 'opacity': '0.3' };
-    const q1 = createSVG('text', { x: 900, y: 100, ...quadStyle }); q1.textContent = "+X, +Y";
-    const q2 = createSVG('text', { x: 100, y: 100, ...quadStyle }); q2.textContent = "-X, +Y";
-    group.appendChild(q1);
-    group.appendChild(q2);
 
-    svgContainer.appendChild(group);
-}
-
-function drawDatums() {
-    const { center } = state;
-    const group = createSVG('g', { stroke: '#334155', 'stroke-width': 2 }); 
-
-    // Datum Lines
-    group.appendChild(createSVG('line', { 
-        x1: 0, y1: center.y, x2: 1000, y2: center.y, 'stroke-dasharray': '40, 10, 10, 10' 
-    }));
-    group.appendChild(createSVG('line', { 
-        x1: center.x, y1: 0, x2: center.x, y2: 800, 'stroke-dasharray': '40, 10, 10, 10' 
-    }));
-
-    // Origin "Target"
-    group.appendChild(createSVG('circle', {
-        cx: center.x, cy: center.y, r: 10, fill: 'none', stroke: '#334155', 'stroke-width': 2
-    }));
-    group.appendChild(createSVG('line', { x1: center.x-15, y1: center.y, x2: center.x+15, y2: center.y }));
-    group.appendChild(createSVG('line', { x1: center.x, y1: center.y-15, x2: center.x, y2: center.y+15 }));
-
-    // Axis Labels
-    const textStyle = { 
-        fill: '#1e293b', 'font-family': 'JetBrains Mono', 'font-weight': '900', 'font-size': '24' 
-    };
-    const labelX = createSVG('text', { x: 920, y: center.y - 15, ...textStyle });
-    labelX.textContent = "DATUM B (X)";
-    const labelY = createSVG('text', { x: center.x + 15, y: 40, ...textStyle });
-    labelY.textContent = "DATUM C (Y)";
-
-    group.appendChild(labelX);
-    group.appendChild(labelY);
-    svgContainer.appendChild(group);
-}
-
-function drawToleranceZone() {
-    const { center, scale, toleranceDiam } = state;
-    const r = (toleranceDiam / 2) * scale; 
-
-    const group = createSVG('g', {});
-
-    // Zone Circle
-    const zone = createSVG('circle', {
-        cx: center.x, cy: center.y, r: r,
-        fill: 'rgba(37, 99, 235, 0.05)', 
-        stroke: '#2563eb', 'stroke-width': 4, 'stroke-dasharray': '15, 10'
-    });
-
-    // Leader Line & Label
-    const line = createSVG('line', {
-        x1: center.x + (r * 0.7), y1: center.y - (r * 0.7),
-        x2: center.x + r + 50, y2: center.y - r - 50,
-        stroke: '#2563eb', 'stroke-width': 2
-    });
-    const label = createSVG('text', {
-        x: center.x + r + 55, y: center.y - r - 55,
-        fill: '#2563eb', 'font-family': 'JetBrains Mono', 'font-size': '20', 'font-weight': 'bold'
-    });
-    label.textContent = `Ø${toleranceDiam.toFixed(3)}" Tol Zone`;
-
-    group.appendChild(zone);
-    group.appendChild(line);
-    group.appendChild(label);
-    svgContainer.appendChild(group);
-}
-
-function drawDeviationDetails() {
-    const { center, scale, deviationX, deviationY } = state;
-    if (deviationX === 0 && deviationY === 0) return;
-
-    const pixX = center.x + (deviationX * scale);
-    const pixY = center.y - (deviationY * scale);
-
-    const group = createSVG('g', {});
-
-    // 1. Hypotenuse (True Deviation)
-    group.appendChild(createSVG('line', {
-        x1: center.x, y1: center.y, x2: pixX, y2: pixY,
-        stroke: '#f59e0b', 'stroke-width': 5
-    }));
-
-    // 2. X-Dimension Arrow
-    // We draw a line below the deviation to show X distance
-    const dimYLevel = center.y + 40; // Push down
-    group.appendChild(createSVG('line', {
-        x1: center.x, y1: dimYLevel, x2: pixX, y2: dimYLevel,
-        stroke: '#64748b', 'stroke-width': 2, 'marker-end': 'url(#arrow)'
-    }));
-    // Connecting leaders
-    group.appendChild(createSVG('line', { x1: pixX, y1: center.y, x2: pixX, y2: dimYLevel + 10, stroke: '#cbd5e1', 'stroke-width': 1, 'stroke-dasharray': '4,4'}));
-
-    // 3. Y-Dimension Arrow
-    const dimXLevel = center.x - 40; // Push left
-    group.appendChild(createSVG('line', {
-        x1: dimXLevel, y1: center.y, x2: dimXLevel, y2: pixY,
-        stroke: '#64748b', 'stroke-width': 2
-    }));
-    // Connecting leaders
-    group.appendChild(createSVG('line', { x1: center.x, y1: pixY, x2: dimXLevel - 10, y2: pixY, stroke: '#cbd5e1', 'stroke-width': 1, 'stroke-dasharray': '4,4'}));
-
-    // Labels
-    const txtStyle = { fill: '#64748b', 'font-family': 'monospace', 'font-size': '16', 'font-weight': 'bold' };
-    
-    const xLbl = createSVG('text', { x: center.x + (deviationX*scale)/2, y: dimYLevel + 20, ...txtStyle, 'text-anchor': 'middle' });
-    xLbl.textContent = `x: ${Math.abs(deviationX).toFixed(3)}`;
-    
-    const yLbl = createSVG('text', { x: dimXLevel - 50, y: center.y - (deviationY*scale)/2, ...txtStyle, 'alignment-baseline': 'middle' });
-    yLbl.textContent = `y: ${Math.abs(deviationY).toFixed(3)}`;
-
-    group.appendChild(xLbl);
-    group.appendChild(yLbl);
-    svgContainer.appendChild(group);
-}
-
-function drawActualHole() {
-    const { center, scale, deviationX, deviationY, holeDiam, toleranceDiam } = state;
-    
-    const pixX = center.x + (deviationX * scale);
-    const pixY = center.y - (deviationY * scale);
-    const radius = (holeDiam / 2) * scale;
-
-    const actualPos = 2 * Math.sqrt(deviationX**2 + deviationY**2);
-    const isPass = actualPos <= toleranceDiam;
-    const color = isPass ? '#10b981' : '#ef4444'; // Bright Green / Bright Red
-
-    const group = createSVG('g', { class: 'cursor-move', id: 'draggable-hole' });
-
-    // The Hole Body
-    group.appendChild(createSVG('circle', {
-        cx: pixX, cy: pixY, r: radius,
-        fill: isPass ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-        stroke: color, 'stroke-width': 4
-    }));
-
-    // Center Target
-    group.appendChild(createSVG('line', { x1: pixX-10, y1: pixY, x2: pixX+10, y2: pixY, stroke: color, 'stroke-width': 3 }));
-    group.appendChild(createSVG('line', { x1: pixX, y1: pixY-10, x2: pixX, y2: pixY+10, stroke: color, 'stroke-width': 3 }));
-
-    // Coordinate Tag (The floating label)
-    const rectWidth = 160;
-    const tagGroup = createSVG('g', {});
-    
-    tagGroup.appendChild(createSVG('rect', {
-        x: pixX + 20, y: pixY - 45, width: rectWidth, height: 35,
-        fill: '#0f172a', rx: 4, opacity: 0.8
-    }));
-    
-    const text = createSVG('text', {
-        x: pixX + 30, y: pixY - 22,
-        fill: '#f8fafc', 'font-family': 'JetBrains Mono', 'font-size': '16'
-    });
-    text.textContent = `ACT: (${deviationX.toFixed(3)}, ${deviationY.toFixed(3)})`;
-    
-    tagGroup.appendChild(text);
-    group.appendChild(tagGroup);
-    
-    svgContainer.appendChild(group);
-}
-
-function drawFuturisticHUD() {
-    const { deviationX, deviationY, toleranceDiam } = state;
-    
-    // Calculations
-    const radialError = Math.sqrt(deviationX**2 + deviationY**2);
-    const actualPos = 2 * radialError; 
-    const isPass = actualPos <= toleranceDiam;
-    
-    // Theme Colors
-    const panelBg = '#0f172a'; // Slate 900
-    const panelBorder = '#334155'; // Slate 700
-    const accent = isPass ? '#22c55e' : '#ef4444'; // Green or Red
-    
-    const group = createSVG('g', {});
-    
-    // 1. Panel Background
-    const bx = 20, by = 20, bw = 400, bh = 240;
-    group.appendChild(createSVG('rect', {
-        x: bx, y: by, width: bw, height: bh,
-        fill: panelBg, stroke: accent, 'stroke-width': 2, rx: 0
-    }));
-
-    // 2. Corner Decals (Tech Look)
-    const decalSize = 20;
-    // Top Left
-    group.appendChild(createSVG('polyline', { points: `${bx},${by+decalSize} ${bx},${by} ${bx+decalSize},${by}`, fill: 'none', stroke: 'white', 'stroke-width': 3 }));
-    // Bottom Right
-    group.appendChild(createSVG('polyline', { points: `${bx+bw},${by+bh-decalSize} ${bx+bw},${by+bh} ${bx+bw-decalSize},${by+bh}`, fill: 'none', stroke: 'white', 'stroke-width': 3 }));
-
-    // 3. Header Text
-    const textBase = 60;
-    const col1 = 50;
-    const col2 = 250;
-    
-    const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': 'JetBrains Mono', 'font-size': size, 'font-weight': weight });
-        t.textContent = txt;
-        return t;
-    };
-
-    group.appendChild(addText('INSPECTION STATUS', bx+20, by+35, 20, '#94a3b8'));
-    group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
-
-    // 4. Data Rows
-    group.appendChild(addText('X-DEV:', col1, by+80, 16, '#cbd5e1'));
-    group.appendChild(addText(deviationX.toFixed(4)+'"', col2, by+80, 16, accent));
-    
-    group.appendChild(addText('Y-DEV:', col1, by+105, 16, '#cbd5e1'));
-    group.appendChild(addText(deviationY.toFixed(4)+'"', col2, by+105, 16, accent));
-
-    group.appendChild(addText('RESULTANT:', col1, by+130, 16, '#cbd5e1'));
-    group.appendChild(addText(actualPos.toFixed(4)+'"', col2, by+130, 16, 'white'));
-
-    // 5. The Formula Reminder
-    group.appendChild(addText('Formula: 2 * SQRT(x^2 + y^2)', bx+20, by+160, 12, '#64748b', 'normal'));
-
-    // 6. Tolerance Bar (Segmented)
-    const barY = by + 190;
-    const barW = 360;
-    const maxVal = toleranceDiam * 1.5; // Scale bar to 150% of tolerance
-    const segments = 20;
-    const filledSegments = Math.min(segments, Math.floor((actualPos / maxVal) * segments));
-    const limitSegment = Math.floor((toleranceDiam / maxVal) * segments);
-
-    // Draw Segments
-    for(let i=0; i<segments; i++) {
-        const segX = bx + 20 + (i * (barW/segments));
-        let segColor = '#334155'; // Empty
-        
-        if (i < filledSegments) {
-            // Gradient effect
-            if (i < limitSegment) segColor = '#22c55e'; // Green zone
-            else segColor = '#ef4444'; // Red zone
-        }
-
-        group.appendChild(createSVG('rect', {
-            x: segX, y: barY, width: (barW/segments)-2, height: 15,
-            fill: segColor
+    // Bonus ring (hatched) and stated zone
+    if (Ra - Rs > 0.5) {
+        g.appendChild(createSVG('path', {
+            d: circlePath(ZC.x, ZC.y, Ra) + ' ' + circlePath(ZC.x, ZC.y, Rs),
+            fill: 'url(#thm-hatch-zone)', 'fill-rule': 'evenodd'
+        }));
+        g.appendChild(createSVG('circle', {
+            cx: ZC.x, cy: ZC.y, r: Ra, fill: 'none',
+            stroke: COLORS.zoneStroke, 'stroke-width': 2, 'stroke-dasharray': '10 6'
         }));
     }
-    
-    // Tolerance Marker on Bar
-    const markX = bx + 20 + (limitSegment * (barW/segments));
-    group.appendChild(createSVG('line', { x1: markX, y1: barY-5, x2: markX, y2: barY+20, stroke: 'white', 'stroke-width': 2 }));
+    g.appendChild(createSVG('circle', {
+        cx: ZC.x, cy: ZC.y, r: Rs, fill: COLORS.zoneFill,
+        stroke: COLORS.zoneStroke, 'stroke-width': 1.5, 'stroke-dasharray': '5 4'
+    }));
 
-    // 7. BIG PASS/FAIL
-    const statusText = isPass ? "PASS" : "FAIL";
-    const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
-    status.setAttribute('style', `text-shadow: 0 0 10px ${accent}`); // Glowing effect
-    group.appendChild(status);
+    // Zone labels, bottom-left
+    const onCircle = (rad, deg) => ({ x: ZC.x + rad * Math.cos(deg * Math.PI / 180), y: ZC.y + rad * Math.sin(deg * Math.PI / 180) });
+    if (Ra - Rs > 0.5) {
+        const pa = onCircle(Ra, 165);
+        g.appendChild(callout(`Ø${f4(r.allowed)} with bonus`, 36, 568, pa.x, pa.y,
+            { anchor: 'start', size: 12.5, fill: COLORS.zoneText, weight: 600 }));
+        const ps = onCircle(Rs, 125);
+        g.appendChild(callout(`Ø${f4(state.toleranceDiam)} stated`, 36, 594, ps.x, ps.y,
+            { anchor: 'start', size: 12.5, fill: COLORS.zoneText, weight: 600 }));
+    } else {
+        const ps = onCircle(Rs, 150);
+        const why = state.modifier === 'RFS' ? 'RFS, no bonus' : `at ${state.modifier}, no bonus`;
+        g.appendChild(callout(`Ø${f4(state.toleranceDiam)} allowed (${why})`, 36, 580, ps.x, ps.y,
+            { anchor: 'start', size: 12.5, fill: COLORS.zoneText, weight: 600 }));
+    }
 
-    svgContainer.appendChild(group);
+    g.appendChild(text('Axis location, top view. Zone magnified; the hole itself is not to scale.', ZC.x, 628,
+        { size: 11.5, fill: COLORS.muted, anchor: 'middle', italic: true }));
+    svgContainer.appendChild(g);
+}
+
+function drawActualAxis(r, s) {
+    const g = createSVG('g', {});
+    const px = ZC.x + state.deviationX * s;
+    const py = ZC.y - state.deviationY * s;
+    const color = r.posOK ? COLORS.actual : COLORS.fail;
+
+    // X and Y legs of the offset
+    const leg = { stroke: COLORS.muted, 'stroke-width': 1, 'stroke-dasharray': '3 3' };
+    g.appendChild(createSVG('line', { x1: ZC.x, y1: py, x2: px, y2: py, ...leg }));
+    g.appendChild(createSVG('line', { x1: px, y1: ZC.y, x2: px, y2: py, ...leg }));
+    if (Math.abs(px - ZC.x) > 30) {
+        g.appendChild(text(`x ${f4(state.deviationX)}`, (ZC.x + px) / 2, py + (py < ZC.y ? -8 : 16),
+            { size: 11, mono: true, fill: COLORS.muted, anchor: 'middle' }));
+    }
+    if (Math.abs(py - ZC.y) > 20) {
+        g.appendChild(text(`y ${f4(state.deviationY)}`, px + (px >= ZC.x ? 8 : -8), (ZC.y + py) / 2 + 4,
+            { size: 11, mono: true, fill: COLORS.muted, anchor: px >= ZC.x ? 'start' : 'end' }));
+    }
+
+    // Radial offset
+    g.appendChild(createSVG('line', { x1: ZC.x, y1: ZC.y, x2: px, y2: py, stroke: color, 'stroke-width': 2 }));
+
+    // The measured axis (drag handle)
+    g.appendChild(createSVG('circle', {
+        cx: px, cy: py, r: 10, fill: COLORS.card, stroke: color, 'stroke-width': 2.5, style: 'cursor: grab'
+    }));
+    g.appendChild(createSVG('circle', { cx: px, cy: py, r: 4, fill: color }));
+
+    const right = px >= ZC.x;
+    g.appendChild(text(`axis: position Ø${f4(r.position)}`, px + (right ? 16 : -16), py - 14,
+        { size: 12.5, weight: 700, fill: color, anchor: right ? 'start' : 'end' }));
+    if (!state.isDragging) {
+        g.appendChild(text('drag', px + (right ? 16 : -16), py + 22,
+            { size: 11, italic: true, fill: COLORS.muted, anchor: right ? 'start' : 'end' }));
+    }
+    svgContainer.appendChild(g);
+}
+
+function drawLegendAndFrame() {
+    svgContainer.appendChild(legend(24, 24, [
+        { kind: 'zoneOutline', label: 'Stated position zone' },
+        { kind: 'bonus', label: 'Bonus tolerance from size' },
+        { kind: 'point', label: `Measured ${state.featureType} axis` },
+        { kind: 'nominal', label: 'True position (perfect location)' },
+        { kind: 'fail', label: 'Outside the allowed zone' }
+    ], { note: 'Position = 2 × distance from true position' }));
+
+    const modLetter = { MMC: 'M', LMC: 'L', RFS: null }[state.modifier];
+    const fcf = featureControlFrame(PANEL_X, 40, {
+        symbol: 'position', tolerance: state.toleranceDiam.toFixed(3),
+        diameter: true, modifier: modLetter, datums: ['A', 'B', 'C']
+    });
+    svgContainer.appendChild(fcf.g);
+
+    const feature = state.featureType;
+    const note = state.modifier === 'RFS'
+        ? `The ${feature} axis must lie in a Ø${state.toleranceDiam.toFixed(3)} zone at true position, whatever its size.`
+        : `The ${feature} axis must lie in a Ø${state.toleranceDiam.toFixed(3)} zone at ${state.modifier}. The zone grows as the ${feature} departs from ${state.modifier}.`;
+    svgContainer.appendChild(wrapText(note, PANEL_X, 98, 50, 17, { size: 12.5, fill: COLORS.muted }));
+}
+
+function panelTitle(str, y) {
+    return text(str, PANEL_X, y, { size: 11, weight: 700, fill: COLORS.muted, letterSpacing: '0.06em' });
+}
+
+function drawSizePanel(r) {
+    const g = createSVG('g', {});
+    g.appendChild(panelTitle(`1. MEASURED SIZE ${state.modifier === 'RFS' ? '(IGNORED AT RFS)' : '→ BONUS'}`, 190));
+
+    // Size scale: covers both limits and the measured size, with padding
+    const pad = 0.3 * Math.max(r.sizeRange, 0.002);
+    const vmin = Math.min(r.lower, state.actualSize) - pad;
+    const vmax = Math.max(r.upper, state.actualSize) + pad;
+    const X = v => PANEL_X + ((v - vmin) / (vmax - vmin)) * PANEL_W;
+    const y = 250;
+
+    g.appendChild(createSVG('line', { x1: PANEL_X, y1: y, x2: PANEL_X + PANEL_W, y2: y, stroke: COLORS.faint, 'stroke-width': 6, 'stroke-linecap': 'round' }));
+    g.appendChild(createSVG('line', { x1: X(r.lower), y1: y, x2: X(r.upper), y2: y, stroke: COLORS.partStroke, 'stroke-width': 6 }));
+
+    // Limit ticks: MMC and LMC (stagger labels when close)
+    const close = Math.abs(X(r.mmc) - X(r.lmc)) < 110;
+    const limits = [['MMC', r.mmc, 222], ['LMC', r.lmc, close ? 204 : 222]];
+    for (const [name, v, ly] of limits) {
+        g.appendChild(createSVG('line', { x1: X(v), y1: y - 12, x2: X(v), y2: y + 12, stroke: COLORS.ink, 'stroke-width': 2 }));
+        g.appendChild(text(`${name} Ø${f4(v)}`, X(v), ly, { size: 12, weight: 600, mono: true, anchor: 'middle', fill: COLORS.ink }));
+    }
+
+    // Measured size marker
+    const ax = X(state.actualSize);
+    const mColor = r.sizeOK ? COLORS.actual : COLORS.fail;
+    g.appendChild(createSVG('path', { d: `M ${ax},${y + 8} L ${ax - 8},${y + 22} L ${ax + 8},${y + 22} Z`, fill: mColor }));
+    const mAnchor = ax > PANEL_X + PANEL_W - 110 ? 'end' : ax < PANEL_X + 110 ? 'start' : 'middle';
+    const mx = mAnchor === 'end' ? ax + 10 : mAnchor === 'start' ? ax - 10 : ax;
+    g.appendChild(text(`measured Ø${f4(state.actualSize)}${r.sizeOK ? '' : ' (out of size)'}`, mx, y + 40,
+        { size: 12.5, weight: 700, anchor: mAnchor, fill: mColor }));
+
+    // Bonus bracket from the modifier's limit to the measured size
+    if (state.modifier !== 'RFS') {
+        const ref = state.modifier === 'MMC' ? r.mmc : r.lmc;
+        const by = y + 64;
+        if (r.bonus > EPS) {
+            // Bonus runs from the modifier's limit toward the other limit (capped there)
+            const towardOther = (state.modifier === 'MMC') === r.isHole ? 1 : -1;
+            const x1 = X(ref), x2 = X(ref + towardOther * r.bonus);
+            g.appendChild(createSVG('path', {
+                d: `M ${x1},${by - 8} L ${x1},${by} L ${x2},${by} L ${x2},${by - 8}`,
+                fill: 'none', stroke: COLORS.zoneStroke, 'stroke-width': 2
+            }));
+            g.appendChild(text(`bonus ${f4(r.bonus)}`, (x1 + x2) / 2, by + 18,
+                { size: 13, weight: 700, mono: true, anchor: 'middle', fill: COLORS.zoneText }));
+        } else {
+            g.appendChild(text(`No bonus: the ${state.featureType} is at (or beyond) ${state.modifier}.`, PANEL_X, by + 10,
+                { size: 12.5, fill: COLORS.zoneText }));
+        }
+    } else {
+        g.appendChild(text('RFS: size does not change the zone.', PANEL_X, y + 74, { size: 12.5, fill: COLORS.muted }));
+    }
+    svgContainer.appendChild(g);
+}
+
+function drawToleranceSum(r) {
+    const g = createSVG('g', {});
+    g.appendChild(panelTitle('2. ALLOWED POSITION TOLERANCE', 370));
+
+    const tol = state.toleranceDiam;
+    const scaleMax = Math.max(tol + r.maxBonus, r.position) * 1.08;
+    const W = v => (v / scaleMax) * PANEL_W;
+    const y = 400;
+
+    g.appendChild(createSVG('rect', { x: PANEL_X, y, width: PANEL_W, height: 16, rx: 3, fill: '#f1f5f9' }));
+    g.appendChild(createSVG('rect', { x: PANEL_X, y, width: W(tol), height: 16, fill: COLORS.zoneFill, stroke: COLORS.zoneStroke, 'stroke-width': 1.5 }));
+    if (r.bonus > EPS) {
+        g.appendChild(createSVG('rect', { x: PANEL_X + W(tol), y, width: W(r.bonus), height: 16, fill: 'url(#thm-hatch-zone)', stroke: COLORS.zoneStroke, 'stroke-width': 1.5 }));
+    }
+
+    // Measured position against the allowance
+    const mx = PANEL_X + Math.min(W(r.position), PANEL_W);
+    const color = r.posOK ? COLORS.pass : COLORS.fail;
+    g.appendChild(createSVG('line', { x1: mx, y1: y - 8, x2: mx, y2: y + 24, stroke: color, 'stroke-width': 3 }));
+    g.appendChild(text(`measured Ø${f4(r.position)}`, mx, y - 12,
+        { size: 11.5, weight: 700, anchor: mx > PANEL_X + PANEL_W - 60 ? 'end' : 'middle', fill: color }));
+
+    const sum = r.bonus > EPS
+        ? `stated ${f4(tol)} + bonus ${f4(r.bonus)} = Ø${f4(r.allowed)}`
+        : `stated ${f4(tol)} + no bonus = Ø${f4(r.allowed)}`;
+    g.appendChild(text(sum, PANEL_X, y + 42, { size: 13, weight: 600, mono: true, fill: COLORS.zoneText }));
+    svgContainer.appendChild(g);
+}
+
+function drawVirtualCondition(r) {
+    const g = createSVG('g', {});
+    g.appendChild(panelTitle('3. VIRTUAL CONDITION (WORST-CASE BOUNDARY)', 492));
+    const tol = f4(state.toleranceDiam);
+    const feature = state.featureType;
+
+    if (r.vc === null) {
+        g.appendChild(wrapText('At RFS the boundary changes with the actual size, so there is no single gauge size. Inspect with a CMM or an adjustable gauge.',
+            PANEL_X, 520, 50, 18, { size: 13, fill: COLORS.text }));
+    } else {
+        let formula, meaning;
+        if (state.modifier === 'MMC') {
+            formula = r.isHole ? `Ø${f4(r.vc)} = MMC ${f4(r.mmc)} − ${tol}` : `Ø${f4(r.vc)} = MMC ${f4(r.mmc)} + ${tol}`;
+            meaning = r.isHole
+                ? `A fixed gauge pin of Ø${f4(r.vc)} at true position must always enter the hole. This is the size of the mating part's worst case.`
+                : `A fixed gauge hole of Ø${f4(r.vc)} at true position must always accept the pin. Size the mating hole at least this big.`;
+        } else {
+            formula = r.isHole ? `Ø${f4(r.vc)} = LMC ${f4(r.lmc)} + ${tol}` : `Ø${f4(r.vc)} = LMC ${f4(r.lmc)} − ${tol}`;
+            meaning = `The worst-case boundary on the material side, which protects minimum wall thickness around the ${feature}. It cannot be checked with a fixed gauge.`;
+        }
+        g.appendChild(text(formula, PANEL_X, 522, { size: 15, weight: 700, mono: true, fill: COLORS.ink }));
+        g.appendChild(wrapText(meaning, PANEL_X, 548, 50, 18, { size: 13, fill: COLORS.text }));
+    }
+    svgContainer.appendChild(g);
+}
+
+function drawResults(r) {
+    const feature = state.featureType;
+    const tol = f4(state.toleranceDiam);
+    let sentence;
+    if (!r.sizeOK) {
+        sentence = `The ${feature} measures Ø${f4(state.actualSize)}, outside its size limits Ø${f4(r.lower)} to Ø${f4(r.upper)}. It fails on size, whatever its position.`;
+    } else {
+        const where = `The axis is ${f4(r.radial)}" from true position, a position of Ø${f4(r.position)}.`;
+        let why;
+        if (state.modifier === 'RFS') {
+            why = ` RFS gives no bonus, so it must fit the stated Ø${tol}.`;
+        } else if (r.bonus > EPS) {
+            why = ` At Ø${f4(state.actualSize)} the ${feature} is ${f4(r.bonus)}" from ${state.modifier}, earning that as bonus: allowed Ø${f4(r.allowed)}.`;
+        } else {
+            why = ` The ${feature} is at ${state.modifier}, so there is no bonus: allowed Ø${tol}.`;
+        }
+        const verdict = !r.posOK ? ' It fails.'
+            : (r.position > state.toleranceDiam + EPS ? ' It passes, but only thanks to the bonus.' : ' It passes.');
+        sentence = where + why + verdict;
+    }
+    svgContainer.appendChild(resultsStrip({
+        pass: r.pass,
+        measured: { label: 'Position (Ø)', value: r.position },
+        allowed: { label: 'Allowed (Ø)', value: r.allowed },
+        sentence,
+        compact: true
+    }));
 }
 
 function drawGuideOverlay() {
-    // Semi-transparent backdrop
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.9)'
-    });
-    svgContainer.appendChild(bg);
+    svgContainer.appendChild(createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'rgba(15, 23, 42, 0.95)' }));
 
     const group = createSVG('g', {});
-    
-    // Helper to write lines of text
-    let yPos = 150;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.5);
+    let yPos = 130;
+    const write = (str, size = 17, color = '#cbd5e1', weight = 400) => {
+        group.appendChild(text(str, 500, yPos, { size, fill: color, weight, anchor: 'middle' }));
+        yPos += size * 1.6;
     };
 
-    write("TOOL GUIDE: POSITION TOLERANCE", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    write("1. DRAG THE HOLE", 24, '#38bdf8', 'bold');
-    write("Click and drag the solid circle to simulate manufacturing error.", 18, '#cbd5e1');
-    yPos += 20;
-    write("2. OBSERVE THE MATH", 24, '#38bdf8', 'bold');
-    write("As you move, the X and Y deviations are calculated instantly.", 18, '#cbd5e1');
-    write("Position = 2 × √(x² + y²)", 20, '#yellow');
-    yPos += 20;
-    write("3. CHECK THE ZONE", 24, '#38bdf8', 'bold');
-    write("The dashed circle is the Tolerance Zone.", 18, '#cbd5e1');
-    write("If the hole center stays inside, you PASS.", 18, '#cbd5e1');
-    yPos += 40;
-    write("[ CLICK ANYWHERE TO CLOSE ]", 16, '#94a3b8');
+    write('HOW POSITION AND BONUS TOLERANCE WORK', 30, '#ffffff', 800);
+    yPos += 16;
+    write('1. POSITION', 20, '#93c5fd', 700);
+    write('The axis must lie in a round zone centered on true position.');
+    write('Position = 2 × the distance from true position (the zone is a diameter).');
+    yPos += 16;
+    write('2. MMC AND BONUS', 20, '#93c5fd', 700);
+    write('MMC = most material: the smallest hole or the largest pin.');
+    write('As the part moves away from MMC it gets more clearance, so the zone grows by that amount.');
+    write('LMC works the other way. RFS means no bonus at all.');
+    yPos += 16;
+    write('3. VIRTUAL CONDITION', 20, '#93c5fd', 700);
+    write('Hole at MMC: MMC − tolerance. This is the fixed gauge pin that must always fit.');
+    yPos += 16;
+    write('TRY IT', 20, '#93c5fd', 700);
+    write('Drag the axis point, change the measured size, and switch RFS / MMC / LMC.');
+    yPos += 30;
+    write('[ CLICK TO CLOSE ]', 14, '#94a3b8');
 
-    // Click to dismiss
     const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
     overlay.addEventListener('click', () => {
         state.showGuide = false;
         renderScene();
     });
-
     svgContainer.appendChild(group);
     svgContainer.appendChild(overlay);
 }
@@ -404,16 +442,13 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if(state.showGuide) return; // Disable drag if guide is open
-
+        if (state.showGuide) return;
         const m = getMousePos(evt);
-        const { center, scale, deviationX, deviationY } = state;
-        const holeX = center.x + (deviationX * scale);
-        const holeY = center.y - (deviationY * scale);
-        
-        const dist = Math.sqrt((m.x - holeX)**2 + (m.y - holeY)**2);
-        
-        if (dist < 60) {
+        const s = drawScale();
+        const px = ZC.x + state.deviationX * s;
+        const py = ZC.y - state.deviationY * s;
+        if (Math.hypot(m.x - px, m.y - py) < 30) {
+            state.dragScale = s;
             state.isDragging = true;
             svg.style.cursor = 'grabbing';
         }
@@ -421,88 +456,102 @@ function setupInteractions(svg) {
 
     svg.addEventListener('mousemove', (evt) => {
         if (!state.isDragging) return;
-        
         const m = getMousePos(evt);
-        const { center, scale } = state;
-
-        let newDevX = (m.x - center.x) / scale;
-        let newDevY = -(m.y - center.y) / scale; 
-
-        state.deviationX = newDevX;
-        state.deviationY = newDevY;
-
+        // Keep the point inside the drawn view
+        let dx = (m.x - ZC.x) / state.dragScale;
+        let dy = -(m.y - ZC.y) / state.dragScale;
+        const limit = (R_MAX + 15) / state.dragScale;
+        const d = Math.hypot(dx, dy);
+        if (d > limit) { dx *= limit / d; dy *= limit / d; }
+        state.deviationX = dx;
+        state.deviationY = dy;
         renderScene();
     });
 
-    svg.addEventListener('mouseup', () => {
+    const endDrag = () => {
+        if (!state.isDragging) return;
         state.isDragging = false;
+        state.dragScale = null;
         svg.style.cursor = 'default';
-    });
+        renderScene();
+    };
+    svg.addEventListener('mouseup', endDrag);
+    svg.addEventListener('mouseleave', endDrag);
 }
 
 // --- CONTROLS UI ---
 
+const segBtn = 'flex-1 px-2 py-1.5 text-xs font-bold rounded border transition-colors';
+const segOn = 'bg-blue-600 text-white border-blue-600';
+const segOff = 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50';
+const numInput = 'w-full px-2 py-1.5 border border-slate-300 rounded font-mono text-sm focus:ring-2 focus:ring-blue-500';
+
 function renderControls() {
     if (!controlsContainer) return;
+    const r = evaluate();
+    const pad = Math.max(r.sizeRange * 0.5, 0.002);
+    const sMin = (r.lower - pad).toFixed(4);
+    const sMax = (r.upper + pad).toFixed(4);
+    const seg = (group, value, label) =>
+        `<button data-${group}="${value}" class="${segBtn} ${state[group === 'mod' ? 'modifier' : 'featureType'] === value ? segOn : segOff}">${label}</button>`;
 
     controlsContainer.innerHTML = `
-        <div class="col-span-1 bg-white p-4 rounded shadow-sm border border-slate-200 flex flex-col justify-between">
-            <div>
-                <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Control Frame</h4>
-                <div class="flex items-center font-mono text-xl bg-white border-2 border-black w-max select-none shadow-lg">
-                    <div class="px-3 py-2 border-r-2 border-black flex items-center justify-center">
-                        <span class="text-3xl">⌖</span>
-                    </div>
-                    <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1">
-                        <span class="text-2xl">Ø</span>
-                        <input type="number" id="ctrl-tol" value="${state.toleranceDiam}" step="0.001" 
-                            class="w-24 font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
-                    </div>
-                    <div class="px-3 py-2 border-r-2 border-black bg-slate-100 text-slate-400">A</div>
-                    <div class="px-3 py-2 border-r-2 border-black bg-slate-100 text-slate-400">B</div>
-                    <div class="px-3 py-2 bg-slate-100 text-slate-400">C</div>
-                </div>
+        <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Control Frame</h4>
+            <div class="flex items-center gap-2 mb-3">
+                <label class="text-sm font-semibold text-slate-700 w-32 shrink-0">Tolerance Ø</label>
+                <input type="number" id="ctrl-tol" value="${state.toleranceDiam}" step="0.001" min="0.001" class="${numInput} bg-yellow-50">
             </div>
-            
-            <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> HOW TO USE / GUIDE
+            <div class="text-xs font-bold text-slate-500 mb-1">MATERIAL CONDITION</div>
+            <div class="flex gap-2">
+                ${seg('mod', 'RFS', 'RFS')}${seg('mod', 'MMC', 'MMC Ⓜ')}${seg('mod', 'LMC', 'LMC Ⓛ')}
+            </div>
+            <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN BONUS TOLERANCE
             </button>
         </div>
 
-        <div class="col-span-1 bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Manual Coordinates (in)</h4>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">X OFFSET</label>
-                    <input type="number" id="ctrl-x" step="0.001" value="${state.deviationX.toFixed(4)}"
-                        class="w-full px-3 py-2 border border-slate-300 rounded font-mono text-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">Y OFFSET</label>
-                    <input type="number" id="ctrl-y" step="0.001" value="${state.deviationY.toFixed(4)}"
-                        class="w-full px-3 py-2 border border-slate-300 rounded font-mono text-lg focus:ring-2 focus:ring-blue-500">
-                </div>
+        <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Size (in)</h4>
+            <div class="flex gap-2 mb-3">
+                ${seg('type', 'hole', 'Hole (internal)')}${seg('type', 'pin', 'Pin (external)')}
             </div>
-            <div class="mt-4 flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-200">
-                <span class="text-xs font-bold text-slate-500">ZOOM</span>
-                <input type="range" id="ctrl-zoom" min="500" max="4000" step="100" value="${state.scale}" class="w-2/3 h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+            <div class="grid grid-cols-3 gap-2 mb-1">
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">NOMINAL Ø</label>
+                    <input type="number" id="ctrl-nom" step="0.001" value="${state.nominal.toFixed(4)}" class="${numInput}"></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">+ TOL</label>
+                    <input type="number" id="ctrl-plus" step="0.001" min="0" value="${state.plusTol.toFixed(4)}" class="${numInput}"></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">− TOL</label>
+                    <input type="number" id="ctrl-minus" step="0.001" min="0" value="${state.minusTol.toFixed(4)}" class="${numInput}"></div>
+            </div>
+            <div class="text-xs text-slate-500 font-mono mb-4">MMC Ø${f4(r.mmc)} · LMC Ø${f4(r.lmc)}</div>
+
+            <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-bold text-slate-500">MEASURED SIZE Ø</label>
+                <input type="number" id="ctrl-size" step="0.0005" value="${state.actualSize.toFixed(4)}" class="w-28 px-2 py-1 border border-slate-300 rounded font-mono text-sm text-right">
+            </div>
+            <input type="range" id="slide-size" min="${sMin}" max="${sMax}" step="0.0001" value="${state.actualSize}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            <div class="flex gap-2 mt-2">
+                <button id="btn-at-mmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">SET TO MMC</button>
+                <button id="btn-at-lmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">SET TO LMC</button>
             </div>
         </div>
 
-        <div class="col-span-1 bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Configuration</h4>
-            <div class="flex items-center justify-between mb-4">
-                <label class="text-sm font-semibold text-slate-700">Hole Diameter (in)</label>
-                <input type="number" id="ctrl-hole" value="${state.holeDiam}" step="0.010"
-                    class="w-24 px-2 py-1 border border-slate-300 rounded text-right font-mono">
+        <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Measured Axis Location (in)</h4>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">X OFFSET</label>
+                    <input type="number" id="ctrl-x" step="0.001" value="${state.deviationX.toFixed(4)}" class="${numInput}"></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">Y OFFSET</label>
+                    <input type="number" id="ctrl-y" step="0.001" value="${state.deviationY.toFixed(4)}" class="${numInput}"></div>
             </div>
-            <div class="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-900">
-                <div class="font-bold mb-1"><i class="fa-solid fa-calculator"></i> Logic</div>
-                <div class="text-xs opacity-80 leading-relaxed">
-                    Tolerance Zone is fixed at True Position.<br>
-                    Actual Position is calculated radially.<br>
-                    <strong>Pass = Actual Pos ≤ Tolerance</strong>
-                </div>
+            <p class="text-xs text-slate-400 mt-2">Or drag the axis point on the drawing.</p>
+        </div>
+
+        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
+            <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> Why bonus exists</div>
+            <div class="text-xs opacity-90 leading-relaxed">
+                At MMC a hole has the least clearance around its mating bolt. A bigger hole has more room to be off location and still assemble, so the zone grows by exactly the size departure. That is why MMC is the default choice for clearance holes and bolt patterns.
             </div>
         </div>
     `;
@@ -511,37 +560,64 @@ function renderControls() {
 }
 
 function bindControlEvents() {
-    const inputTol = document.getElementById('ctrl-tol');
-    const inputX = document.getElementById('ctrl-x');
-    const inputY = document.getElementById('ctrl-y');
-    const inputHole = document.getElementById('ctrl-hole');
-    const inputZoom = document.getElementById('ctrl-zoom');
-    const btnGuide = document.getElementById('btn-guide');
+    const $ = id => document.getElementById(id);
 
-    inputTol.oninput = (e) => { state.toleranceDiam = parseFloat(e.target.value) || 0; renderScene(); };
-    
-    const updateDev = () => {
-        state.deviationX = parseFloat(inputX.value) || 0;
-        state.deviationY = parseFloat(inputY.value) || 0;
+    $('ctrl-tol').oninput = (e) => { state.toleranceDiam = readTolerance(e.target.value); renderScene(); };
+
+    controlsContainer.querySelectorAll('[data-mod]').forEach(b => {
+        b.onclick = () => { state.modifier = b.dataset.mod; renderControls(); renderScene(); };
+    });
+    controlsContainer.querySelectorAll('[data-type]').forEach(b => {
+        b.onclick = () => {
+            if (state.featureType === b.dataset.type) return;
+            state.featureType = b.dataset.type;
+            Object.assign(state, DEFAULT_SIZES[state.featureType]);
+            renderControls();
+            renderScene();
+        };
+    });
+
+    // Size limits change the slider range, so rebuild the controls
+    const readLimit = (id, key, allowZero) => {
+        $(id).onchange = (e) => {
+            const v = parseFloat(e.target.value);
+            if (Number.isFinite(v) && (allowZero ? v >= 0 : v > 0)) state[key] = v;
+            renderControls();
+            renderScene();
+        };
+    };
+    readLimit('ctrl-nom', 'nominal', false);
+    readLimit('ctrl-plus', 'plusTol', true);
+    readLimit('ctrl-minus', 'minusTol', true);
+
+    const setSize = (v) => {
+        if (!Number.isFinite(v) || v <= 0) return;
+        state.actualSize = v;
+        $('ctrl-size').value = v.toFixed(4);
+        $('slide-size').value = v;
         renderScene();
     };
-    inputX.oninput = updateDev;
-    inputY.oninput = updateDev;
-    inputHole.oninput = (e) => { state.holeDiam = parseFloat(e.target.value) || 0.1; renderScene(); };
-    inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); renderScene(); };
-    
-    // Toggle Guide
-    btnGuide.onclick = () => {
-        state.showGuide = !state.showGuide;
+    $('slide-size').oninput = (e) => setSize(parseFloat(e.target.value));
+    $('ctrl-size').onchange = (e) => setSize(parseFloat(e.target.value));
+    $('btn-at-mmc').onclick = () => setSize(evaluate().mmc);
+    $('btn-at-lmc').onclick = () => setSize(evaluate().lmc);
+
+    const setXY = () => {
+        state.deviationX = parseFloat($('ctrl-x').value) || 0;
+        state.deviationY = parseFloat($('ctrl-y').value) || 0;
         renderScene();
-    }
+    };
+    $('ctrl-x').onchange = setXY;
+    $('ctrl-y').onchange = setXY;
+
+    $('btn-guide').onclick = () => { state.showGuide = !state.showGuide; renderScene(); };
 }
 
 function updateReadouts() {
     if (state.isDragging) {
         const inputX = document.getElementById('ctrl-x');
         const inputY = document.getElementById('ctrl-y');
-        if(inputX) inputX.value = state.deviationX.toFixed(4);
-        if(inputY) inputY.value = state.deviationY.toFixed(4);
+        if (inputX) inputX.value = state.deviationX.toFixed(4);
+        if (inputY) inputY.value = state.deviationY.toFixed(4);
     }
 }

@@ -1,6 +1,6 @@
 // js/modules/form/straightness.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -487,7 +487,7 @@ function bindControlEvents() {
     const inputZoom = document.getElementById('ctrl-zoom');
     const btnGuide = document.getElementById('btn-guide');
     
-    inputTol.oninput = (e) => { state.toleranceWidth = parseFloat(e.target.value) || 0; renderScene(); };
+    inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); renderScene(); };
     btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
