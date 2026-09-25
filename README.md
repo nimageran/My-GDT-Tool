@@ -27,7 +27,7 @@ The tool opens on a **Home** page ("What do you need to do?" start points and a 
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas, ISO fits (ISO 286: H7/g6 → limits, clearance or interference, preferred fits) | |
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
 | **Learn** | Standards, practice and your own notes | My Notebook (your notes: company rules, decoded callouts, lessons learned; "+ Note" from any tool, tags, pins, found by search, backup export / import), learning path (6 lessons, 30 quiz questions from real callouts, progress saved; shown on Home), glossary (103 terms, searchable), ASME vs ISO GPS | Y14.5-2009 vs 2018 |
-| **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
+| **Manufacturing** | Can the shop make it, and at what cost | Process capability guide (which process holds a tolerance and finish, cost rule of thumb), Cp / Cpk calculator (paste measurements, histogram, advice), ± to position (57% more zone, drag the hole) | |
 
 ## Structure
 
@@ -46,6 +46,7 @@ js/notes.js                My Notebook storage, note editor, backup export / imp
 js/focus.js                Hand-off of that item to the tool (setFocus / takeFocus)
 js/legibility.js           Keeps canvas text readable when the canvas is scaled down
 js/modules/<area>/*.js     One file per tool
+js/modules/manufacturing/  Process capability, Cp / Cpk, ± to position
 js/modules/material/       Rule #1, virtual condition, datum shift
 js/modules/decode/         Decoders, symbols.js geometry library, DECODER_SPEC.md
 js/modules/drawing/        Drawing basics; sheet.js (line styles, title block, dims) and dictionary.js (searchable card pages)

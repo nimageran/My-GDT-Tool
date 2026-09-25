@@ -141,12 +141,9 @@ export const GDT_HIERARCHY = {
         label: "Manufacturing",
         icon: "fa-industry",
         symbols: {
-            process_capability: { name: "Process Capability Guide", iconChar: "⚙", planned: true,
-                summary: "What turning, milling, grinding, reaming and EDM realistically hold, and how cost climbs as tolerances tighten." },
-            cpk: { name: "Cp / Cpk Calculator", iconChar: "∿", planned: true,
-                summary: "Paste measurements and see whether the process can hold the callout, with a histogram against the limits." },
-            plus_minus: { name: "± to Position", iconChar: "⊡", planned: true,
-                summary: "Convert coordinate ± tolerances to position and see why a round zone gives 57% more usable area than the square one." }
+            process_capability: { name: "Process Capability Guide", iconChar: "⚙", filePath: './modules/manufacturing/process_capability.js', desc: "Which processes can hold a tolerance and finish, and what it costs." },
+            cpk: { name: "Cp / Cpk Calculator", iconChar: "∿", filePath: './modules/manufacturing/cpk.js', desc: "Paste measurements: can the process hold the callout?" },
+            plus_minus: { name: "± to Position", iconChar: "⊡", filePath: './modules/manufacturing/plus_minus.js', desc: "Why a round position zone gives 57% more room than ± coordinates." }
         }
     }
 };
