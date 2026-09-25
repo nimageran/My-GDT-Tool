@@ -331,8 +331,10 @@ export function legend(x, y, items, { title = 'KEY', note } = {}) {
  *   measured: { label, value }, allowed: { label, value },   // numbers
  *   unit: '"' | ' mm', decimals,
  *   sentence: string,
- *   compact: boolean   // smaller type for sentences over ~200 characters
+ *   compact: boolean,  // smaller type for sentences over ~200 characters
+ *   gauge: false       // hide the gauge (e.g. when values are ranges)
  * }
+ * measured / allowed may carry `text` to show instead of the formatted value.
  */
 export function resultsStrip(results) {
     const { pass, measured, allowed, sentence } = results;
@@ -360,10 +362,12 @@ export function resultsStrip(results) {
     // 2. Measured vs allowed, with a gauge
     const nx = 195;
     g.appendChild(text(measured.label.toUpperCase(), nx, top + 36, { size: 11, weight: 700, fill: COLORS.muted, letterSpacing: '0.06em' }));
-    g.appendChild(text(measured.value.toFixed(dec) + unit, nx, top + 66, { size: 26, weight: 700, fill: accent, mono: true }));
+    const show = m => m.text ?? (m.value.toFixed(dec) + unit);
+    const valueSize = (measured.text || allowed.text) ? 20 : 26;
+    g.appendChild(text(show(measured), nx, top + 66, { size: valueSize, weight: 700, fill: accent, mono: true }));
     g.appendChild(text(allowed.label.toUpperCase(), nx + 170, top + 36, { size: 11, weight: 700, fill: COLORS.muted, letterSpacing: '0.06em' }));
-    g.appendChild(text(allowed.value.toFixed(dec) + unit, nx + 170, top + 66, { size: 26, weight: 700, fill: COLORS.text, mono: true }));
-    g.appendChild(gauge(nx, top + 92, 320, measured.value, allowed.value, accent));
+    g.appendChild(text(show(allowed), nx + 170, top + 66, { size: valueSize, weight: 700, fill: COLORS.text, mono: true }));
+    if (results.gauge !== false) g.appendChild(gauge(nx, top + 92, 320, measured.value, allowed.value, accent));
 
     // 3. Plain English
     const sx = 560;

@@ -24,7 +24,7 @@ Tabs are grouped by what you're trying to do. Tools marked *planned* appear grey
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D) | Datum targets |
 | **Decode Drawings** | Reading hard callouts | Feature control frames, holes/threads/patterns, welding symbols | Surface finish, frame legality checker |
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
-| **Stack-ups & Fits** | Assembly math | | Tolerance stack-up, fastener formulas, ISO fits |
+| **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas | ISO fits |
 | **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
 | **Learn** | Standards and practice | | Practice scenarios, Y14.5-2009 vs 2018, ASME vs ISO GPS |
 
