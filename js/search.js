@@ -22,6 +22,7 @@ const TYPES = {
     line: { label: 'Line / view', cls: 'bg-slate-200 text-slate-800' },
     field: { label: 'Title block', cls: 'bg-sky-100 text-sky-800' },
     step: { label: 'How to read', cls: 'bg-violet-100 text-violet-800' },
+    method: { label: 'Measure', cls: 'bg-cyan-100 text-cyan-800' },
     compare: { label: 'Compare', cls: 'bg-lime-100 text-lime-800' },
     mine: { label: 'My note', cls: 'bg-orange-100 text-orange-800' },
     planned: { label: 'Coming soon', cls: 'bg-slate-100 text-slate-500' }
@@ -37,11 +38,12 @@ const go = (cat, sym, focus) => window.dispatchEvent(new CustomEvent('gdt:naviga
 // --------------------------------------------------------------------------
 
 async function buildIndex() {
-    const [ex, gl, sf, notes, lines, tb, rc, ai, yc] = await Promise.all([
+    const [ex, gl, sf, notes, lines, tb, rc, ai, yc, mm] = await Promise.all([
         import('./explain.js'), import('./glossary.js'), import('./modules/decode/symbol_finder.js'),
         import('./modules/drawing/drawing_notes.js'), import('./modules/drawing/lines_views.js'),
         import('./modules/drawing/title_block.js'), import('./modules/drawing/read_checklist.js'),
-        import('./modules/learn/asme_iso.js'), import('./modules/learn/y14_changes.js')
+        import('./modules/learn/asme_iso.js'), import('./modules/learn/y14_changes.js'),
+        import('./modules/inspection/methods.js')
     ]);
     const items = [];
 
@@ -108,6 +110,20 @@ async function buildIndex() {
         items.push({
             type: 'compare', title: t.title, sub: 'Y14.5-2009 vs 2018', keys: [], text: `${t.y2009} ${t.y2018} ${t.you}`, snippet: t.you,
             open: () => go('LEARN', 'y14_changes', t.id)
+        });
+    }
+    // Measurement methods: per characteristic and per piece of equipment
+    for (const c of mm.CHARS) {
+        items.push({
+            type: 'method', title: `Measuring ${c.name.toLowerCase()}`, sub: 'Measurement Methods', keys: [],
+            text: c.methods.map(m => `${m.how} ${m.steps}`).join(' ') + ' ' + c.misleads.join(' '),
+            snippet: c.methods.map(m => m.how).join(' · '), boost: -1, open: () => go('INSPECTION', 'methods', `char:${c.id}`)
+        });
+    }
+    for (const t of mm.TOOLS) {
+        items.push({
+            type: 'method', title: t.name, sub: 'Measurement Methods · Equipment', keys: [], text: `${t.good} ${t.limit}`, snippet: t.good,
+            open: () => go('INSPECTION', 'methods', `tool:${t.id}`)
         });
     }
     return items;
@@ -250,7 +266,7 @@ async function open(prefill = '') {
         <div class="px-4 py-2 border-t border-slate-100 text-xs text-slate-500 flex gap-4">
           <span><kbd class="border border-slate-200 rounded px-1">↑</kbd> <kbd class="border border-slate-200 rounded px-1">↓</kbd> move</span>
           <span><kbd class="border border-slate-200 rounded px-1">Enter</kbd> open</span>
-          <span class="ml-auto">Searches tools, symbols, glossary, notes, ASME vs ISO, fits, threads and your notebook</span>
+          <span class="ml-auto">Searches tools, symbols, glossary, notes, measuring methods, fits, threads and your notebook</span>
         </div>
       </div>`;
     document.body.appendChild(modal);
