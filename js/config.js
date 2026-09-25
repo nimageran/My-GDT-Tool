@@ -77,8 +77,7 @@ export const GDT_HIERARCHY = {
             hole_callouts: { name: "Holes, Threads & Patterns", iconChar: "⌀", filePath: './modules/decode/hole_callouts.js' },
             welding: { name: "Welding Symbols", iconChar: "▷", filePath: './modules/decode/welding.js' },
             surface_finish: { name: "Surface Finish", iconChar: "√", filePath: './modules/decode/surface_finish.js' },
-            frame_checker: { name: "Frame Legality Checker", iconChar: "✓", planned: true,
-                summary: "Build a frame and get warnings for illegal or suspicious callouts: datums on form controls, MMC on a plane surface, position without datums, runout on a non-round feature." }
+            frame_checker: { name: "Frame Legality Checker", iconChar: "✓", filePath: './modules/decode/frame_checker.js' }
         }
     },
 
