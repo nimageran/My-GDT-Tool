@@ -118,6 +118,7 @@ const FRAME_LINK = { label: 'Decode a full frame', cat: DEC, sym: 'composite_fra
 const toolLink = (sym, name) => ({ label: `Open the ${name} tool`, cat: CHAR, sym });
 const WELD_LINK = { label: 'Decode a welding symbol', cat: DEC, sym: 'welding' };
 const HOLE_LINK = { label: 'Decode a hole callout', cat: DEC, sym: 'hole_callouts' };
+const SURF_LINK = { label: 'Decode a surface finish callout', cat: DEC, sym: 'surface_finish' };
 
 const FAMILIES = [
     { key: 'characteristics', label: 'Geometric characteristics', std: 'ASME Y14.5-2018' },
@@ -339,30 +340,30 @@ const SYMBOLS = [
     // Surface texture
     { family: 'surface', name: 'Surface texture (any process)', draw: surf({}), aliases: 'finish roughness ra check',
       meaning: 'Basic surface texture symbol: any manufacturing process is allowed. Values such as Ra 1.6 are written on it.',
-      misread: 'The roughness value is a maximum unless stated otherwise.' },
+      misread: 'The roughness value is a maximum unless stated otherwise.' , links: [SURF_LINK] },
     { family: 'surface', name: 'Material removal required', draw: surf({ removal: 'required' }), aliases: 'machined finish',
       meaning: 'The bar closes the V: the surface must be machined (material removed).',
-      misread: 'Most common symbol on machined parts.' },
+      misread: 'Most common symbol on machined parts.' , links: [SURF_LINK] },
     { family: 'surface', name: 'Material removal prohibited', draw: surf({ removal: 'prohibited' }), aliases: 'as cast as forged',
       meaning: 'The circle in the V: leave the surface as produced (cast, forged, rolled). Do not machine.',
-      misread: 'It does not mean "no requirement": the surface must stay as-produced.' },
+      misread: 'It does not mean "no requirement": the surface must stay as-produced.' , links: [SURF_LINK] },
     { family: 'surface', name: 'All around (surface texture)', draw: surf({ removal: 'required', allAround: true }), aliases: 'finish around',
       meaning: 'Circle where the long leg meets the extension line: applies to all surfaces around the outline in that view.',
-      misread: '' },
+      misread: '' , links: [SURF_LINK] },
     { family: 'surface', name: 'Lay parallel', draw: lay('='), aliases: 'lay direction',
-      meaning: 'Machining marks run parallel to the view plane edge the symbol is attached to.', misread: '' },
+      meaning: 'Machining marks run parallel to the view plane edge the symbol is attached to.', misread: '' , links: [SURF_LINK] },
     { family: 'surface', name: 'Lay perpendicular', draw: lay('perp'), aliases: 'lay direction',
-      meaning: 'Machining marks run perpendicular to that edge.', misread: '' },
+      meaning: 'Machining marks run perpendicular to that edge.', misread: '' , links: [SURF_LINK] },
     { family: 'surface', name: 'Lay crossed', draw: lay('X'), aliases: 'lay direction',
-      meaning: 'Marks cross in two oblique directions (e.g. honing).', misread: '' },
+      meaning: 'Marks cross in two oblique directions (e.g. honing).', misread: '' , links: [SURF_LINK] },
     { family: 'surface', name: 'Lay multidirectional', draw: lay('M'), aliases: 'lay',
-      meaning: 'Marks run in many directions (e.g. lapping, grinding with a cup wheel).', misread: '' },
+      meaning: 'Marks run in many directions (e.g. lapping, grinding with a cup wheel).', misread: '' , links: [SURF_LINK] },
     { family: 'surface', name: 'Lay circular', draw: lay('C'), aliases: 'lay facing',
-      meaning: 'Marks roughly circular about the center (e.g. facing on a lathe).', misread: '' },
+      meaning: 'Marks roughly circular about the center (e.g. facing on a lathe).', misread: '' , links: [SURF_LINK] },
     { family: 'surface', name: 'Lay radial', draw: lay('R'), aliases: 'lay',
-      meaning: 'Marks roughly radial from the center.', misread: '' },
+      meaning: 'Marks roughly radial from the center.', misread: '' , links: [SURF_LINK] },
     { family: 'surface', name: 'Lay particulate', draw: lay('P'), aliases: 'lay',
-      meaning: 'Non-directional or pitted (e.g. shot blast, EDM).', misread: '' },
+      meaning: 'Non-directional or pitted (e.g. shot blast, EDM).', misread: '' , links: [SURF_LINK] },
 
     // ISO-only
     { family: 'iso', name: 'Envelope requirement (E in a circle)', draw: mod('E'), aliases: 'envelope rule 1 iso 8015',
