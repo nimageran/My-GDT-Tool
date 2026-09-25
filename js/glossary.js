@@ -128,7 +128,8 @@ export const GLOSSARY = [
       meaning: 'Rule #1 does not apply to this size: size and shape are checked separately. ISO drawings work this way by default.',
       see: tool('MATERIAL', 'rule1', 'Rule #1 Envelope') },
     { term: 'ISO GPS', match: ['ISO GPS', 'ISO 8015'],
-      meaning: 'The international (ISO) system for GD&T. It looks similar to ASME but has some different defaults, for example no Rule #1.' },
+      meaning: 'The international (ISO) system for GD&T. It looks similar to ASME but has some different defaults, for example no Rule #1.',
+      see: tool('LEARN', 'asme_iso', 'ASME vs ISO GPS') },
     { term: 'Lay', match: ['lay direction', 'lay symbol', 'surface lay'],
       meaning: 'The direction of the machining marks on a surface, shown by a small symbol next to the surface finish mark.',
       see: tool('DECODE', 'surface_finish', 'Surface Finish') },
@@ -222,6 +223,21 @@ export const GLOSSARY = [
     { term: 'Worst case', match: ['worst case', 'worst-case'],
       meaning: 'Assuming every part is at its worst limit at the same time. Guaranteed to work, but pessimistic.',
       see: tool('STACKUPS', 'stackup', 'Tolerance Stack-up') },
+
+    // ASME vs ISO
+    { term: 'Envelope requirement (Ⓔ)', match: ['envelope requirement'],
+      meaning: 'Ⓔ after a size on an ISO drawing: the feature must not go beyond perfect form at its MMC size, like ASME Rule #1.',
+      see: tool('LEARN', 'asme_iso', 'ASME vs ISO GPS') },
+    { term: 'Theoretically exact dimension (TED)', match: ['TED', 'theoretically exact dimension'],
+      meaning: 'The ISO name for a basic dimension: a boxed, perfect value whose tolerance comes from a geometric frame.',
+      see: tool('LEARN', 'asme_iso', 'ASME vs ISO GPS') },
+    { term: 'CZ (combined zone)', match: ['CZ', 'combined zone'],
+      meaning: 'ISO: the features of a pattern are toleranced as one group, with their zones locked together by the TEDs between them.',
+      see: tool('LEARN', 'asme_iso', 'ASME vs ISO GPS') },
+    { term: 'UZ', match: ['UZ'],
+      meaning: 'ISO: the profile zone is not centred on the true profile. The number after UZ is how far the zone centre moves (+ outside the material, − inside).',
+      example: '0.3 UZ−0.05 is the same zone as ASME 0.3 Ⓤ 0.1: 0.1 outside, 0.2 inside.',
+      see: tool('LEARN', 'asme_iso', 'ASME vs ISO GPS') },
 
     // Fits
     { term: 'ISO fit', match: ['ISO fit', 'ISO fits', 'H7/g6', 'fit class'],

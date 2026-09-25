@@ -21,6 +21,7 @@ const TYPES = {
     line: { label: 'Line / view', cls: 'bg-slate-200 text-slate-800' },
     field: { label: 'Title block', cls: 'bg-sky-100 text-sky-800' },
     step: { label: 'How to read', cls: 'bg-violet-100 text-violet-800' },
+    compare: { label: 'ASME vs ISO', cls: 'bg-lime-100 text-lime-800' },
     planned: { label: 'Coming soon', cls: 'bg-slate-100 text-slate-500' }
 };
 
@@ -34,10 +35,11 @@ const go = (cat, sym, focus) => window.dispatchEvent(new CustomEvent('gdt:naviga
 // --------------------------------------------------------------------------
 
 async function buildIndex() {
-    const [ex, gl, sf, notes, lines, tb, rc] = await Promise.all([
+    const [ex, gl, sf, notes, lines, tb, rc, ai] = await Promise.all([
         import('./explain.js'), import('./glossary.js'), import('./modules/decode/symbol_finder.js'),
         import('./modules/drawing/drawing_notes.js'), import('./modules/drawing/lines_views.js'),
-        import('./modules/drawing/title_block.js'), import('./modules/drawing/read_checklist.js')
+        import('./modules/drawing/title_block.js'), import('./modules/drawing/read_checklist.js'),
+        import('./modules/learn/asme_iso.js')
     ]);
     const items = [];
 
@@ -92,6 +94,13 @@ async function buildIndex() {
             boost: -2, open: () => go('DECODE', 'read_checklist', i)
         });
     });
+    // ASME vs ISO differences
+    for (const t of ai.TOPICS) {
+        items.push({
+            type: 'compare', title: t.title, sub: 'ASME vs ISO GPS', keys: [], text: `${t.asme} ${t.iso} ${t.you}`, snippet: t.you,
+            open: () => go('LEARN', 'asme_iso', t.id)
+        });
+    }
     return items;
 }
 
@@ -115,7 +124,7 @@ function score(item, phrase, words) {
         if (start.test(title)) s += 20;
         else if (keys.some(k => start.test(k))) s += 15;
         else if (title.includes(w)) s += 8;
-        else if (w.length > 2 && start.test(body)) s += 4;
+        else if (start.test(body)) s += w.length > 2 ? 4 : 1;
         else if (w.length > 3 && body.includes(w)) s += 1;
         else return 0;                                    // every word must match somewhere
     }
@@ -226,7 +235,7 @@ async function open(prefill = '') {
         <div class="px-4 py-2 border-t border-slate-100 text-xs text-slate-500 flex gap-4">
           <span><kbd class="border border-slate-200 rounded px-1">↑</kbd> <kbd class="border border-slate-200 rounded px-1">↓</kbd> move</span>
           <span><kbd class="border border-slate-200 rounded px-1">Enter</kbd> open</span>
-          <span class="ml-auto">Searches tools, symbols, the glossary, notes, lines &amp; views, fits and threads</span>
+          <span class="ml-auto">Searches tools, symbols, glossary, notes, lines &amp; views, ASME vs ISO, fits and threads</span>
         </div>
       </div>`;
     document.body.appendChild(modal);
