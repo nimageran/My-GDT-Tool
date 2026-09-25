@@ -78,12 +78,11 @@ function getActualRadius(yNorm, angle) {
     // 1. Taper: Linear change
     r += deformTaper * yNorm;
     
-    // 2. Barrel/Hourglass: Quadratic (0 at ends, max at center)
-    // Formula: (0.25 - y^2) peaks at 0.
-    r += deformBarrel * (0.25 - (yNorm * yNorm));
+    // 2. Barrel/Hourglass: Quadratic (0 at ends, deformBarrel at center)
+    r += deformBarrel * 4 * (0.25 - (yNorm * yNorm));
     
-    // 3. Ovality: 2-lobe shape
-    r += deformOval * Math.cos(2 * angle) * 0.1;
+    // 3. Ovality: 2-lobe shape (largest minus smallest radius = deformOval)
+    r += deformOval * Math.cos(2 * angle) * 0.5;
     
     return r;
 }
@@ -96,11 +95,107 @@ function getCenterShift(yNorm) {
     return { x: shift, z: 0 };
 }
 
+// --- CYLINDRICITY MATHS (minimum zone) ---
+// Cylindricity: all surface points must lie between two coaxial cylinders
+// whose radii differ by the tolerance. The cylinders float: their axis may
+// shift and tilt, and their size is free. So the form error is the smallest
+// (max radius - min radius) over every possible axis.
+
+const FIT_RINGS = 20, FIT_SEGMENTS = 36;
+
+function surfacePoint(yNorm, angle) {
+    const shift = getCenterShift(yNorm);
+    const rad = getActualRadius(yNorm, angle);
+    return { x: shift.x + rad * Math.cos(angle), y: yNorm * state.height, z: shift.z + rad * Math.sin(angle) };
+}
+
+// Axis: passes through (x0, 0, z0) with direction (tx, 1, tz)
+function axisPointAt(axis, y) {
+    return { x: axis.x0 + axis.tx * y, z: axis.z0 + axis.tz * y };
+}
+
+// Perpendicular distance from a point to the axis
+function distToAxis(p, axis) {
+    const n = Math.hypot(axis.tx, 1, axis.tz);
+    const ux = axis.tx / n, uy = 1 / n, uz = axis.tz / n;
+    const c = axisPointAt(axis, p.y);
+    const dx = p.x - c.x, dz = p.z - c.z;             // vector from the axis point at the same height
+    return Math.hypot(-dz * uy, dz * ux - dx * uz, dx * uy);
+}
+
+function spreadAbout(axis, pts) {
+    let min = Infinity, max = -Infinity;
+    for (const p of pts) {
+        const d = distToAxis(p, axis);
+        if (d < min) min = d;
+        if (d > max) max = d;
+    }
+    return { min, max, width: max - min };
+}
+
+// Nelder-Mead search over the axis (x0, z0, tx, tz) for the narrowest zone
+function minimumZone(pts) {
+    const toAxis = v => ({ x0: v[0], z0: v[1], tx: v[2], tz: v[3] });
+    const f = v => spreadAbout(toAxis(v), pts).width;
+    let best = [0, 0, 0, 0];
+    for (let restart = 0; restart < 3; restart++) {
+        const step = 0.02 / (restart + 1);
+        let simplex = [best, ...[0, 1, 2, 3].map(i => best.map((b, j) => (j === i ? b + step : b)))]
+            .map(v => ({ v, f: f(v) }));
+        for (let it = 0; it < 400; it++) {
+            simplex.sort((a, b) => a.f - b.f);
+            if (simplex[4].f - simplex[0].f < 1e-10) break;
+            const c = [0, 1, 2, 3].map(j => simplex.slice(0, 4).reduce((s, p) => s + p.v[j], 0) / 4);
+            const at = t => c.map((cj, j) => cj + t * (simplex[4].v[j] - cj));
+            const r = at(-1), fr = f(r);
+            if (fr < simplex[0].f) {
+                const e = at(-2), fe = f(e);
+                simplex[4] = fe < fr ? { v: e, f: fe } : { v: r, f: fr };
+            } else if (fr < simplex[3].f) {
+                simplex[4] = { v: r, f: fr };
+            } else {
+                const k = at(0.5), fk = f(k);
+                if (fk < simplex[4].f) simplex[4] = { v: k, f: fk };
+                else simplex = simplex.map((p, i) => i === 0 ? p : (v => ({ v, f: f(v) }))(p.v.map((x, j) => simplex[0].v[j] + 0.5 * (x - simplex[0].v[j]))));
+            }
+        }
+        simplex.sort((a, b) => a.f - b.f);
+        best = simplex[0].v;
+    }
+    const axis = toAxis(best);
+    const s = spreadAbout(axis, pts);
+    return { axis, ...s, mid: (s.min + s.max) / 2 };
+}
+
+// The search stops within about a millionth of an inch; allow for that so a
+// shape exactly at the limit reads as a pass
+const FIT_SLACK = 5e-6;
+
+let fit = null, fitKey = '';   // result for the current shape (rotating the view does not change it)
+
+function computeFit() {
+    const key = [state.deformTaper, state.deformBend, state.deformBarrel, state.deformOval].join();
+    if (fit && key === fitKey) return fit;
+    fitKey = key;
+    const pts = [];
+    for (let r = 0; r <= FIT_RINGS; r++) {
+        for (let a = 0; a < FIT_SEGMENTS; a++) pts.push(surfacePoint(r / FIT_RINGS - 0.5, (a / FIT_SEGMENTS) * Math.PI * 2));
+    }
+    return minimumZone(pts);
+}
+
+// Inside the tolerance zone centred on the best-fit cylinder?
+function inZone(p) {
+    const d = distToAxis(p, fit.axis);
+    return Math.abs(d - fit.mid) <= state.toleranceRadial / 2 + FIT_SLACK;
+}
+
 // --- RENDERING ORCHESTRATION ---
 
 function renderScene() {
     if (!svgContainer) return;
     svgContainer.innerHTML = ''; 
+    fit = computeFit();
     
     // 1. Background Grid
     drawGrid();
@@ -145,13 +240,11 @@ function drawGrid() {
 
 function drawToleranceGhosts() {
     // Draws two perfect cylinders representing the tolerance zone
-    const { nominalRadius, height, toleranceRadial } = state;
-    const halfTol = toleranceRadial / 2; // Radial distance
-    
-    // Inner Limit
-    drawWireCylinder(nominalRadius - halfTol, height, '#3b82f6', 0.1, true);
-    // Outer Limit
-    drawWireCylinder(nominalRadius + halfTol, height, '#3b82f6', 0.1, true);
+    // The zone floats: it sits on the best-fit axis, at whatever size fits best
+    const { height, toleranceRadial } = state;
+    const halfTol = toleranceRadial / 2;
+    drawWireCylinder(fit.mid - halfTol, height, '#3b82f6', 0.35, true);
+    drawWireCylinder(fit.mid + halfTol, height, '#3b82f6', 0.35, true);
 }
 
 // Helper to draw a generic perfect cylinder (for ghosts)
@@ -167,9 +260,8 @@ function drawWireCylinder(rad, h, color, opacity, isDashed) {
         let path = "";
         for (let i = 0; i <= segments; i++) {
             const theta = (i / segments) * Math.PI * 2;
-            const x = rad * Math.cos(theta);
-            const z = rad * Math.sin(theta);
-            const p = project(x, y, z);
+            const c = axisPointAt(fit.axis, y);
+            const p = project(c.x + rad * Math.cos(theta), y, c.z + rad * Math.sin(theta));
             path += (i===0 ? "M" : "L") + ` ${p.x.toFixed(1)},${p.y.toFixed(1)}`;
         }
         group.appendChild(createSVG('path', { d: path }));
@@ -178,10 +270,9 @@ function drawWireCylinder(rad, h, color, opacity, isDashed) {
     // Draw connecting lines (4 quadrants)
     for(let i=0; i<4; i++) {
         const theta = (i/4) * Math.PI * 2;
-        const x = rad * Math.cos(theta);
-        const z = rad * Math.sin(theta);
-        const p1 = project(x, -h/2, z);
-        const p2 = project(x, h/2, z);
+        const c1 = axisPointAt(fit.axis, -h / 2), c2 = axisPointAt(fit.axis, h / 2);
+        const p1 = project(c1.x + rad * Math.cos(theta), -h / 2, c1.z + rad * Math.sin(theta));
+        const p2 = project(c2.x + rad * Math.cos(theta), h / 2, c2.z + rad * Math.sin(theta));
         group.appendChild(createSVG('line', { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y }));
     }
 
@@ -189,12 +280,11 @@ function drawWireCylinder(rad, h, color, opacity, isDashed) {
 }
 
 function drawCylinderMesh() {
-    const { height, toleranceRadial } = state;
+    const { height } = state;
     const rings = 12;      // Vertical resolution
     const segments = 32;   // Radial resolution
     
     const group = createSVG('g', {});
-    const halfTol = toleranceRadial / 2;
 
     // We build horizontal rings
     for (let r = 0; r <= rings; r++) {
@@ -217,9 +307,7 @@ function drawCylinderMesh() {
             
             const p = project(x, y, z);
             
-            // Validation
-            const error = Math.abs(rad - state.nominalRadius);
-            const isPass = error <= halfTol;
+            const isPass = inZone({ x, y, z });
             if (!isPass) isRingFail = true;
 
             points.push({ p, isPass });
@@ -258,8 +346,7 @@ function drawCylinderMesh() {
             const z = shift.z + rad * Math.sin(angle);
             const p = project(x, y, z);
             
-            const error = Math.abs(rad - state.nominalRadius);
-            const isPass = error <= halfTol;
+            const isPass = inZone({ x, y, z });
 
             if (prevP) {
                 const color = (isPass && prevPass) ? '#10b981' : '#ef4444';
@@ -301,42 +388,10 @@ function drawAxis() {
 }
 
 function drawFuturisticHUD() {
-    // Calculate Error Magnitude
-    // Standard Cylindricity = (Max Radius - Min Radius) relative to best fit.
-    // Here we simplify: Max Deviation from Nominal.
-    let maxR = 0;
-    let minR = Infinity;
-    
-    // Sample points
-    for(let r=0; r<=10; r++) {
-        const yNorm = (r/10)-0.5;
-        for(let a=0; a<16; a++) {
-            const ang = (a/16)*Math.PI*2;
-            const rad = getActualRadius(yNorm, ang);
-            // Also need to account for center shift for true cylindricity (Minimum Zone)
-            // But visual tolerance zone is fixed to nominal axis here for clarity.
-            // Error = Deviation from Nominal Axis.
-            
-            // Adjust for Bend? 
-            // The Tolerance Zone implies coaxial cylinders. 
-            // If the axis bends, the surface moves out of the coaxial zone.
-            // So deviation is (Shift + Radius) - Nominal? 
-            // Approx:
-            const shift = getCenterShift(yNorm).x; // Simplification
-            const effRad = rad + Math.abs(shift); 
-            
-            if(effRad > maxR) maxR = effRad;
-            if(effRad < minR) minR = effRad;
-        }
-    }
-    
-    const maxDev = Math.max(Math.abs(maxR - state.nominalRadius), Math.abs(minR - state.nominalRadius));
-    // Actually, check against tolerance limits
-    // Tolerance is Total Radial Width. So +/- (Tol/2).
-    
-    const limit = state.toleranceRadial / 2;
-    const isPass = maxDev <= limit;
-    
+    // Form error = width of the narrowest zone that holds the whole surface
+    const maxDev = fit.width;
+    const isPass = maxDev <= state.toleranceRadial + FIT_SLACK;
+
     const panelBg = '#0f172a'; 
     const accent = isPass ? '#22c55e' : '#ef4444'; 
     
@@ -360,14 +415,13 @@ function drawFuturisticHUD() {
     const col1 = bx+20;
     const col2 = bx+240;
     
-    group.appendChild(addText('LARGEST RADIUS ERROR:', col1, by+80, 14, '#cbd5e1'));
+    group.appendChild(addText('BAND NEEDED:', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(maxDev.toFixed(4)+'"', col2, by+80, 14, accent));
     
-    group.appendChild(addText('ALLOWED (± ON RADIUS):', col1, by+105, 14, '#cbd5e1'));
-    group.appendChild(addText(limit.toFixed(4)+'"', col2, by+105, 14, 'white'));
+    group.appendChild(addText('TOLERANCE (BAND):', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText(state.toleranceRadial.toFixed(4)+'"', col2, by+105, 14, 'white'));
     
-    group.appendChild(addText('TOLERANCE (FRAME):', col1, by+130, 14, '#cbd5e1'));
-    group.appendChild(addText(state.toleranceRadial.toFixed(4)+'"', col2, by+130, 14, 'white'));
+    group.appendChild(addText('Best-fit axis, any size', col1, by+130, 12, '#94a3b8', 'normal'));
 
     const statusText = isPass ? "PASS" : "FAIL";
     const status = addText(statusText, bx+bw-90, by+35, 24, accent, '900');
