@@ -616,6 +616,76 @@ export const EXPLAIN = {
         tool: 'Change B\'s size, switch B Ⓜ and B (RMB), edit the hole offsets, or try the presets.'
     },
 
+    process_capability: {
+        title: 'Process capability guide',
+        terms: [
+            ['Process capability', 'How tight a tolerance a process can hold, part after part.'],
+            ['Routine', 'A normal shop holds it every day, at normal cost.'],
+            ['With care', 'Possible, but needs a good machine, a stable setup and checking: more scrap and cost.'],
+            ['Ra', 'Average surface roughness, in µm.']
+        ],
+        simple: [
+            'Every process has a **range of tolerances it can hold**: sand casting ±1 mm or so, grinding a few microns.',
+            'Enter the tolerance from the drawing and the chart shows which processes hold it **routinely**, **with care**, or **not at all**.',
+            'Add a **surface finish** if the drawing asks for one, because some processes cannot reach it.',
+            'Tighter tolerances **cost more**, and the cost climbs steeply below about ±0.025 mm.',
+            'Use it to **question tight tolerances** before they reach the shop.'
+        ],
+        example: [
+            'A bore is Ø20 +0.021/0, so about ±0.01 mm.',
+            'The chart shows grinding, wire EDM and honing hold it routinely, while reaming, boring, turning and milling need care.',
+            'So the shop will drill, then ream or bore carefully (or grind), and the cost is about 9× a loose tolerance.'
+        ],
+        tool: 'Type a tolerance (± each side) in mm or inch, optionally a finish, and read which processes fit.'
+    },
+
+    cpk: {
+        title: 'Cp / Cpk',
+        terms: [
+            ['Standard deviation (σ)', 'How spread out the measurements are. About 99.7% of parts fall within ±3σ of the average.'],
+            ['Cp', 'Could the spread fit inside the limits if it were perfectly centred? Tolerance ÷ 6σ.'],
+            ['Cpk', 'Does it fit where it actually is? The distance from the average to the nearest limit ÷ 3σ.'],
+            ['ppm', 'Parts per million out of spec.']
+        ],
+        simple: [
+            '**Cp** compares the **width of the tolerance** with the **width of the process spread**.',
+            '**Cpk** also looks at **where** the process sits: if it drifts towards one limit, Cpk drops.',
+            'A Cpk of **1.33** is the usual target; **1.67** for critical parts; below **1.0** some parts will be out of spec.',
+            'If **Cp is fine but Cpk is low**, just **re-centre** the process; if **both are low**, the spread itself must shrink.',
+            'For **position, flatness or runout**, use **upper limit only**.'
+        ],
+        example: [
+            'A Ø10.00 ±0.05 bore: 40 parts average 10.018 with σ = 0.012.',
+            'Cp = 0.10 ÷ (6 × 0.012) = 1.39: the spread would fit.',
+            'Cpk = (10.05 − 10.018) ÷ (3 × 0.012) = 0.89: it runs too close to the upper limit.',
+            'Moving the tool offset by −0.018 brings Cpk up to about 1.39.'
+        ],
+        tool: 'Paste measurements (a column from Excel works), set the limits and the target, and read the advice.'
+    },
+
+    plus_minus: {
+        title: '± to position',
+        terms: [
+            ['± (coordinate) tolerance', 'Separate limits in X and Y: the allowed area is a square or rectangle.'],
+            ['Position tolerance', 'One round zone around the true position, given as a diameter.'],
+            ['Equivalent position', 'The circle through the corners of the ± square: Ø = 2 × √(X² + Y²).']
+        ],
+        simple: [
+            'With **±X and ±Y**, the hole centre must stay in a **square**.',
+            'But its **corners** are already allowed, so the real distance you accept is the **diagonal**.',
+            'A **round position zone** through those corners allows the **same worst case** and gives about **57% more area**.',
+            'Parts just outside the **flat sides of the square** are **good** but rejected by ±.',
+            'Converting position **back** to ± gives the **square inside the circle**, which throws away half the zone.'
+        ],
+        example: [
+            'A hole is located ±0.1 in X and ±0.1 in Y.',
+            'The equivalent position is Ø = 2 × √(0.1² + 0.1²) = Ø0.283.',
+            'A hole off by 0.13 in X only fails ± (0.13 > 0.1), but its position is Ø0.26, inside Ø0.283.',
+            'It is a good part, and position would accept it.'
+        ],
+        tool: 'Set ±X and ±Y, then drag the hole centre (or use the presets) and compare the two checks.'
+    },
+
     datum_targets: {
         title: 'Datum targets',
         terms: [

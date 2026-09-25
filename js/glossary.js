@@ -241,6 +241,15 @@ export const GLOSSARY = [
       example: '0.3 UZ−0.05 is the same zone as ASME 0.3 Ⓤ 0.1: 0.1 outside, 0.2 inside.',
       see: tool('LEARN', 'asme_iso', 'ASME vs ISO GPS') },
 
+    // Manufacturing
+    { term: 'Cp / Cpk', match: ['Cpk', 'Cp', 'process capability index'],
+      meaning: 'Numbers that say whether a process can hold a tolerance. Cp compares the tolerance with the spread; Cpk also checks how centred the process is. 1.33 or more is the usual target.',
+      example: 'Tolerance 0.10, spread 6σ = 0.072: Cp = 1.39. If the average drifts towards a limit, Cpk drops below Cp.',
+      see: tool('MANUFACTURING', 'cpk', 'Cp / Cpk Calculator') },
+    { term: 'Standard deviation', match: ['standard deviation', 'sigma'],
+      meaning: 'How spread out a set of measurements is (σ). For a bell-shaped spread, about 99.7% of parts fall within ±3σ of the average.',
+      see: tool('MANUFACTURING', 'cpk', 'Cp / Cpk Calculator') },
+
     // Fits
     { term: 'ISO fit', match: ['ISO fit', 'ISO fits', 'H7/g6', 'fit class'],
       meaning: 'A code like Ø20 H7/g6 that gives a hole (capital letter) and a shaft (small letter) tolerance zones from the ISO 286 tables, and so sets how tightly they fit.',
