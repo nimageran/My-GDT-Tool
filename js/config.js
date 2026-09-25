@@ -1,148 +1,142 @@
 // js/config.js
+// ============================================================================
+// Navigation: tabs (top bar) → tools (ribbon). Tabs follow the jobs a
+// manufacturing engineer does with GD&T: understand a characteristic, work
+// out material condition and datums, read a drawing, inspect, stack up, make.
+//
+// Tool entry fields:
+//   name, iconChar ... ribbon label (Unicode is fine here, navigation only)
+//   filePath ........ module to load (exports draw, loadControls, optional unload)
+//   group ........... optional sub-heading within the ribbon
+//   legacy .......... removed from the current standard, kept for old drawings
+//   planned ......... on the roadmap: shown greyed with its `summary`, no file.
+//                     To build one: write the module, add filePath, delete planned.
+// ============================================================================
 
 export const GDT_HIERARCHY = {
-    // CATEGORY 1: FORM
-    FORM: {
-        label: "Form",
-        icon: "fa-shapes", 
+    // TAB 1: the 14 characteristics, each as an interactive tolerance zone
+    CHARACTERISTICS: {
+        label: "Characteristics",
+        icon: "fa-shapes",
         symbols: {
-            straightness: { 
-                name: "Straightness", 
-                iconChar: "—", 
-                filePath: './modules/form/straightness.js' 
-            },
-            flatness: { 
-                name: "Flatness", 
-                iconChar: "⏥", 
-                filePath: './modules/form/flatness.js' 
-            },
-            circularity: { 
-                name: "Circularity", 
-                iconChar: "○", 
-                filePath: './modules/form/circularity.js' 
-            },
-            cylindricity: { 
-                name: "Cylindricity", 
-                iconChar: "⌭", 
-                filePath: './modules/form/cylindricity.js' 
-            }
+            straightness: { group: "Form", name: "Straightness", iconChar: "—", filePath: './modules/form/straightness.js' },
+            flatness: { group: "Form", name: "Flatness", iconChar: "⏥", filePath: './modules/form/flatness.js' },
+            circularity: { group: "Form", name: "Circularity", iconChar: "○", filePath: './modules/form/circularity.js' },
+            cylindricity: { group: "Form", name: "Cylindricity", iconChar: "⌭", filePath: './modules/form/cylindricity.js' },
+
+            line_profile: { group: "Profile", name: "Line Profile", iconChar: "⌒", filePath: './modules/profile/line_profile.js' },
+            surface_profile: { group: "Profile", name: "Surface Profile", iconChar: "⌓", filePath: './modules/profile/surface_profile.js' },
+
+            angularity: { group: "Orientation", name: "Angularity", iconChar: "∠", filePath: './modules/orientation/angularity.js' },
+            perpendicularity: { group: "Orientation", name: "Perpendicularity", iconChar: "⊥", filePath: './modules/orientation/perpendicularity.js' },
+            parallelism: { group: "Orientation", name: "Parallelism", iconChar: "∥", filePath: './modules/orientation/parallelism.js' },
+
+            position: { group: "Location", name: "Position", iconChar: "⌖", filePath: './modules/location/position.js' },
+            concentricity: { group: "Location", name: "Concentricity", iconChar: "◎", filePath: './modules/location/concentricity.js', legacy: true },
+            symmetry: { group: "Location", name: "Symmetry", iconChar: "⌯", filePath: './modules/location/symmetry.js', legacy: true },
+
+            circular_runout: { group: "Runout", name: "Circular Runout", iconChar: "↗", filePath: './modules/runout/circular_runout.js' },
+            total_runout: { group: "Runout", name: "Total Runout", iconChar: "⌰", filePath: './modules/runout/total_runout.js' }
         }
     },
 
-    // CATEGORY 2: PROFILE
-    PROFILE: {
-        label: "Profile",
-        icon: "fa-bezier-curve",
+    // TAB 2: modifiers and the boundaries they create
+    MATERIAL: {
+        label: "Material Condition",
+        icon: "fa-expand",
         symbols: {
-            line_profile: { 
-                name: "Line Profile", 
-                iconChar: "⌒", 
-                filePath: './modules/profile/line_profile.js' 
-            },
-            surface_profile: { 
-                name: "Surface Profile", 
-                iconChar: "⌓", 
-                filePath: './modules/profile/surface_profile.js' 
-            }
+            bonus: { name: "Bonus Tolerance (MMC / LMC)", iconChar: "Ⓜ", filePath: './modules/location/position.js' },
+            virtual_condition: { name: "Virtual & Resultant Condition", iconChar: "◌", planned: true,
+                summary: "The worst-case boundaries a mating part must clear. Compute virtual and resultant condition for holes and pins at MMC or LMC, and see which one matters for assembly and which for wall thickness." },
+            rule1: { name: "Rule #1 Envelope", iconChar: "▭", planned: true,
+                summary: "Perfect form at MMC: see why a bent pin fails a ring gauge even when every two-point size measurement is in tolerance, and when the independency symbol lifts the rule." },
+            datum_shift: { name: "Datum Shift (MMB)", iconChar: "⇄", planned: true,
+                summary: "The extra movement a pattern gets when a datum feature of size is referenced at MMB, and why a functional gauge allows it but a CMM report often ignores it." }
         }
     },
 
-    // CATEGORY 3: ORIENTATION
-    ORIENTATION: {
-        label: "Orientation",
-        icon: "fa-ruler-combined",
+    // TAB 3: how parts are held and measured from
+    DATUMS: {
+        label: "Datums",
+        icon: "fa-cube",
         symbols: {
-            angularity: { 
-                name: "Angularity", 
-                iconChar: "∠", 
-                filePath: './modules/orientation/angularity.js' 
-            },
-            perpendicularity: { 
-                name: "Perpendicularity", 
-                iconChar: "⊥", 
-                filePath: './modules/orientation/perpendicularity.js' 
-            },
-            parallelism: { 
-                name: "Parallelism", 
-                iconChar: "∥", 
-                filePath: './modules/orientation/parallelism.js' 
-            }
+            drf: { name: "Datum Reference Frame", iconChar: "⌗", planned: true,
+                summary: "Pick primary, secondary and tertiary datum features and watch the six degrees of freedom lock one by one (3-2-1)." },
+            precedence: { name: "Datum Precedence", iconChar: "⇅", planned: true,
+                summary: "Swap A|B|C to B|A|C and see how the part sits differently in the fixture and how the results change." },
+            datum_targets: { name: "Datum Targets", iconChar: "⊗", planned: true,
+                summary: "Target points, lines and areas for castings, forgings and sheet metal, and how to build the fixture that simulates them." }
         }
     },
 
-    // CATEGORY 4: LOCATION
-    LOCATION: {
-        label: "Location",
-        icon: "fa-crosshairs",
-        symbols: {
-            position: { 
-                name: "Position", 
-                iconChar: "⌖", 
-                filePath: './modules/location/position.js' 
-            },
-            concentricity: { 
-                name: "Concentricity", 
-                iconChar: "◎", 
-                filePath: './modules/location/concentricity.js' 
-            },
-            symmetry: { 
-                name: "Symmetry", 
-                iconChar: "⌯", 
-                filePath: './modules/location/symmetry.js' 
-            }
-        }
-    },
-
-    // CATEGORY 5: RUNOUT
-    RUNOUT: {
-        label: "Runout",
-        icon: "fa-arrows-spin",
-        symbols: {
-            circular_runout: { 
-                name: "Circular Runout", 
-                iconChar: "↗", 
-                filePath: './modules/runout/circular_runout.js' 
-            },
-            total_runout: { 
-                name: "Total Runout", 
-                iconChar: "⌰", 
-                filePath: './modules/runout/total_runout.js' 
-            }
-        }
-    },
-
-    // CATEGORY 6: DECODE — reverse-engineering hard drawing callouts.
-    // Registered once; future modules OVERWRITE their placeholder file.
-    // Config never needs editing again (see DECODER_SPEC.md §7).
+    // TAB 4: reverse-engineering hard callouts (see decode/DECODER_SPEC.md)
     DECODE: {
-        label: "Decode",
+        label: "Decode Drawings",
         icon: "fa-magnifying-glass",
         symbols: {
-            welding: {
-                name: "Welding Symbol",
-                iconChar: "▷",
-                filePath: './modules/decode/welding.js'
-            },
-            hole_callouts: {
-                name: "Holes & Patterns",
-                iconChar: "⌀",
-                filePath: './modules/decode/hole_callouts.js'
-            },
-            surface_finish: {
-                name: "Surface Finish",
-                iconChar: "√",
-                filePath: './modules/decode/surface_finish.js'
-            },
-            composite_frames: {
-                name: "Composite & Datums",
-                iconChar: "▣",
-                filePath: './modules/decode/composite_frames.js'
-            },
-            fits: {
-                name: "Fits (H7/g6)",
-                iconChar: "⌗",
-                filePath: './modules/decode/fits.js'
-            }
+            composite_frames: { name: "Feature Control Frames", iconChar: "▣", filePath: './modules/decode/composite_frames.js' },
+            hole_callouts: { name: "Holes, Threads & Patterns", iconChar: "⌀", filePath: './modules/decode/hole_callouts.js' },
+            welding: { name: "Welding Symbols", iconChar: "▷", filePath: './modules/decode/welding.js' },
+            surface_finish: { name: "Surface Finish", iconChar: "√", planned: true,
+                summary: "Full ISO 1302 / ASME Y14.36 grammar: removal required or prohibited, Ra and Rz values, sampling length, lay symbols, machining allowance and all-around." },
+            frame_checker: { name: "Frame Legality Checker", iconChar: "✓", planned: true,
+                summary: "Build a frame and get warnings for illegal or suspicious callouts: datums on form controls, MMC on a plane surface, position without datums, runout on a non-round feature." }
+        }
+    },
+
+    // TAB 5: what quality does with the drawing
+    INSPECTION: {
+        label: "Inspection",
+        icon: "fa-microscope",
+        symbols: {
+            cmm_position: { name: "CMM Position Calculator", iconChar: "⌖", planned: true,
+                summary: "Paste measured X, Y and diameter for each hole from a CMM report and get position, bonus and pass/fail per hole and for the pattern." },
+            methods: { name: "Measurement Methods", iconChar: "⏚", planned: true,
+                summary: "How each characteristic is actually checked (surface plate and indicator, V-blocks, CMM, functional gauge) and where each method can mislead." },
+            functional_gauge: { name: "Functional Gauge Designer", iconChar: "⊞", planned: true,
+                summary: "Size gauge pins at virtual condition and lay out a go gauge for a hole pattern, including datum pins at MMB." }
+        }
+    },
+
+    // TAB 6: assembly math
+    STACKUPS: {
+        label: "Stack-ups & Fits",
+        icon: "fa-layer-group",
+        symbols: {
+            stackup: { name: "Tolerance Stack-up", iconChar: "≡", planned: true,
+                summary: "Worst-case and RSS (statistical) loops, with position and profile tolerances as contributors." },
+            fasteners: { name: "Fastener Formulas", iconChar: "⊕", planned: true,
+                summary: "Floating fastener T = H − F and fixed fastener T = (H − F) / 2: size clearance holes and position tolerance for a given bolt." },
+            fits: { name: "ISO Fits (H7/g6)", iconChar: "⌗", planned: true,
+                summary: "ISO 286 fit decoder: nominal size + fit class → limit dimensions, clearance or interference range, and fit character, with a shaft-in-hole zone diagram." }
+        }
+    },
+
+    // TAB 7: can the shop make it, and at what cost
+    MANUFACTURING: {
+        label: "Manufacturing",
+        icon: "fa-industry",
+        symbols: {
+            process_capability: { name: "Process Capability Guide", iconChar: "⚙", planned: true,
+                summary: "What turning, milling, grinding, reaming and EDM realistically hold, and how cost climbs as tolerances tighten." },
+            cpk: { name: "Cp / Cpk Calculator", iconChar: "∿", planned: true,
+                summary: "Paste measurements and see whether the process can hold the callout, with a histogram against the limits." },
+            plus_minus: { name: "± to Position", iconChar: "⊡", planned: true,
+                summary: "Convert coordinate ± tolerances to position and see why a round zone gives 57% more usable area than the square one." }
+        }
+    },
+
+    // TAB 8: standards and practice
+    LEARN: {
+        label: "Learn",
+        icon: "fa-graduation-cap",
+        symbols: {
+            practice: { name: "Practice Scenarios", iconChar: "?", planned: true,
+                summary: "Pass or fail, and why? Scenario quizzes built from real drawing callouts." },
+            y14_changes: { name: "Y14.5-2009 vs 2018", iconChar: "Δ", planned: true,
+                summary: "What changed between editions, including the removal of concentricity and symmetry and what to use instead." },
+            asme_iso: { name: "ASME vs ISO GPS", iconChar: "≠", planned: true,
+                summary: "The differences that matter when reading drawings from ISO-based suppliers: independency by default, datum systems, symbols." }
         }
     }
 };
