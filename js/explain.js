@@ -1,0 +1,617 @@
+// js/explain.js
+// ============================================================================
+// EXPLAIN PANEL: one plain-language explanation per tool, always in the same
+// three parts:
+//   1. Key terms   (the harder words, each with a short meaning)
+//   2. In simple words   (at most 6 sentences, important words in **bold**)
+//   3. Example   (a short real case with numbers, ending in the result)
+// plus a one-line hint on how to use the tool.
+//
+// Writing rules for new entries:
+//   - short sentences, everyday words; explain a term the first time it appears
+//   - no capitals for emphasis
+//   - examples use the same units as the tool and end with pass / fail / action
+// ============================================================================
+
+const EXPLAIN = {
+    straightness: {
+        title: 'Straightness',
+        terms: [
+            ['Line element', 'One straight line drawn along the surface, in one direction.'],
+            ['Axis (derived median line)', 'The centre line of a pin or hole, made of the centre points of each slice.'],
+            ['Form control', 'A control of shape only. It is never tied to a datum.']
+        ],
+        simple: [
+            'Straightness checks **how straight a line** on the part is.',
+            'On a surface, each line along it must fit between **two parallel lines** that are the tolerance apart.',
+            'If the frame shows **Ø** before the value, it checks the **axis** of a pin or hole instead, inside a thin cylinder.',
+            'It never uses a **datum**: it only cares about shape, not where the part is.'
+        ],
+        example: [
+            'A shaft has straightness 0.002" on its surface.',
+            'You lay a straight edge along it and find the biggest gap along one line: 0.0015".',
+            'That line passes, because 0.0015 is less than 0.002.',
+            'Repeat on other lines around the shaft: every one must pass.'
+        ],
+        tool: 'Use the presets or drag the points to bend the line and watch it against the zone.'
+    },
+
+    flatness: {
+        title: 'Flatness',
+        terms: [
+            ['Two parallel planes', 'Two perfect flat sheets, the tolerance apart. The surface must fit between them.'],
+            ['Peak and valley', 'The highest and the lowest point of the surface.'],
+            ['Floating zone', 'The two planes may tilt and move to fit the surface as well as possible.']
+        ],
+        simple: [
+            'Flatness checks **how flat a surface** is.',
+            'All its points must fit between **two parallel planes** that are the tolerance apart.',
+            'The planes can **tilt to fit** the surface, so only the shape counts, not the angle.',
+            'The flatness error is the **highest point minus the lowest point** after that best fit.',
+            'It never has a **datum**.'
+        ],
+        example: [
+            'A mounting plate has flatness 0.004".',
+            'On a surface plate, the dial reads from −0.001" to +0.002" across the face.',
+            'The spread is 0.003", so it passes.',
+            'If one corner read +0.004", the spread would be 0.005" and it would fail.'
+        ],
+        tool: 'Drag the white points up or down to bow or twist the plate.'
+    },
+
+    circularity: {
+        title: 'Circularity (roundness)',
+        terms: [
+            ['Cross-section', 'A slice straight across a round feature.'],
+            ['Concentric circles', 'Two circles with the same centre.'],
+            ['Lobing', 'A shape with 2 or 3 slightly flat sides (oval or triangle-like).']
+        ],
+        simple: [
+            'Circularity checks **how round each slice** of a shaft or hole is.',
+            'Every point of one slice must fit between **two circles with the same centre**, the tolerance apart (measured on the radius).',
+            'The circles find **their own best centre**: the part\'s axis does not matter.',
+            'Each **slice is checked on its own**.',
+            'It never has a datum, and it does not control the size.'
+        ],
+        example: [
+            'A pin has circularity 0.001".',
+            'In one slice, the largest radius is 0.2505" and the smallest is 0.2497".',
+            'The difference is 0.0008", so that slice passes.',
+            'Careful: a 3-lobe shape can measure the same diameter everywhere with a caliper, yet still fail roundness.'
+        ],
+        tool: 'Add oval or 3-lobe error with the sliders and rotate the part.'
+    },
+
+    cylindricity: {
+        title: 'Cylindricity',
+        terms: [
+            ['Coaxial cylinders', 'Two cylinders sharing the same centre line.'],
+            ['Taper', 'The diameter changes from one end to the other.'],
+            ['Barrel', 'The middle is fatter (or thinner) than the ends.']
+        ],
+        simple: [
+            'Cylindricity checks the **whole surface** of a shaft or hole at once.',
+            'All points must fit between **two cylinders with the same axis**, the tolerance apart.',
+            'It combines **roundness, straightness and taper** in one check.',
+            'Like all form controls, it has **no datum**.',
+            'It is strict and costly to inspect, so it is kept for **precision fits**.'
+        ],
+        example: [
+            'A hydraulic piston has cylindricity 0.0005".',
+            'Every slice is round within 0.0003", but the diameter grows 0.0004" from one end to the other.',
+            'Together the surface needs a band of about 0.0007", so it fails, even though each slice alone looked fine.'
+        ],
+        tool: 'Add taper, barrel, bend or oval error. Note: this tool measures from the nominal size, a simplification; a real check uses a best-fit axis.'
+    },
+
+    line_profile: {
+        title: 'Profile of a line',
+        terms: [
+            ['True profile', 'The perfect shape, defined by boxed (basic) dimensions or the CAD model.'],
+            ['Line element', 'One 2D slice through the surface.'],
+            ['Equal split', 'By default the band lies half outside and half inside the perfect shape.']
+        ],
+        simple: [
+            'Profile of a line checks the **shape of a curve**, one **slice at a time**.',
+            'Each slice must stay within a **band around the perfect shape**, the tolerance wide.',
+            'By default the band is **split equally**: half each side.',
+            'With datums it also controls **angle and location**; without datums, only the shape.'
+        ],
+        example: [
+            'A cam edge has profile of a line 0.030" to datum A.',
+            'The band is 0.015" each side of the perfect curve.',
+            'At one spot the edge is 0.010" outside: fine.',
+            'At another spot it is 0.020" inside: that spot fails.'
+        ],
+        tool: 'Add surface error and see where the curve leaves the band.'
+    },
+
+    surface_profile: {
+        title: 'Profile of a surface',
+        terms: [
+            ['True profile', 'The perfect 3D shape, from basic dimensions or the CAD model.'],
+            ['Ⓤ (unequal)', 'Moves the band so more of it lies on one side of the perfect shape.'],
+            ['Datum reference frame', 'The set of datums (A, B, C) that fixes where the part is.']
+        ],
+        simple: [
+            'Profile of a surface checks a **whole surface in 3D** against its perfect shape.',
+            'Every point must be within a **band around the true profile**, the tolerance wide.',
+            'The band is **split equally** unless the frame shows **Ⓤ**.',
+            'With datums it controls **shape, size, angle and location** at once, which makes it the most powerful GD&T control.',
+            'Without datums, it controls only the shape.'
+        ],
+        example: [
+            'A curved cover has surface profile 0.030" to A, B and C, so the band is ±0.015" around the CAD surface.',
+            'A CMM scan finds one point 0.018" proud of the surface.',
+            'That point fails, even though the rest of the surface is within ±0.005".'
+        ],
+        tool: 'Drag the white points to deform the surface; red shows where it leaves the band.'
+    },
+
+    angularity: {
+        title: 'Angularity',
+        terms: [
+            ['Basic angle', 'The exact angle, shown in a box on the drawing.'],
+            ['Zone width', 'The tolerance: a distance, not an angle.'],
+            ['Datum', 'The reference surface the angle is measured from.']
+        ],
+        simple: [
+            'Angularity checks that a surface or axis sits at the **right angle** to a datum (any angle other than 90° or 0°).',
+            'The surface must fit between **two parallel planes** the tolerance apart, tilted at the **basic angle**.',
+            'The tolerance is a **distance** (like 0.020"), **not degrees**.',
+            'The zone may move closer or farther, so it controls only the **tilt**, not the location.'
+        ],
+        example: [
+            'A 45° face, 0.300" long, has angularity 0.020" to datum A.',
+            'It is made at 47°: over its length it tilts about 0.300 × sin(2°) ≈ 0.010" away from perfect, so it passes.',
+            'At 49° it tilts about 0.021", so it fails.'
+        ],
+        tool: 'Change the angle error with the slider; the zone follows the surface.'
+    },
+
+    perpendicularity: {
+        title: 'Perpendicularity',
+        terms: [
+            ['Perpendicular', 'Exactly 90° to the datum.'],
+            ['Lean', 'How far the top of the surface sits from a perfect 90° line.'],
+            ['Floating zone', 'The zone may slide sideways; only the lean counts.']
+        ],
+        simple: [
+            'Perpendicularity checks that a surface or axis stands at **90° to a datum**.',
+            'The surface must fit between **two parallel planes** that stay at 90° to the datum.',
+            'The tolerance is a **width**, not an angle.',
+            'The zone may **slide sideways**, so only the **lean** matters, not where the surface is.',
+            'With **Ø**, it controls the axis of a pin or hole inside a thin cylinder.'
+        ],
+        example: [
+            'A wall 0.300" tall has perpendicularity 0.015" to datum A (the base).',
+            'Its top leans 0.012" from a perfect vertical, so it passes.',
+            'If it leaned 0.020", it would fail, even though that is only about 3.8°.'
+        ],
+        tool: 'Drag the round handle at the top of the block to tilt it.'
+    },
+
+    parallelism: {
+        title: 'Parallelism',
+        terms: [
+            ['Parallel', 'Running in the same direction as the datum, like two rails.'],
+            ['Datum', 'The reference surface, often the face the part sits on.']
+        ],
+        simple: [
+            'Parallelism checks that a surface or axis runs **parallel to a datum**.',
+            'All points must fit between **two planes parallel to the datum**, the tolerance apart.',
+            'The zone may move up or down, so it controls **tilt and waviness**, not the **distance** to the datum.',
+            'That distance is checked separately, by the size dimension.'
+        ],
+        example: [
+            'A top face must be parallel within 0.50 mm to the bottom face (datum A).',
+            'Heights measured across the top range from 20.10 to 20.45 mm.',
+            'The spread is 0.35 mm, so parallelism passes.',
+            'Whether 20.10 to 20.45 is the right height is judged by the size tolerance.'
+        ],
+        tool: 'Change the tilt and the tolerance.'
+    },
+
+    position: {
+        title: 'Position (with MMC and bonus)',
+        terms: [
+            ['True position', 'The perfect location, set by boxed (basic) dimensions from the datums.'],
+            ['MMC', 'Maximum material condition: the smallest hole or the biggest pin allowed.'],
+            ['Bonus', 'Extra tolerance you get when the hole is bigger (or the pin smaller) than its MMC size.'],
+            ['Virtual condition', 'The worst-case boundary: the size of a fixed gauge pin that must always fit.']
+        ],
+        simple: [
+            'Position controls **where a hole or pin is**.',
+            'Its **centre (axis)** must sit inside a **round zone** around the perfect location.',
+            'The number in the frame is the zone\'s **diameter**, so position = **2 × the offset**.',
+            'With **Ⓜ**, the zone grows by the **bonus** when the hole is bigger than its smallest size.',
+            'Without a modifier (RFS), the zone never changes.'
+        ],
+        example: [
+            'A hole Ø0.500" +0.010/−0 has position Ø0.030 Ⓜ.',
+            'It measures Ø0.506" and its centre is 0.017" from perfect: position = 2 × 0.017 = 0.034".',
+            'That looks too big for 0.030.',
+            'But the hole is 0.006" over its smallest size, so the allowed zone is 0.030 + 0.006 = 0.036": it passes.'
+        ],
+        tool: 'Drag the axis point, change the measured size, and switch between RFS, MMC and LMC.'
+    },
+
+    concentricity: {
+        title: 'Concentricity (legacy)',
+        terms: [
+            ['Median points', 'Midpoints between opposite points around the surface.'],
+            ['Datum axis', 'The reference centre line.'],
+            ['Legacy', 'Removed from ASME Y14.5 in 2018; still found on older drawings.']
+        ],
+        simple: [
+            'Concentricity checks that the **centre points** of a round feature line up with a **datum axis**.',
+            'Take opposite points around the surface and find their **midpoints**; all of them must fit inside a **small cylinder** around the datum axis.',
+            'It is slow and hard to inspect, so it was **removed from the standard in 2018**.',
+            'On new drawings you will see **position, runout or profile** instead.'
+        ],
+        example: [
+            'A shaft step has concentricity Ø0.005" to datum A.',
+            'Midpoints measured along the step wander up to 0.002" from the axis: 2 × 0.002 = 0.004", so it passes.',
+            'A 3-lobe shape can have the same diameter everywhere and still move its midpoints, and fail.'
+        ],
+        tool: 'Add offset or 3-lobe error and watch the midpoints.'
+    },
+
+    symmetry: {
+        title: 'Symmetry (legacy)',
+        terms: [
+            ['Centre plane', 'The plane halfway between two opposite faces.'],
+            ['Opposed points', 'Pairs of points straight across a slot or tab.'],
+            ['Legacy', 'Removed from ASME Y14.5 in 2018; still found on older drawings.']
+        ],
+        simple: [
+            'Symmetry checks that a **slot or tab is centred** on a datum centre plane.',
+            'The **midpoints** between its two walls must lie within **two planes** around the datum plane, the tolerance apart.',
+            'It was **removed from the standard in 2018**.',
+            'Today, **position** of the slot or tab does the same job and is easier to inspect.'
+        ],
+        example: [
+            'A keyway has symmetry 0.020" to datum A.',
+            'The left wall is 0.130" from the datum plane and the right wall 0.120".',
+            'The midpoint is 0.005" off centre, which needs a zone 0.010" wide, so it passes.'
+        ],
+        tool: 'Drag the slot left and right.'
+    },
+
+    circular_runout: {
+        title: 'Circular runout',
+        terms: [
+            ['FIM', 'Full indicator movement: the highest minus the lowest dial reading.'],
+            ['Datum axis', 'The axis the part spins about (e.g. set by V-blocks or centres).'],
+            ['Circular element', 'One ring (slice) of the surface.']
+        ],
+        simple: [
+            'Circular runout checks how much a round surface **wobbles** when the part **spins on its datum axis**.',
+            'A dial indicator touches **one slice** at a time; the needle\'s **total movement** in one turn must not exceed the tolerance.',
+            'It catches both **out-of-round** and **off-centre** errors in that slice.',
+            'Each slice is checked separately, so it does **not catch taper** along the length.'
+        ],
+        example: [
+            'A pulley seat has circular runout 0.010" to datum A.',
+            'The part spins in V-blocks; at one slice the dial moves from −0.003" to +0.004".',
+            'FIM = 0.007", so that slice passes; check several slices, and each must pass.'
+        ],
+        tool: 'Add eccentricity or ovality and watch the dial and the chart.'
+    },
+
+    total_runout: {
+        title: 'Total runout',
+        terms: [
+            ['FIM', 'Full indicator movement: the highest minus the lowest dial reading.'],
+            ['A-B', 'A datum axis made by two features together, e.g. two bearing seats.'],
+            ['Taper', 'The diameter changes along the length.']
+        ],
+        simple: [
+            'Total runout checks the **whole surface** while the part spins on its datum axis.',
+            'The dial indicator **slides along the full length** while the part turns; its **total movement over everything** must stay within the tolerance.',
+            'It catches **wobble, out-of-round, taper and bend** together.',
+            'That makes it **stricter** than circular runout.'
+        ],
+        example: [
+            'A shaft has total runout 0.012" to A-B.',
+            'Each slice alone moves the dial only 0.005", but one end is bigger than the other and the shaft is slightly bent.',
+            'Over the full sweep the dial goes from −0.004" to +0.010" = 0.014", so it fails; circular runout alone would have passed.'
+        ],
+        tool: 'Add taper or bend and watch the scan.'
+    },
+
+    drf: {
+        title: 'Datum reference frame',
+        terms: [
+            ['Datum', 'A perfect reference (plane or axis) that measurements start from.'],
+            ['Datum feature', 'The real surface on the part that creates the datum.'],
+            ['Degrees of freedom', 'The 6 ways a part can move: slide along X, Y, Z and turn about X, Y, Z.'],
+            ['3-2-1', 'At least 3 points of contact on the first datum, 2 on the second, 1 on the third.']
+        ],
+        simple: [
+            'Datums tell everyone **how to hold the part** before measuring it.',
+            'The part sits on the **primary datum** first (3 points), is pushed against the **secondary** (2 points), then the **tertiary** (1 point).',
+            'Together they lock all **6 degrees of freedom**, so every measurement starts from the **same setup**.',
+            'The **order in the frame** (A|B|C) is the order of contact.',
+            'On a real, imperfect part, **changing the order changes the setup** and the results.'
+        ],
+        example: [
+            'A bracket has position to A|B|C.',
+            'Inspection puts face A on the granite plate, slides face B against an angle plate, then pushes face C against a stop.',
+            'If someone uses B first instead, an out-of-square part sits differently and may pass or fail wrongly.',
+            'Always set up in the frame\'s order.'
+        ],
+        tool: 'Step through the datums, then switch the order and the out-of-square part to see the difference.'
+    },
+
+    symbol_finder: {
+        title: 'Symbol Finder',
+        terms: [
+            ['ASME Y14.5', 'The US standard for GD&T.'],
+            ['ISO', 'The international standards, common in Europe and Asia.'],
+            ['Feature control frame', 'The box on a drawing that holds a GD&T requirement.']
+        ],
+        simple: [
+            'The Symbol Finder is a **picture dictionary** of drawing symbols.',
+            '**Find the shape** you see on the drawing, by family or by searching a word, and click it.',
+            'You get its **name**, what it **means** in plain words, and the **common mistake** people make with it.',
+            'Buttons then open the tool that **decodes it in full**.',
+            'Check the title block first: a few symbols mean different things in **ASME and ISO**.'
+        ],
+        example: [
+            'You see a circle with a slash, then a number, then an M inside a circle.',
+            'Search "diameter" and "MMC": the first means a round zone, the second means the tolerance grows as the hole gets bigger.',
+            'Then open the Position tool to see it working with your numbers.'
+        ],
+        tool: 'Browse a family on the left, or search by name.'
+    },
+
+    composite_frames: {
+        title: 'Feature control frames',
+        terms: [
+            ['Feature control frame', 'The box with the symbol, the tolerance and the datums.'],
+            ['Composite frame', 'Two rows sharing one symbol: the top row locates the pattern, the bottom row controls the holes relative to each other.'],
+            ['Datum shift', 'Extra movement allowed when a datum hole is bigger than its smallest size (Ⓜ after a datum letter).']
+        ],
+        simple: [
+            'This decoder lets you **rebuild any frame** from a drawing and read it in plain words.',
+            'A frame is read **left to right**: the **symbol**, the **tolerance** with its modifiers, then the **datums** in order.',
+            'Two rows sharing one symbol is a **composite** frame: the top row places the whole pattern, the bottom row only controls the holes **to each other**.',
+            'Two separate frames stacked are **independent** requirements.',
+            'Warnings appear for the common misreadings.'
+        ],
+        example: [
+            'A composite frame reads: position Ø0.5 Ⓜ to A, B, C on the top row and Ø0.1 Ⓜ to A on the bottom row.',
+            'The hole pattern may sit anywhere within Ø0.5 of its perfect place.',
+            'But the holes must be within Ø0.1 of their correct spacing and square to A.',
+            'So the pattern may shift a little as a group, while the holes stay well spaced.'
+        ],
+        tool: 'Rebuild the frame from your drawing and read the sentence and warnings.'
+    },
+
+    frame_checker: {
+        title: 'Frame Legality Checker',
+        terms: [
+            ['Illegal frame', 'A frame that breaks a rule of the standard, so its meaning is not clear.'],
+            ['Feature of size', 'A hole, pin, slot or tab: something with a size you can measure.'],
+            ['MMB', 'Ⓜ after a datum letter: that datum is held by a fixed-size gauge, so the part may shift a little.']
+        ],
+        simple: [
+            'The checker tells you if a frame **follows the rules** of ASME Y14.5-2018.',
+            'Rebuild the frame, and each finding is marked **Illegal** (not valid), **Check** (legal, but often a mistake) or **Note** (what it means for you).',
+            'It catches things like **datums on form controls**, **Ⓜ on a flat surface** and a **missing Ø** on holes.',
+            'Use it before you **question a supplier\'s drawing**, or before sending your own.'
+        ],
+        example: [
+            'A drawing shows flatness 0.05 with datum A.',
+            'The checker marks it Illegal: flatness never uses a datum.',
+            'The designer probably meant parallelism 0.05 to A, so ask them before inspecting.'
+        ],
+        tool: 'Try the examples first, then rebuild frames from your own drawings.'
+    },
+
+    hole_callouts: {
+        title: 'Holes, threads and patterns',
+        terms: [
+            ['Counterbore', 'A flat-bottomed, larger hole at the top, for a bolt head.'],
+            ['Countersink', 'A cone at the top of a hole, for a flat-head screw.'],
+            ['Spotface', 'A very shallow counterbore, just to give a flat seat.'],
+            ['nX', 'Number of identical holes, e.g. 4X = four holes.']
+        ],
+        simple: [
+            'This decoder reads **hole callouts**: the note next to a hole with Ø, depth and symbols.',
+            'Read it **top to bottom**: the count (**4X**), the hole size, the depth or **THRU**, then counterbore, countersink or spotface.',
+            'The **4X applies to every line** of the note.',
+            'For threads it decodes notes like **M8×1.25-6H** or **3/8-16 UNC-2B** field by field.',
+            'The preview shows the hole cut in half so you can see its shape.'
+        ],
+        example: [
+            'A note says 4X Ø9 THRU, then a counterbore symbol Ø15, depth 9.',
+            'It means four holes of 9 mm through the part, each with a counterbore 15 mm wide and 9 mm deep.',
+            'That fits an M8 socket-head screw with its head just below the surface.'
+        ],
+        tool: 'Rebuild the note from your drawing; the preview and sentence update as you go.'
+    },
+
+    welding: {
+        title: 'Welding symbols',
+        terms: [
+            ['Reference line', 'The horizontal line that the weld symbol sits on.'],
+            ['Arrow side / other side', 'The side of the joint the arrow touches, and the far side.'],
+            ['Fillet weld', 'A triangle-shaped weld in a corner.'],
+            ['CJP', 'Complete joint penetration: the weld goes all the way through the joint.']
+        ],
+        simple: [
+            'This decoder reads **welding symbols** (AWS A2.4, with an ISO option).',
+            'A symbol **below the reference line** means weld on the **arrow side**; **above** means the **other side**.',
+            'The number on the left is the **weld size**; numbers on the right give the **length and spacing**.',
+            'Extra marks add meaning: a **circle** means weld all around, a **flag** means weld on site.',
+            'The preview shows the actual weld on the joint.'
+        ],
+        example: [
+            'A triangle below the line, with 6 on its left and 50-150 on its right.',
+            'It means 6 mm fillet welds on the arrow side, in 50 mm segments spaced 150 mm centre to centre.',
+            'So there are 100 mm gaps between the welds.'
+        ],
+        tool: 'Rebuild the symbol from your drawing; switch between AWS and ISO.'
+    },
+
+    surface_finish: {
+        title: 'Surface finish',
+        terms: [
+            ['Ra', 'Average roughness height, in µm (or µin on older US drawings).'],
+            ['Rz', 'Average peak-to-valley height; usually about 4 to 7 times Ra.'],
+            ['Lay', 'The direction of the machining marks.'],
+            ['Cut-off (λc)', 'The measuring length the roughness instrument uses.']
+        ],
+        simple: [
+            'This decoder reads **surface finish symbols**: the check-mark shape sitting on a surface.',
+            'A **bar** across it means machining is required; a **circle** in it means do not machine.',
+            'The number is a **maximum roughness**, most often **Ra** in µm (on older US drawings, µin).',
+            'By default **up to 16% of readings may be over** the value; "max" means none may.',
+            'Other positions give the **process, lay direction and machining allowance**.'
+        ],
+        example: [
+            'A check mark with a bar and "Ra 1.6" means: machine this surface to an average roughness of 1.6 µm or better.',
+            'That is a typical good turned or milled finish.',
+            'On an older US drawing, "63" means 63 µin, which is about the same (1.6 µm).'
+        ],
+        tool: 'Rebuild the symbol; the profile on the right shows what Ra or Rz actually measures.'
+    },
+
+    cmm_position: {
+        title: 'CMM Position Calculator',
+        terms: [
+            ['CMM', 'Coordinate measuring machine: it measures the X, Y, Z of points on the part.'],
+            ['Basic X / Y', 'The perfect location of the hole, from the drawing.'],
+            ['Offset', 'The straight-line distance from the perfect centre to the measured centre.']
+        ],
+        simple: [
+            'This calculator checks **hole positions from a CMM report**.',
+            'Type or **paste** each hole\'s basic X and Y, its measured X and Y, and its **measured size**.',
+            'It works out **position** (2 × the offset), the **bonus** from each hole\'s size, and **pass or fail** for each hole.',
+            'Every hole must pass on its own, because the zones are **tied to the datums**.',
+            '**Copy the results** as a table for your report.'
+        ],
+        example: [
+            'Hole H3 should be at X 3.000, Y 3.000 and measures X 3.019, Y 3.012, Ø0.504.',
+            'Offset = √(0.019² + 0.012²) = 0.0225, so position = Ø0.045.',
+            'Allowed = 0.030 + 0.004 bonus = 0.034, so it fails.',
+            'Before rejecting, check that the report printed the diameter, not the radius.'
+        ],
+        tool: 'Paste from Excel or a CMM report. Your data stays in this browser.'
+    },
+
+    stackup: {
+        title: 'Tolerance stack-up',
+        terms: [
+            ['Stack-up', 'Adding up dimensions and tolerances around a chain of parts to predict a gap.'],
+            ['Worst case', 'Every part at its worst limit at the same time.'],
+            ['RSS', 'Root sum square: a statistical estimate, less pessimistic than worst case.']
+        ],
+        simple: [
+            'A stack-up answers one question: **will the parts fit every time**?',
+            'Walk from one side of the gap through each part to the other side, adding (**+**) or subtracting (**−**) each dimension.',
+            '**Worst case** adds all the tolerances: guaranteed, but pessimistic.',
+            '**RSS** is realistic when the processes are **stable and centred**.',
+            'The chart shows **which tolerance matters most**, so you know what to tighten.'
+        ],
+        example: [
+            'Housing 20 ±0.1, spacer 8 ±0.05, bearing 10 +0/−0.12, cover lip 1.8 ±0.05: the nominal gap is 0.2 mm.',
+            'Worst case, the gap can reach −0.05 mm, so the parts could clash.',
+            'RSS predicts 0.115 to 0.405 mm, inside the requirement.',
+            'Fine for production from good processes; risky for a one-off.'
+        ],
+        tool: 'Edit the loop in the sidebar, or load the example.'
+    },
+
+    fasteners: {
+        title: 'Fastener formulas',
+        terms: [
+            ['Floating fastener', 'A bolt and nut: both parts have clearance holes.'],
+            ['Fixed fastener', 'A screw in a tapped hole, or a pressed-in pin.'],
+            ['H and F', 'H = the smallest clearance hole; F = the largest bolt.'],
+            ['Projected zone Ⓟ', 'A tolerance zone that extends above the part, where the mating part sits.']
+        ],
+        simple: [
+            'These formulas give the **position tolerance** that guarantees the bolts always go in.',
+            '**Floating** (bolt and nut): each part gets T = **H − F**.',
+            '**Fixed** (tapped hole): T₁ + T₂ = **H − F**, so each part gets **about half**.',
+            'Always use the **smallest hole** and the **largest bolt**, not the nominal sizes.',
+            'Tapped holes also need a **projected zone**, so a tilted thread cannot push the bolt into the other part.'
+        ],
+        example: [
+            'An M8 bolt (F = 8.0 mm) goes through Ø9.0 holes (H).',
+            'Floating: each part may have position Ø1.0 at MMC.',
+            'If one part is tapped instead: only about Ø0.5 each (0.5 + 0.5 = 1.0).'
+        ],
+        tool: 'Pick a screw and the joint type; red in the section shows where the parts would clash.'
+    }
+};
+
+// Tools that share another tool's explanation
+const ALIASES = { bonus: 'position', precedence: 'drf' };
+
+export function hasExplanation(symKey) {
+    return !!EXPLAIN[ALIASES[symKey] ?? symKey];
+}
+
+// --- Rendering ---
+
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// \uFE0E asks for the plain text form of Ⓜ, which some systems draw as an emoji
+const rich = s => esc(s).replace(/Ⓜ/g, 'Ⓜ\uFE0E').replace(/\*\*(.+?)\*\*/g, '<strong class="text-slate-900">$1</strong>');
+
+export function openExplain(symKey) {
+    const e = EXPLAIN[ALIASES[symKey] ?? symKey];
+    if (!e) return;
+    closeExplain();
+
+    const modal = document.createElement('div');
+    modal.id = 'explain-modal';
+    modal.className = 'fixed inset-0 z-50 bg-slate-900/50 flex items-start justify-center p-4 overflow-y-auto';
+    modal.innerHTML = `
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8" role="dialog" aria-modal="true" aria-labelledby="explain-title">
+        <div class="flex items-start justify-between px-6 pt-5 pb-3 border-b border-slate-100">
+          <div>
+            <div class="text-[11px] font-bold tracking-widest text-slate-400 uppercase">Explain</div>
+            <h2 id="explain-title" class="text-2xl font-extrabold text-slate-900">${esc(e.title)}</h2>
+          </div>
+          <button id="explain-close" class="text-slate-400 hover:text-slate-700 text-xl px-2" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="px-6 py-5 space-y-6 text-slate-700">
+          <section>
+            <h3 class="text-xs font-bold tracking-widest text-slate-500 uppercase mb-2">1. Key terms</h3>
+            <table class="w-full text-sm border border-slate-200 rounded">
+              <tbody>
+                ${e.terms.map(([t, m], i) => `
+                  <tr class="${i % 2 ? 'bg-slate-50' : ''}">
+                    <td class="align-top font-semibold text-slate-900 px-3 py-2 w-40 border-r border-slate-200">${esc(t)}</td>
+                    <td class="px-3 py-2">${rich(m)}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </section>
+          <section>
+            <h3 class="text-xs font-bold tracking-widest text-slate-500 uppercase mb-2">2. In simple words</h3>
+            <p class="leading-relaxed">${e.simple.map(rich).join(' ')}</p>
+          </section>
+          <section class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+            <h3 class="text-xs font-bold tracking-widest text-blue-700 uppercase mb-2">3. Example</h3>
+            <p class="leading-relaxed text-slate-800">${e.example.map(rich).join(' ')}</p>
+          </section>
+          <p class="text-sm text-slate-500"><i class="fa-solid fa-hand-pointer mr-1"></i><span class="font-semibold">In this tool:</span> ${rich(e.tool)}</p>
+        </div>
+      </div>`;
+
+    modal.addEventListener('click', ev => { if (ev.target === modal) closeExplain(); });
+    document.body.appendChild(modal);
+    modal.querySelector('#explain-close').onclick = closeExplain;
+    modal.querySelector('#explain-close').focus();
+}
+
+export function closeExplain() {
+    document.getElementById('explain-modal')?.remove();
+}
+
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeExplain(); });
