@@ -130,8 +130,7 @@ export const GDT_HIERARCHY = {
             notebook: { name: "My Notebook", iconChar: "✎", filePath: './modules/learn/notebook.js', desc: "Your own notes: company rules, decoded callouts, lessons learned." },
             glossary: { name: "Glossary", iconChar: "Aa", filePath: './modules/learn/glossary.js', desc: "Every term in plain words, A to Z." },
             practice: { name: "Learning Path & Quizzes", iconChar: "?", filePath: './modules/learn/practice.js', desc: "Six short lessons in order, each with a quiz to check yourself." },
-            y14_changes: { name: "Y14.5-2009 vs 2018", iconChar: "Δ", planned: true,
-                summary: "What changed between editions, including the removal of concentricity and symmetry and what to use instead." },
+            y14_changes: { name: "Y14.5-2009 vs 2018", iconChar: "Δ", filePath: './modules/learn/y14_changes.js', desc: "Which edition a drawing uses, and what changed (and what did not)." },
             asme_iso: { name: "ASME vs ISO GPS", iconChar: "≠", filePath: './modules/learn/asme_iso.js', desc: "Which rulebook a drawing uses, and what that changes." }
         }
     },
