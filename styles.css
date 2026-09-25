@@ -24,3 +24,12 @@
     color: #1d4ed8; /* Blue 700 */
     font-weight: 700;
 }
+
+/* Glossary terms: dotted underline, meaning on hover or tap */
+.gloss {
+    text-decoration: underline dotted #2563eb;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+    cursor: help;
+}
+.gloss:hover, .gloss:focus { background: #dbeafe; outline: none; border-radius: 2px; }

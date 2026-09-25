@@ -549,6 +549,8 @@ const EXPLAIN = {
     }
 };
 
+import { GLOSSARY, linkify } from './glossary.js';
+
 // Tools that share another tool's explanation
 const ALIASES = { bonus: 'position', precedence: 'drf' };
 
@@ -606,6 +608,12 @@ export function openExplain(symKey) {
 
     modal.addEventListener('click', ev => { if (ev.target === modal) closeExplain(); });
     document.body.appendChild(modal);
+
+    // Underline glossary terms in the text, except those already defined in
+    // the key terms table or named in the title
+    const defined = [e.title, ...e.terms.map(t => t[0])].join(' ').toLowerCase();
+    const skipTerms = GLOSSARY.filter(g => g.match.some(w => defined.includes(w.toLowerCase()))).map(g => g.term);
+    modal.querySelectorAll('section p').forEach(p => linkify(p, { skipTerms }));
     modal.querySelector('#explain-close').onclick = closeExplain;
     modal.querySelector('#explain-close').focus();
 }
