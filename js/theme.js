@@ -222,15 +222,18 @@ export function callout(label, labelX, labelY, targetX, targetY, opts = {}) {
  * Feature control frame with its top-left corner at (x, y).
  * symbol: a gdtChar() key, e.g. 'perpendicularity'
  * diameter: prefix the tolerance with the diameter symbol
- * modifier: 'M' | 'L' | null, circled material condition after the tolerance
+ * modifier: 'M' | 'L' | ['M', 'P'] | null, circled letters after the tolerance
+ * projected: projected zone height shown after a P modifier, e.g. '10'
  * Returns { g, width, height }.
  */
-export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diameter = false, modifier = null, h = 34 }) {
+export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diameter = false, modifier = null, projected = null, h = 34 }) {
     const g = createSVG('g', {});
+    const mods = [].concat(modifier ?? []);
     const textW = tolerance.length * 9.8;          // 16px monospace advance
     const diaW = diameter ? 20 : 0;
-    const modW = modifier ? 26 : 0;
-    const tolContentW = diaW + textW + modW;
+    const modW = mods.length * 24 + (mods.length ? 2 : 0);
+    const projW = projected ? projected.length * 9.8 + 6 : 0;
+    const tolContentW = diaW + textW + modW + projW;
     const cells = [
         { w: h, draw: (cx, cy) => g.appendChild(gdtChar(symbol, cx, cy, h * 0.62)) },
         { w: Math.max(h * 2.2, tolContentW + 22), draw: (cx, cy) => {
@@ -238,8 +241,12 @@ export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diam
             if (diameter) g.appendChild(diaSymbol(left - 1, cy + 6, 16));
             left += diaW;
             g.appendChild(text(tolerance, left, cy, { size: 16, weight: 600, mono: true, baseline: 'central', fill: COLORS.ink }));
-            left += textW;
-            if (modifier) g.appendChild(circledMod(left + 13, cy, 9.5, modifier));
+            left += textW + 2;
+            for (const m of mods) {
+                g.appendChild(circledMod(left + 12, cy, 9.5, m));
+                left += 24;
+            }
+            if (projected) g.appendChild(text(projected, left + 6, cy, { size: 16, weight: 600, mono: true, baseline: 'central', fill: COLORS.ink }));
         } },
         ...datums.map(d => ({ w: h, draw: (cx, cy) =>
             g.appendChild(text(d, cx, cy, { size: 17, weight: 700, anchor: 'middle', baseline: 'central', fill: COLORS.ink })) }))
