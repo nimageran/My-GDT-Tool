@@ -1,6 +1,6 @@
 // js/modules/location/position.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -518,7 +518,7 @@ function bindControlEvents() {
     const inputZoom = document.getElementById('ctrl-zoom');
     const btnGuide = document.getElementById('btn-guide');
 
-    inputTol.oninput = (e) => { state.toleranceDiam = parseFloat(e.target.value) || 0; renderScene(); };
+    inputTol.oninput = (e) => { state.toleranceDiam = readTolerance(e.target.value); renderScene(); };
     
     const updateDev = () => {
         state.deviationX = parseFloat(inputX.value) || 0;

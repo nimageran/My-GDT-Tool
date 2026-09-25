@@ -1,6 +1,6 @@
 // js/modules/profile/surface_profile.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -426,7 +426,7 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Feature Control Frame</h4>
             <div class="flex items-center font-mono text-xl bg-white border-2 border-black w-max select-none shadow-md">
                 <div class="px-3 py-2 border-r-2 border-black flex items-center justify-center bg-slate-50">
-                    <span class="text-3xl">⌭</span>
+                    <span class="text-3xl">⌓</span>
                 </div>
                 <div class="px-3 py-2 border-r-2 border-black flex items-center gap-1 min-w-[100px]">
                     <input type="number" id="ctrl-tol" value="${state.toleranceWidth}" step="0.001" 
@@ -476,7 +476,7 @@ function bindControlEvents() {
     const inputZ = document.getElementById('ctrl-zscale');
     const btnGuide = document.getElementById('btn-guide');
     
-    inputTol.oninput = (e) => { state.toleranceWidth = parseFloat(e.target.value) || 0; renderScene(); };
+    inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     inputZ.oninput = (e) => { state.zScale = parseFloat(e.target.value); renderScene(); };
     btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 

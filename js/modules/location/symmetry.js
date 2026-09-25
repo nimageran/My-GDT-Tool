@@ -1,6 +1,6 @@
 // js/modules/location/symmetry.js
 
-import { createSVG } from '../../drawing_utils.js';
+import { createSVG, readTolerance } from '../../drawing_utils.js';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -498,7 +498,7 @@ function bindControlEvents() {
     const inputZoom = document.getElementById('ctrl-zoom');
     const btnGuide = document.getElementById('btn-guide');
 
-    inputTol.oninput = (e) => { state.toleranceWidth = parseFloat(e.target.value) || 0; renderScene(); };
+    inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     
     const updateDev = (val) => {
         state.deviation = parseFloat(val) || 0;

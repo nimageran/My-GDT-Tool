@@ -36,7 +36,7 @@ export const GDT_HIERARCHY = {
         symbols: {
             line_profile: { 
                 name: "Line Profile", 
-                iconChar: "⌓", 
+                iconChar: "⌒", 
                 filePath: './modules/profile/line_profile.js' 
             },
             surface_profile: { 

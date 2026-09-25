@@ -24,4 +24,12 @@ export function drawToleranceZoneBox(svg, cx, cy, width, height) {
     svg.appendChild(rect);
 }
 
+// Tolerance inputs: an empty, zero or negative value would divide by zero in
+// the gauge/zone scaling, so fall back to a small positive minimum.
+export const MIN_TOLERANCE = 0.0001;
+export function readTolerance(value) {
+    const v = parseFloat(value);
+    return Number.isFinite(v) && v > 0 ? v : MIN_TOLERANCE;
+}
+
 // Helper to draw datums, centerlines, etc. can go here.

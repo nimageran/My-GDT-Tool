@@ -10,7 +10,7 @@ let currentModule = null;
 const categoryNav = document.getElementById('categoryNav');
 const symbolList = document.getElementById('symbolList'); // Changed from symbolNav
 const toolbarLabel = document.getElementById('toolbarLabel');
-const canvas = document.getElementById('mainCanvas');
+let canvas = document.getElementById('mainCanvas');
 const controlsContent = document.getElementById('controlsContent');
 
 // Sidebar Toggles
@@ -113,8 +113,16 @@ async function loadSymbolModule(catKey, symKey) {
     const catData = GDT_HIERARCHY[catKey];
     const symData = catData.symbols[symKey];
 
-    // Clear Canvas
-    canvas.innerHTML = ''; 
+    // Stop the previous module (animation loops, listeners) before clearing
+    if (currentModule && typeof currentModule.unload === 'function') {
+        currentModule.unload();
+    }
+    currentModule = null;
+
+    // Fresh canvas element: drops mouse listeners the old module attached
+    const freshCanvas = canvas.cloneNode(false);
+    canvas.replaceWith(freshCanvas);
+    canvas = freshCanvas;
     controlsContent.innerHTML = '<div class="flex items-center justify-center h-40"><i class="fa-solid fa-circle-notch fa-spin text-blue-500 text-2xl"></i></div>';
 
     try {
@@ -139,23 +147,23 @@ async function loadSymbolModule(catKey, symKey) {
 }
 
 // --- 5. UI UTILITIES (Sidebar Toggle) ---
-function setupSidebarToggle() {
-    const toggleSidebar = () => {
-        const isCollapsed = controlsPanel.classList.contains('w-0');
-        
-        if (isCollapsed) {
-            // EXPAND
-            controlsPanel.classList.remove('w-0', 'border-none');
-            controlsPanel.classList.add('w-[26rem]', 'border-r');
-            expandControlsBtn.classList.add('hidden');
-        } else {
-            // COLLAPSE
-            controlsPanel.classList.remove('w-[26rem]', 'border-r');
-            controlsPanel.classList.add('w-0', 'border-none'); // Hide width and border
-            expandControlsBtn.classList.remove('hidden');
-        }
-    };
+function toggleSidebar() {
+    const isCollapsed = controlsPanel.classList.contains('w-0');
+    
+    if (isCollapsed) {
+        // EXPAND
+        controlsPanel.classList.remove('w-0', 'border-none');
+        controlsPanel.classList.add('w-[26rem]', 'border-r');
+        expandControlsBtn.classList.add('hidden');
+    } else {
+        // COLLAPSE
+        controlsPanel.classList.remove('w-[26rem]', 'border-r');
+        controlsPanel.classList.add('w-0', 'border-none'); // Hide width and border
+        expandControlsBtn.classList.remove('hidden');
+    }
+}
 
+function setupSidebarToggle() {
     toggleControlsBtn.onclick = toggleSidebar;
     expandControlsBtn.onclick = toggleSidebar;
 }
