@@ -548,6 +548,29 @@ const EXPLAIN = {
         tool: 'Pick a screw and the joint type; red in the section shows where the parts would clash.'
     },
 
+    fits: {
+        title: 'ISO fits (H7/g6)',
+        terms: [
+            ['Fit', 'How a shaft sits in a hole: loose, snug or pressed.'],
+            ['Tolerance class', 'A letter and a number, like H7. The letter sets where the zone sits; the number sets how wide it is.'],
+            ['IT grade', 'The number in the class. Lower = tighter. IT7 at 20 mm is 21 µm wide.'],
+            ['Hole basis', 'The hole is H (its smallest size is exactly the nominal), and the shaft letter picks the fit.']
+        ],
+        simple: [
+            'A code like **Ø20 H7/g6** gives the hole and the shaft each a **tolerance zone** from a standard table (ISO 286).',
+            '**Capital letters are holes, small letters are shafts.**',
+            'The **letter** says where the zone sits compared to the nominal size; the **number** says how wide it is.',
+            'Compare the **biggest shaft with the smallest hole** (tightest case) and the **smallest shaft with the biggest hole** (loosest case).',
+            'Always a gap is a **clearance fit**, always a press is an **interference fit**, and either is a **transition fit**.'
+        ],
+        example: [
+            'Ø20 H7/g6: the hole is 20.000 to 20.021 and the shaft 19.980 to 19.993.',
+            'Tightest: 20.000 − 19.993 = 0.007 mm gap. Loosest: 20.021 − 19.980 = 0.041 mm gap.',
+            'Always a gap, so it is a clearance fit: the shaft slides in and turns freely but is located accurately.'
+        ],
+        tool: 'Enter the size and pick the hole and shaft classes, type a callout like "25 H7/p6", or pick a preferred fit.'
+    },
+
     read_checklist: {
         title: 'How to read a drawing',
         terms: [

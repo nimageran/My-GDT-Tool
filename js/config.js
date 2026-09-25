@@ -109,8 +109,7 @@ export const GDT_HIERARCHY = {
         symbols: {
             stackup: { name: "Tolerance Stack-up", iconChar: "≡", filePath: './modules/stackups/stackup.js' },
             fasteners: { name: "Fastener Formulas", iconChar: "⊕", filePath: './modules/stackups/fasteners.js' },
-            fits: { name: "ISO Fits (H7/g6)", iconChar: "⌗", planned: true,
-                summary: "ISO 286 fit decoder: nominal size + fit class → limit dimensions, clearance or interference range, and fit character, with a shaft-in-hole zone diagram." }
+            fits: { name: "ISO Fits (H7/g6)", iconChar: "⌗", filePath: './modules/stackups/fits.js' }
         }
     },
 

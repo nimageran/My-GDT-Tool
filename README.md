@@ -24,9 +24,9 @@ Tabs are grouped by what you're trying to do. Tools marked *planned* appear grey
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D) | Datum targets |
 | **Read Drawings** | Reading a drawing, from the sheet itself to hard callouts | *Drawing basics:* how to read a drawing (step-by-step on a sample sheet), title block, first vs third angle projection, lines & views, general tolerances (title block and ISO 2768), notes & abbreviations. *Decode callouts:* Symbol Finder (visual index of ~80 drawing symbols), feature control frames, frame legality checker, holes/threads/patterns, welding symbols, surface finish (ISO 1302 and US legacy) | |
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
-| **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas | ISO fits |
+| **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas, ISO fits (ISO 286: H7/g6 → limits, clearance or interference, preferred fits) | |
 | **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
-| **Learn** | Standards and practice | Glossary (93 terms, searchable) | Practice scenarios, Y14.5-2009 vs 2018, ASME vs ISO GPS |
+| **Learn** | Standards and practice | Glossary (99 terms, searchable) | Practice scenarios, Y14.5-2009 vs 2018, ASME vs ISO GPS |
 
 ## Structure
 
