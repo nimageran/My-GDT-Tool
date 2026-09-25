@@ -26,7 +26,6 @@ const state = {
     
     // UI State
     activeHandleIdx: -1,
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -92,7 +91,6 @@ function renderScene() {
     drawFuturisticHUD();
 
     // 7. Guide
-    if (state.showGuide) drawGuideOverlay();
 }
 
 // --- DRAWING HELPERS ---
@@ -270,19 +268,19 @@ function drawFuturisticHUD() {
         return t;
     };
 
-    group.appendChild(addText('SURFACE PROFILE SCAN', bx+20, by+35, 18, '#94a3b8'));
+    group.appendChild(addText('SURFACE PROFILE CHECK', bx+20, by+35, 18, '#94a3b8'));
     group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
 
     const col1 = bx+20;
     const col2 = bx+240;
     
-    group.appendChild(addText('PEAK DEVIATION:', col1, by+80, 14, '#cbd5e1'));
+    group.appendChild(addText('LARGEST ERROR:', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(maxDev.toFixed(4)+'"', col2, by+80, 14, accent));
     
-    group.appendChild(addText('HALF-ZONE LIMIT:', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText('ALLOWED EACH SIDE:', col1, by+105, 14, '#cbd5e1'));
     group.appendChild(addText(limit.toFixed(4)+'"', col2, by+105, 14, 'white'));
 
-    group.appendChild(addText('TOTAL TOLERANCE:', col1, by+130, 14, '#cbd5e1'));
+    group.appendChild(addText('TOLERANCE (FRAME):', col1, by+130, 14, '#cbd5e1'));
     group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+130, 14, 'white'));
 
     const statusText = isPass ? "PASS" : "FAIL";
@@ -314,57 +312,10 @@ function drawFuturisticHUD() {
         }));
     });
     
-    group.appendChild(addText('POINT MAPPING', startX + 130, barY + 20, 12, '#64748b'));
+    group.appendChild(addText('MEASURED POINTS', startX + 130, barY + 20, 12, '#64748b'));
 
     svgContainer.appendChild(group);
 }
-
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: SURFACE PROFILE", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. 3D TOLERANCE", 24, '#6366f1', 'bold');
-    write("Surface Profile controls the entire skin of the part.", 18, '#cbd5e1');
-    write("The tolerance zone is a volumetric 'blanket' over the shape.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. VISUALIZATION", 24, '#6366f1', 'bold');
-    write("The Transparent Blue Planes represent the Upper & Lower limits.", 18, '#cbd5e1');
-    write("The Wireframe Mesh is the actual surface.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("3. INTERACTION", 24, '#6366f1', 'bold');
-    write("Drag the white points to deform the surface topography.", 18, '#cbd5e1');
-    write("Red lines indicate the surface has broken out of the zone.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
-}
-
 
 // --- INTERACTION LOGIC ---
 
@@ -378,7 +329,6 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if(state.showGuide) return; 
         
         const target = evt.target;
         if (target.dataset.idx) {
@@ -438,12 +388,12 @@ function renderControls() {
             </div>
             
             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Surface Topography Presets</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Try a shape</h4>
             
             <div class="grid grid-cols-2 gap-2 mb-4">
                 <button id="btn-flat" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">FLAT</button>
@@ -451,18 +401,18 @@ function renderControls() {
                 <button id="btn-dome" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">DOME</button>
                 <button id="btn-saddle" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">SADDLE</button>
                 <button id="btn-twist" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">TWIST</button>
-                <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">CHAOS</button>
+                <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">RANDOM</button>
             </div>
             
             <div class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed">
-                <i class="fa-solid fa-mouse-pointer"></i> <strong>Interactive:</strong> Click and drag any white point on the grid to adjust the local Z-height manually.
+                <i class="fa-solid fa-mouse-pointer"></i> <strong>Try it:</strong> drag any white point up or down to change the surface at that spot.
             </div>
         </div>
         
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">View Distortion</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">View</h4>
              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-slate-500">Z-AMPLIFICATION</span>
+                <span class="text-xs font-bold text-slate-500">MAGNIFY HEIGHT</span>
             </div>
             <input type="range" id="ctrl-zscale" min="1000" max="8000" step="100" value="${state.zScale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
         </div>
@@ -474,11 +424,9 @@ function renderControls() {
 function bindControlEvents() {
     const inputTol = document.getElementById('ctrl-tol');
     const inputZ = document.getElementById('ctrl-zscale');
-    const btnGuide = document.getElementById('btn-guide');
     
     inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     inputZ.oninput = (e) => { state.zScale = parseFloat(e.target.value); renderScene(); };
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const setGrid = (fn) => {
         for(let r=0; r<4; r++) {

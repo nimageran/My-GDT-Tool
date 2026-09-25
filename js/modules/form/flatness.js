@@ -29,7 +29,6 @@ const state = {
     activeHandleIdx: -1,
     dragStartY: 0,
     dragStartZ: 0,
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -125,7 +124,6 @@ function renderScene() {
     drawHandles();
     drawFuturisticHUD();
     
-    if (state.showGuide) drawGuideOverlay();
 }
 
 // --- DRAWING HELPERS ---
@@ -329,25 +327,25 @@ function drawFuturisticHUD() {
         return t;
     };
 
-    group.appendChild(addText('FLATNESS TOPOGRAPHY', bx+20, by+35, 18, '#94a3b8'));
+    group.appendChild(addText('FLATNESS CHECK', bx+20, by+35, 18, '#94a3b8'));
     group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
 
     const col1 = bx+20;
     const col2 = bx+240;
     
     // Stats
-    group.appendChild(addText('HIGHEST PEAK:', col1, by+80, 14, '#cbd5e1'));
+    group.appendChild(addText('HIGHEST POINT:', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(peak.toFixed(4)+'"', col2, by+80, 14, '#ef4444'));
     
-    group.appendChild(addText('LOWEST VALLEY:', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText('LOWEST POINT:', col1, by+105, 14, '#cbd5e1'));
     group.appendChild(addText(valley.toFixed(4)+'"', col2, by+105, 14, '#3b82f6'));
 
     group.appendChild(createSVG('line', { x1: col1, y1: by+115, x2: col2+60, y2: by+115, stroke: '#334155', 'stroke-dasharray': '2,2' }));
 
-    group.appendChild(addText('TOTAL FLATNESS:', col1, by+135, 14, '#cbd5e1'));
+    group.appendChild(addText('MEASURED (HIGH − LOW):', col1, by+135, 14, '#cbd5e1'));
     group.appendChild(addText(error.toFixed(4)+'"', col2, by+135, 16, accent));
     
-    group.appendChild(addText('TOLERANCE:', col1, by+155, 14, '#cbd5e1'));
+    group.appendChild(addText('ALLOWED:', col1, by+155, 14, '#cbd5e1'));
     group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+155, 14, 'white'));
 
     const statusText = isPass ? "PASS" : "FAIL";
@@ -371,52 +369,6 @@ function drawFuturisticHUD() {
     svgContainer.appendChild(group);
 }
 
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: FLATNESS", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. 3D VISUALIZATION", 24, '#6366f1', 'bold');
-    write("Flatness is a surface control, viewed here as a 3D Mesh.", 18, '#cbd5e1');
-    write("The 'Sandwich' consists of two parallel blue planes.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. PEAK TO VALLEY", 24, '#6366f1', 'bold');
-    write("Flatness Error = Height difference between highest and lowest point.", 18, '#cbd5e1');
-    write("Datums do not apply. The zone floats to fit the surface.", 18, '#f59e0b');
-    yPos += 20;
-    
-    write("3. INTERACTION", 24, '#6366f1', 'bold');
-    write("Drag the white points up/down to create 'Bow' or 'Twist'.", 18, '#cbd5e1');
-    write("Red lines appear if points poke through the blue planes.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
-}
-
 // --- INTERACTION LOGIC ---
 
 function setupInteractions(svg) {
@@ -429,7 +381,6 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if(state.showGuide) return; 
         const target = evt.target;
         if (target.dataset.idx) {
             state.activeHandleIdx = parseInt(target.dataset.idx);
@@ -477,15 +428,15 @@ function renderControls() {
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
             </div>
-            <p class="text-xs text-slate-400 mt-2 italic">*No Datum References</p>
+            <p class="text-xs text-slate-400 mt-2 italic">No datum: flatness controls shape only</p>
             
             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Surface Presets</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Try a shape</h4>
             
             <div class="grid grid-cols-2 gap-2 mb-4">
                 <button id="btn-flat" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">PERFECT</button>
@@ -496,7 +447,7 @@ function renderControls() {
             </div>
             
             <div class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed">
-                 <i class="fa-solid fa-mouse-pointer"></i> <strong>Interactive:</strong> Drag points on the 3D mesh to deform the plate.
+                 <i class="fa-solid fa-mouse-pointer"></i> <strong>Try it:</strong> drag the white points up or down to bend the plate.
             </div>
         </div>
         
@@ -512,11 +463,9 @@ function renderControls() {
 function bindControlEvents() {
     const inputTol = document.getElementById('ctrl-tol');
     const inputZoom = document.getElementById('ctrl-zoom');
-    const btnGuide = document.getElementById('btn-guide');
     
     inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     inputZoom.oninput = (e) => { state.zScale = parseFloat(e.target.value); renderScene(); };
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const setGrid = (fn) => {
         for(let i=0; i<25; i++) {

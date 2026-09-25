@@ -23,7 +23,6 @@ const state = {
     
     // UI State
     activeHandleIdx: -1, // -1 means none
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -67,10 +66,6 @@ function renderScene() {
     // 6. HUD
     drawFuturisticHUD();
 
-    // 7. Guide Overlay
-    if (state.showGuide) {
-        drawGuideOverlay();
-    }
 }
 
 // --- MATH HELPERS (Bezier Logic) ---
@@ -333,19 +328,19 @@ function drawFuturisticHUD() {
         return t;
     };
 
-    group.appendChild(addText('PROFILE SCAN', bx+20, by+35, 18, '#94a3b8'));
+    group.appendChild(addText('LINE PROFILE CHECK', bx+20, by+35, 18, '#94a3b8'));
     group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
 
     const col1 = bx+20;
     const col2 = bx+240;
     
-    group.appendChild(addText('MAX DEVIATION:', col1, by+80, 14, '#cbd5e1'));
+    group.appendChild(addText('LARGEST ERROR:', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(maxDev.toFixed(4)+'"', col2, by+80, 14, accent));
     
-    group.appendChild(addText('TOLERANCE (TOTAL):', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText('TOLERANCE (FRAME):', col1, by+105, 14, '#cbd5e1'));
     group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+105, 14, 'white'));
 
-    group.appendChild(addText('HALF-ZONE LIMIT:', col1, by+130, 14, '#cbd5e1'));
+    group.appendChild(addText('ALLOWED EACH SIDE:', col1, by+130, 14, '#cbd5e1'));
     group.appendChild(addText((toleranceWidth/2).toFixed(4)+'"', col2, by+130, 14, 'white'));
 
     const statusText = isPass ? "PASS" : "FAIL";
@@ -382,52 +377,6 @@ function drawFuturisticHUD() {
     svgContainer.appendChild(group);
 }
 
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: PROFILE OF A LINE", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. THE GEOMETRY", 24, '#6366f1', 'bold');
-    write("Controls a 2D cross-section of a surface.", 18, '#cbd5e1');
-    write("The dashed line is the True Profile (Target).", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. TOLERANCE ZONE", 24, '#6366f1', 'bold');
-    write("The Blue Band is the Tolerance Zone.", 18, '#cbd5e1');
-    write("It is defined by boundaries offset from the True Profile.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("3. INTERACTION", 24, '#6366f1', 'bold');
-    write("Drag the 3 White Handles on the curve to warp the surface.", 18, '#cbd5e1');
-    write("The 'Combs' (whiskers) show the error magnitude.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
-}
-
 // --- INTERACTION LOGIC ---
 
 function setupInteractions(svg) {
@@ -440,7 +389,6 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if(state.showGuide) return; 
         
         // Check if clicking a handle
         const target = evt.target;
@@ -504,12 +452,12 @@ function renderControls() {
             </div>
             
              <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Surface Error Control</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Surface errors</h4>
             
             <div class="flex items-center justify-between mb-2">
                 <button id="btn-reset" class="text-xs bg-slate-200 hover:bg-slate-300 px-2 py-1 rounded text-slate-700">Reset Surface</button>
@@ -552,7 +500,7 @@ function renderControls() {
             <div class="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
                 <div class="font-bold mb-1"><i class="fa-solid fa-wave-square"></i> Note</div>
                 <div class="text-xs opacity-90 leading-relaxed">
-                    Line Profile is a 2D control. The tolerance zone follows the true profile curve. The "Whiskers" indicate the magnitude of surface error.
+                    Profile of a line checks one slice at a time. The band follows the perfect curve, half on each side. The short lines show how far each point is from the perfect curve.
                 </div>
             </div>
         </div>
@@ -564,7 +512,6 @@ function renderControls() {
 function bindControlEvents() {
     const inputTol = document.getElementById('ctrl-tol');
     const inputZoom = document.getElementById('ctrl-zoom');
-    const btnGuide = document.getElementById('btn-guide');
     const btnReset = document.getElementById('btn-reset');
     const btnRandom = document.getElementById('btn-random');
     
@@ -580,7 +527,6 @@ function bindControlEvents() {
 
     inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); renderScene(); };
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateDevs = () => {
         state.deviations[0] = parseFloat(s1.value);

@@ -16,7 +16,6 @@ const state = {
     
     // UI State
     isDragging: false,
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -60,10 +59,6 @@ function renderScene() {
     // 6. The HUD
     drawFuturisticHUD();
 
-    // 7. Guide Overlay
-    if (state.showGuide) {
-        drawGuideOverlay();
-    }
 
     // 8. Sync UI
     updateReadouts();
@@ -283,7 +278,7 @@ function drawFuturisticHUD() {
     };
 
     // Header
-    group.appendChild(addText('SYMMETRY ANALYSIS', bx+20, by+35, 20, '#94a3b8'));
+    group.appendChild(addText('SYMMETRY CHECK', bx+20, by+35, 20, '#94a3b8'));
     group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
 
     // Data
@@ -293,10 +288,10 @@ function drawFuturisticHUD() {
     group.appendChild(addText('DATUM CENTER:', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText('0.0000"', col2, by+80, 14, '#cbd5e1'));
     
-    group.appendChild(addText('MEDIAN OFFSET:', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText('MIDPOINT OFF CENTRE:', col1, by+105, 14, '#cbd5e1'));
     group.appendChild(addText(Math.abs(deviation).toFixed(4)+'"', col2, by+105, 14, accent));
 
-    group.appendChild(addText('ALLOWABLE OFFSET:', col1, by+130, 14, '#cbd5e1'));
+    group.appendChild(addText('ALLOWED OFFSET:', col1, by+130, 14, '#cbd5e1'));
     group.appendChild(addText((toleranceWidth/2).toFixed(4)+'"', col2, by+130, 14, '#white'));
 
     // Status
@@ -340,52 +335,6 @@ function drawFuturisticHUD() {
     svgContainer.appendChild(group);
 }
 
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: SYMMETRY", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. THE GEOMETRY", 24, '#6366f1', 'bold');
-    write("Symmetry applies to 'Opposed Elements' (like this slot).", 18, '#cbd5e1');
-    write("It does not check the walls directly; it checks their MIDPOINTS.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. THE MEDIAN PLANE", 24, '#6366f1', 'bold');
-    write("The dashed line is the Derived Median Plane.", 18, '#cbd5e1');
-    write("It is calculated by averaging the Left and Right wall positions.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("3. PASS / FAIL", 24, '#6366f1', 'bold');
-    write("The Median Plane must stay within the Blue Tolerance Zone.", 18, '#cbd5e1');
-    write("Drag the slot left/right to see the Median Plane shift.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
-}
-
 // --- INTERACTION LOGIC ---
 
 function setupInteractions(svg) {
@@ -398,7 +347,6 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if(state.showGuide) return; 
 
         const m = getMousePos(evt);
         const { center, scale, deviation } = state;
@@ -448,12 +396,12 @@ function renderControls() {
             </div>
             
              <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Median Plane Offset (in)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Slot offset from centre (in)</h4>
             <div class="flex items-center gap-2 mb-2">
                 <label class="w-16 text-xs font-bold text-slate-500">SHIFT</label>
                 <input type="number" id="ctrl-dev" step="0.001" value="${state.deviation.toFixed(4)}"
@@ -479,9 +427,9 @@ function renderControls() {
             </div>
 
             <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
-                <div class="font-bold mb-1"><i class="fa-solid fa-scale-balanced"></i> Application</div>
+                <div class="font-bold mb-1"><i class="fa-solid fa-scale-balanced"></i> Where it is used</div>
                 <div class="text-xs opacity-90 leading-relaxed">
-                    Symmetry is used to center features (like slots, tabs, or keys) relative to a Datum Plane. It is sensitive to form errors and center deviation.
+                    Symmetry keeps a slot, tab or keyway centred on a datum centre plane. Removed in 2018: on new drawings, position does this job.
                 </div>
             </div>
         </div>
@@ -496,7 +444,6 @@ function bindControlEvents() {
     const slideDev = document.getElementById('slide-dev');
     const inputWidth = document.getElementById('ctrl-width');
     const inputZoom = document.getElementById('ctrl-zoom');
-    const btnGuide = document.getElementById('btn-guide');
 
     inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     
@@ -513,7 +460,6 @@ function bindControlEvents() {
     inputWidth.oninput = (e) => { state.slotWidth = parseFloat(e.target.value) || 0.1; renderScene(); };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); renderScene(); };
     
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 }
 
 function updateReadouts() {

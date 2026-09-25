@@ -17,7 +17,6 @@ const state = {
     // UI State
     isDragging: false,
     dragScale: null,       // Scale frozen at drag start so the handle tracks the mouse
-    showGuide: false
 };
 
 // --- DRAWING GEOMETRY (px) ---
@@ -109,7 +108,6 @@ function renderScene() {
     drawLegendAndFrame();
     drawResults(result);
 
-    if (state.showGuide) drawGuideOverlay();
 
     updateReadouts();
 }
@@ -253,50 +251,6 @@ function drawResults(result) {
     }));
 }
 
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 170;
-    const write = (str, size = 18, color = '#cbd5e1', weight = 400) => {
-        group.appendChild(text(str, 500, yPos, { size, fill: color, weight, anchor: 'middle' }));
-        yPos += size * 1.6;
-    };
-
-    write('HOW TO READ PERPENDICULARITY', 32, '#ffffff', 800);
-    yPos += 20;
-
-    write('1. WHAT IT CONTROLS', 20, '#93c5fd', 700);
-    write('How close a surface is to 90° from a datum.');
-    write('The tolerance is a WIDTH (inches or mm), not an angle.');
-    yPos += 20;
-
-    write('2. THE ZONE', 20, '#93c5fd', 700);
-    write('The blue band is two parallel planes, always square to datum A.');
-    write('It may slide sideways to fit the part: only the lean counts.');
-    yPos += 20;
-
-    write('3. TRY IT', 20, '#93c5fd', 700);
-    write('Drag the round handle at the top of the block to tilt it.');
-    write('Anything shown in red is outside the zone.');
-
-    yPos += 40;
-    write('[ CLICK TO CLOSE ]', 14, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
-}
-
 // --- INTERACTION LOGIC ---
 
 function setupInteractions(svg) {
@@ -309,7 +263,6 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if (state.showGuide) return;
 
         const m = getMousePos(evt);
         const { topX, topY } = geometry();
@@ -362,7 +315,7 @@ function renderControls() {
             </div>
 
              <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
@@ -395,7 +348,7 @@ function renderControls() {
             <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
                 <div class="font-bold mb-1"><i class="fa-solid fa-ruler-vertical"></i> Engineering Note</div>
                 <div class="text-xs opacity-90 leading-relaxed">
-                    Perpendicularity is a specific form of Angularity (at 90°). The tolerance zone floats to contain the feature, but is always oriented 90° to the datum.
+                    Perpendicularity is angularity at exactly 90°. The zone may slide sideways to fit the surface, but it always stays at 90° to the datum.
                 </div>
             </div>
         </div>
@@ -410,7 +363,6 @@ function bindControlEvents() {
     const slideDev = document.getElementById('slide-dev');
     const inputHeight = document.getElementById('ctrl-height');
     const inputZoom = document.getElementById('ctrl-zoom');
-    const btnGuide = document.getElementById('btn-guide');
 
     inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
 
@@ -432,7 +384,6 @@ function bindControlEvents() {
     };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); renderScene(); };
 
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 }
 
 function updateReadouts() {

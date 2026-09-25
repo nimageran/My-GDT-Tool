@@ -26,7 +26,6 @@ const state = {
     // UI State
     isDragging: false,
     lastAngle: 0,
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -145,7 +144,6 @@ function renderScene() {
     drawFuturisticHUD();
 
     // 6. Guide
-    if (state.showGuide) drawGuideOverlay();
 }
 
 // --- DRAWING HELPERS ---
@@ -274,17 +272,17 @@ function drawFuturisticHUD() {
         return t;
     };
 
-    group.appendChild(addText('CIRCULARITY PLOT', bx+20, by+35, 18, '#94a3b8'));
+    group.appendChild(addText('ROUNDNESS CHECK', bx+20, by+35, 18, '#94a3b8'));
     group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
 
     const col1 = bx+20;
     const col2 = bx+240;
     
     // Stats
-    group.appendChild(addText('RADIAL SEPARATION:', col1, by+80, 14, '#cbd5e1'));
+    group.appendChild(addText('MEASURED (RADIAL BAND):', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(error.toFixed(5)+'"', col2, by+80, 16, accent));
     
-    group.appendChild(addText('TOLERANCE WIDTH:', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText('ALLOWED:', col1, by+105, 14, '#cbd5e1'));
     group.appendChild(addText(toleranceRadial.toFixed(4)+'"', col2, by+105, 14, 'white'));
     
     // MIC/MCC (Inner/Outer radii relative to nominal isn't strictly needed for GD&T check, just the gap)
@@ -323,59 +321,11 @@ function drawFuturisticHUD() {
     svgContainer.appendChild(group);
 }
 
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: CIRCULARITY (ROUNDNESS)", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. DEFINITION", 24, '#6366f1', 'bold');
-    write("Controls the roundness of a cross-section.", 18, '#cbd5e1');
-    write("The profile must lie between two concentric circles.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. TOLERANCE ZONE", 24, '#6366f1', 'bold');
-    write("The Zone (Blue Band) floats to best fit the shape.", 18, '#cbd5e1');
-    write("It is not fixed to a center point; it finds its own center.", 18, '#cbd5e1');
-    write("Error = Radial Separation between Inner and Outer circles.", 18, '#f59e0b');
-    yPos += 20;
-    
-    write("3. INTERACTION", 24, '#6366f1', 'bold');
-    write("Use sliders to add Ovality (2-lobe) or Triangulation (3-lobe).", 18, '#cbd5e1');
-    write("Rotate the part to see the inspection update.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
-}
-
 // --- INTERACTION LOGIC ---
 
 function setupInteractions(svg) {
     // Rotation Logic
     svg.addEventListener('mousedown', (evt) => {
-        if(state.showGuide) return; 
         state.isDragging = true;
         svg.style.cursor = 'grabbing';
     });
@@ -410,20 +360,20 @@ function renderControls() {
                         class="w-full font-bold bg-yellow-50 border-b-2 border-slate-300 focus:border-blue-500 outline-none text-center text-blue-800">
                 </div>
             </div>
-            <p class="text-xs text-slate-400 mt-2 italic">*No Datum References</p>
+            <p class="text-xs text-slate-400 mt-2 italic">No datum: circularity controls shape only</p>
             
             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Profile Errors</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Add errors</h4>
             
             <div class="space-y-4">
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Ovality (2-Lobe)</span>
+                        <span>Oval (2-lobe)</span>
                         <span id="val-oval">0.000</span>
                     </div>
                     <input type="range" id="slide-oval" min="0" max="0.005" step="0.0001" value="${state.ampOval}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -431,7 +381,7 @@ function renderControls() {
                 
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Triangulation (3-Lobe)</span>
+                        <span>3-lobe (triangle-like)</span>
                         <span id="val-tri">0.000</span>
                     </div>
                     <input type="range" id="slide-tri" min="0" max="0.005" step="0.0001" value="${state.ampTri}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -439,7 +389,7 @@ function renderControls() {
 
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Random Noise (Chatter)</span>
+                        <span>Random bumps (chatter)</span>
                         <span id="val-noise">0.000</span>
                     </div>
                     <input type="range" id="slide-noise" min="0" max="0.003" step="0.0001" value="${state.ampNoise}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -451,7 +401,7 @@ function renderControls() {
         
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-slate-500">VISUAL MAGNIFICATION</span>
+                <span class="text-xs font-bold text-slate-500">MAGNIFY ERRORS</span>
             </div>
             <input type="range" id="ctrl-zoom" min="500" max="5000" step="100" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
         </div>
@@ -463,7 +413,6 @@ function renderControls() {
 function bindControlEvents() {
     const inputTol = document.getElementById('ctrl-tol');
     const inputZoom = document.getElementById('ctrl-zoom');
-    const btnGuide = document.getElementById('btn-guide');
     const btnReset = document.getElementById('btn-reset');
     
     // Sliders
@@ -478,7 +427,6 @@ function bindControlEvents() {
 
     inputTol.oninput = (e) => { state.toleranceRadial = readTolerance(e.target.value); recalculateProfile(); renderScene(); };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); recalculateProfile(); renderScene(); };
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateDeforms = () => {
         state.ampOval = parseFloat(sOval.value);

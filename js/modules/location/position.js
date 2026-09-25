@@ -27,7 +27,6 @@ const state = {
     // UI State
     isDragging: false,
     dragScale: null,         // Scale frozen at drag start so the point tracks the mouse
-    showGuide: false
 };
 
 // --- DRAWING GEOMETRY (px) ---
@@ -91,7 +90,6 @@ function renderScene() {
     drawVirtualCondition(r);
     drawResults(r);
 
-    if (state.showGuide) drawGuideOverlay();
 
     updateReadouts();
 }
@@ -366,44 +364,6 @@ function drawResults(r) {
     }));
 }
 
-function drawGuideOverlay() {
-    svgContainer.appendChild(createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'rgba(15, 23, 42, 0.95)' }));
-
-    const group = createSVG('g', {});
-    let yPos = 130;
-    const write = (str, size = 17, color = '#cbd5e1', weight = 400) => {
-        group.appendChild(text(str, 500, yPos, { size, fill: color, weight, anchor: 'middle' }));
-        yPos += size * 1.6;
-    };
-
-    write('HOW POSITION AND BONUS TOLERANCE WORK', 30, '#ffffff', 800);
-    yPos += 16;
-    write('1. POSITION', 20, '#93c5fd', 700);
-    write('The axis must lie in a round zone centered on true position.');
-    write('Position = 2 × the distance from true position (the zone is a diameter).');
-    yPos += 16;
-    write('2. MMC AND BONUS', 20, '#93c5fd', 700);
-    write('MMC = most material: the smallest hole or the largest pin.');
-    write('As the part moves away from MMC it gets more clearance, so the zone grows by that amount.');
-    write('LMC works the other way. RFS means no bonus at all.');
-    yPos += 16;
-    write('3. VIRTUAL CONDITION', 20, '#93c5fd', 700);
-    write('Hole at MMC: MMC − tolerance. This is the fixed gauge pin that must always fit.');
-    yPos += 16;
-    write('TRY IT', 20, '#93c5fd', 700);
-    write('Drag the axis point, change the measured size, and switch RFS / MMC / LMC.');
-    yPos += 30;
-    write('[ CLICK TO CLOSE ]', 14, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
-}
-
 // --- INTERACTION LOGIC ---
 
 function setupInteractions(svg) {
@@ -416,7 +376,6 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if (state.showGuide) return;
         const m = getMousePos(evt);
         const s = drawScale();
         const px = ZC.x + state.deviationX * s;
@@ -481,7 +440,7 @@ function renderControls() {
                 ${seg('mod', 'RFS', 'RFS')}${seg('mod', 'MMC', 'MMC Ⓜ')}${seg('mod', 'LMC', 'LMC Ⓛ')}
             </div>
             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN BONUS TOLERANCE
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
@@ -584,7 +543,6 @@ function bindControlEvents() {
     $('ctrl-x').onchange = setXY;
     $('ctrl-y').onchange = setXY;
 
-    $('btn-guide').onclick = () => { state.showGuide = !state.showGuide; renderScene(); };
 }
 
 function updateReadouts() {
