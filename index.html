@@ -10,22 +10,27 @@
 </head>
 <body class="bg-slate-100 h-screen flex flex-col overflow-hidden font-sans">
 
-    <header class="bg-slate-900 text-white shrink-0 flex items-center justify-between px-6 py-3 shadow-md z-40 relative">
-        <div class="flex items-center gap-4 shrink-0">
+    <header class="bg-slate-900 text-white shrink-0 flex items-center gap-4 px-4 py-2 shadow-md z-40 relative">
+        <button id="homeLogo" class="shrink-0 text-left" title="Start page">
             <h1 class="text-xl font-black tracking-wider text-yellow-500">ASME<span class="text-white">Y14.5</span></h1>
-            <span class="text-xs text-slate-400 border-l border-slate-700 pl-4 hidden 2xl:block">Professional Analyst Tool</span>
-            <button id="searchBtn" class="flex items-center gap-2 text-sm text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg pl-3 pr-2 py-1.5 transition-colors" title="Search everything (/ or Ctrl+K)">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <span>Search</span>
-                <kbd class="text-[11px] text-slate-400 border border-slate-600 rounded px-1.5 font-mono">/</kbd>
-            </button>
-        </div>
-        <nav id="categoryNav" class="flex space-x-1 overflow-x-auto ml-6"></nav>
+        </button>
+        <button id="searchBtn" class="shrink-0 flex items-center gap-2 text-sm text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg pl-3 pr-2 py-1.5 transition-colors" title="Search everything (/ or Ctrl+K)">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span class="hidden 2xl:inline">Search</span>
+            <kbd class="text-[11px] text-slate-400 border border-slate-600 rounded px-1.5 font-mono">/</kbd>
+        </button>
+        <!-- Menu bar: each tab opens a drop-down of its tools (js/main.js) -->
+        <nav id="categoryNav" role="menubar" class="flex items-center gap-0.5 ml-auto min-w-0 overflow-x-auto"></nav>
     </header>
 
-    <nav id="symbolToolbar" class="bg-white border-b border-slate-200 px-6 py-2 flex items-center gap-4 shadow-sm z-30 overflow-x-auto h-16 shrink-0">
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest shrink-0 border-r border-slate-200 pr-4 mr-2" id="toolbarLabel">SELECT TOOL</span>
-        <div id="symbolList" class="flex items-center gap-3"></div>
+    <!-- Where you are, and the previous / next tool in this tab -->
+    <nav id="pathBar" class="bg-white border-b border-slate-200 px-4 h-10 flex items-center gap-2 text-sm shrink-0 z-30" aria-label="Current tool">
+        <ol id="pathCrumbs" class="flex items-center gap-1.5 min-w-0 text-slate-500"></ol>
+        <div class="ml-auto flex items-center gap-1 shrink-0">
+            <span id="pathCount" class="text-xs text-slate-400 mr-1"></span>
+            <button id="prevTool" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-500 disabled:opacity-30" title="Previous tool in this tab"><i class="fa-solid fa-chevron-left"></i></button>
+            <button id="nextTool" class="w-8 h-8 rounded hover:bg-slate-100 text-slate-500 disabled:opacity-30" title="Next tool in this tab"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
     </nav>
 
     <div class="flex-1 flex overflow-hidden relative">
@@ -48,7 +53,7 @@
             </div>
             
             <div id="controlsContent" class="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/30">
-                <p class="text-slate-400 italic text-sm mt-4">Select a feature from the top toolbar.</p>
+                <p class="text-slate-400 italic text-sm mt-4">Loading…</p>
             </div>
         </section>
 

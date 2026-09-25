@@ -327,6 +327,11 @@ function choose(i) {
     r.open();
 }
 
+/** Open the search, optionally with text already typed. */
+export function openSearch(prefill = '') {
+    open(prefill);
+}
+
 export function initSearch() {
     document.getElementById('searchBtn')?.addEventListener('click', () => open());
     document.addEventListener('keydown', e => {
