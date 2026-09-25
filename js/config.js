@@ -134,8 +134,7 @@ export const GDT_HIERARCHY = {
                 summary: "Pass or fail, and why? Scenario quizzes built from real drawing callouts." },
             y14_changes: { name: "Y14.5-2009 vs 2018", iconChar: "Δ", planned: true,
                 summary: "What changed between editions, including the removal of concentricity and symmetry and what to use instead." },
-            asme_iso: { name: "ASME vs ISO GPS", iconChar: "≠", planned: true,
-                summary: "The differences that matter when reading drawings from ISO-based suppliers: independency by default, datum systems, symbols." }
+            asme_iso: { name: "ASME vs ISO GPS", iconChar: "≠", filePath: './modules/learn/asme_iso.js' }
         }
     }
 };

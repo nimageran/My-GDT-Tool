@@ -616,6 +616,30 @@ export const EXPLAIN = {
         tool: 'Change B\'s size, switch B Ⓜ and B (RMB), edit the hole offsets, or try the presets.'
     },
 
+    asme_iso: {
+        title: 'ASME vs ISO GPS',
+        terms: [
+            ['ASME Y14.5', 'The US rulebook for dimensions and GD&T.'],
+            ['ISO GPS', 'The international rulebook (Geometrical Product Specifications), spread over many ISO standards.'],
+            ['Independency', 'Size and form are checked separately. The ISO default (ISO 8015).'],
+            ['Ⓔ', 'Envelope requirement: on an ISO drawing, asks for perfect form at MMC, like ASME Rule #1.']
+        ],
+        simple: [
+            'Most symbols **look the same** in ASME and ISO, but a **few rules are different**.',
+            'First find **which rulebook** the drawing names: "ASME Y14.5" or "ISO 8015 / ISO GPS".',
+            'The biggest difference: **ISO has no Rule #1**, so a size tolerance **does not limit bending or out-of-round**.',
+            'ISO also keeps **concentricity and symmetry**, uses **CZ / SIM** instead of composite frames, and puts **general tolerances** in an ISO 2768 note.',
+            'Some things are just **different names**: a basic dimension is a **TED** in ISO.'
+        ],
+        example: [
+            'A German drawing says "ISO 8015" and "Ø20 ±0.05" on a pin, with no form tolerance.',
+            'Every caliper reading is 19.98, but the pin is bowed 0.08.',
+            'Under ISO it meets the size requirement, because size does not control form.',
+            'Under ASME Rule #1 it would fail: 19.98 + 0.08 = 20.06, bigger than the Ø20.05 MMC.'
+        ],
+        tool: 'Start with the clue list at the top, then search or filter the side-by-side cards.'
+    },
+
     fits: {
         title: 'ISO fits (H7/g6)',
         terms: [

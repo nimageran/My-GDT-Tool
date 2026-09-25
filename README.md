@@ -26,7 +26,7 @@ Tabs are grouped by what you're trying to do. **Search** (header, or press `/`) 
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas, ISO fits (ISO 286: H7/g6 → limits, clearance or interference, preferred fits) | |
 | **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
-| **Learn** | Standards and practice | Glossary (99 terms, searchable) | Practice scenarios, Y14.5-2009 vs 2018, ASME vs ISO GPS |
+| **Learn** | Standards and practice | Glossary (103 terms, searchable), ASME vs ISO GPS (which rulebook, and the differences that change pass / fail) | Practice scenarios, Y14.5-2009 vs 2018 |
 
 ## Structure
 
