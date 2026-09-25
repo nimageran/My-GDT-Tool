@@ -16,10 +16,10 @@ const FRONT = { x: 120, y: 290, w: 100 * K, h: 60 * K };
 const TOP = { x: 120, y: 190, w: 100 * K, h: 20 * K };
 const RIGHT = { x: 470, y: 290, w: 20 * K, h: 60 * K };
 const HOLES = [25, 75].map(mx => ({ x: FRONT.x + mx * K, y: FRONT.y + FRONT.h - 35 * K, r: 5 * K }));
-const TB = { x: 560, y: 600 };
+const TB = { x: 455, y: 555, k: 1.25 };
 
 // Field boxes of the title block, same layout as sheet.js TITLE_FIELDS at k = 1
-const tbBox = (fx, fy, w, h) => ({ x: TB.x + fx, y: TB.y + fy, w, h });
+const tbBox = (fx, fy, w, h) => ({ x: TB.x + fx * TB.k, y: TB.y + fy * TB.k, w: w * TB.k, h: h * TB.k });
 
 // --------------------------------------------------------------------------
 // Steps
@@ -57,9 +57,9 @@ export const STEPS = [
       check: ['100, 60 and 20 have no decimals, so they are ±0.5 here.', 'So 100 means anything from 99.5 to 100.5.'],
       watch: 'Boxed (basic) dimensions like the 25, 75 and 35 never take this default.',
       link: ['DECODE', 'general_tolerances', 'General tolerance calculator'] },
-    { title: 'Notes', rects: [{ x: 30, y: 600, w: 520, h: 172 }],
+    { title: 'Notes', rects: [{ x: 30, y: 600, w: 410, h: 172 }],
       look: 'The notes block. These rules apply to the whole part.',
-      check: ['Read every note before starting.', 'Here: remove burrs and break edges, default finish Ra 3.2, sizes apply after anodize, and part marking.'],
+      check: ['Read every note before starting.', 'Here: remove burrs and break edges, default finish Ra 3.2 unless marked (UOS), sizes apply after anodize, and part marking.'],
       watch: 'Note 3 matters: the Ø10 holes must be the right size after anodize, so they are machined slightly bigger.',
       link: ['DECODE', 'drawing_notes', 'Notes & abbreviations'] },
     { title: 'Datums: how the part is held', rects: [{ x: 528, y: 418, w: 58, h: 44 }, { x: 250, y: 462, w: 40, h: 64 }, { x: 64, y: 312, w: 62, h: 36 }],
@@ -77,7 +77,7 @@ export const STEPS = [
       check: ['The back face (datum A) must be Ra 1.6 or smoother.', 'All other machined faces follow note 2: Ra 3.2.'],
       watch: 'Unknown symbol? Look it up before guessing.',
       link: ['DECODE', 'symbol_finder', 'Symbol Finder'] },
-    { title: 'Revision block', rects: [{ x: 600, y: 20, w: 380, h: 56 }],
+    { title: 'Revision block', rects: [{ x: 600, y: 20, w: 380, h: 60 }],
       look: 'The revision table, top right: what changed and when.',
       check: ['REV C changed the holes from Ø9 to Ø10.', 'If you have old parts, stock or programs from REV B, they are now wrong.'],
       watch: 'Always check what changed when a new revision arrives, even if the change looks small.' }
@@ -115,7 +115,7 @@ function render() {
     svg.appendChild(createSVG('rect', { x: 20, y: 20, width: 960, height: 760, fill: 'none', stroke: INK, 'stroke-width': 2.4 }));
 
     drawRevisionBlock(svg);
-    svg.appendChild(titleBlock(TB.x, TB.y, 1).g);
+    svg.appendChild(titleBlock(TB.x, TB.y, TB.k, { fixed: true, labelSize: 10, valueSize: 12.5, bigSize: 16 }).g);
     drawNotes(svg);
     drawViews(svg);
     drawDimensions(svg);
@@ -124,17 +124,17 @@ function render() {
 }
 
 function drawRevisionBlock(svg) {
-    const cols = [600, 640, 830, 920, 980];
+    const cols = [600, 640, 810, 920, 980];
     const rows = [
         ['REV', 'DESCRIPTION', 'DATE', 'BY'],
         ['B', 'FIRST RELEASE', '2025-11-10', 'J.S.'],
         ['C', 'HOLES Ø10 WAS Ø9', '2026-03-02', 'A.K.']
     ];
     rows.forEach((r, i) => {
-        const y = 20 + i * 18.7;
+        const y = 20 + i * 20;
         r.forEach((c, j) => {
-            svg.appendChild(createSVG('rect', { x: cols[j], y, width: cols[j + 1] - cols[j], height: 18.7, fill: i === 0 ? '#f1f5f9' : '#fff', stroke: INK, 'stroke-width': 1 }));
-            svg.appendChild(text(c, cols[j] + 5, y + 13, { size: i === 0 ? 8.5 : 10, weight: i === 0 ? 700 : 600, fill: INK, mono: i > 0 }));
+            svg.appendChild(createSVG('rect', { x: cols[j], y, width: cols[j + 1] - cols[j], height: 20, fill: i === 0 ? '#f1f5f9' : '#fff', stroke: INK, 'stroke-width': 1 }));
+            svg.appendChild(text(c, cols[j] + 5, y + 14.5, { size: i === 0 ? 8.5 : 10, weight: i === 0 ? 700 : 600, fill: INK, mono: i > 0 }));
         });
     });
 }
@@ -142,10 +142,10 @@ function drawRevisionBlock(svg) {
 function drawNotes(svg) {
     const notes = [
         'NOTES:',
-        '1. REMOVE ALL BURRS. BREAK SHARP EDGES 0.2-0.5.',
-        '2. SURFACE FINISH Ra 3.2 UNLESS OTHERWISE SPECIFIED.',
+        '1. REMOVE BURRS. BREAK SHARP EDGES 0.2-0.5.',
+        '2. SURFACE FINISH Ra 3.2 UOS.',
         '3. DIMENSIONS APPLY AFTER ANODIZE.',
-        '4. MARK PART NUMBER AND REV ON BACK FACE, INK.'
+        '4. MARK P/N AND REV ON BACK FACE, INK.'
     ];
     notes.forEach((n, i) => svg.appendChild(text(n, 40, 628 + i * 24, { size: i ? 12.5 : 13, weight: i ? 500 : 800, fill: INK, mono: true })));
 }

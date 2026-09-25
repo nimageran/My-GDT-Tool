@@ -169,7 +169,7 @@ function update() {
 function txt(str, x, y, o = {}) {
     const t = el('text', {
         x, y, 'font-size': o.size || 16, fill: o.fill || '#0f172a',
-        'font-family': o.mono ? "'JetBrains Mono', monospace" : 'ui-sans-serif, system-ui, sans-serif',
+        'font-family': o.mono ? "'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" : 'ui-sans-serif, system-ui, sans-serif',
         'text-anchor': o.anchor || 'start', 'dominant-baseline': o.baseline || 'auto'
     });
     if (o.bold) t.setAttribute('font-weight', '700');

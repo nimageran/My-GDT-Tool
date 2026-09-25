@@ -387,7 +387,7 @@ function drawFuturisticHUD() {
     }));
 
     const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': 'JetBrains Mono', 'font-size': size, 'font-weight': weight });
+        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
         t.textContent = txt;
         return t;
     };
@@ -435,9 +435,9 @@ function drawFuturisticHUD() {
         { l: 'Bend', v: state.bend }
     ];
     errs.forEach((e, i) => {
-        const x = bx + 20 + (i*110);
+        const x = bx + 20 + (i * 125);
         group.appendChild(addText(e.l, x, subY, 10, '#64748b'));
-        const valCol = Math.abs(e.v) > 0.0001 ? '#f59e0b' : '#334155';
+        const valCol = Math.abs(e.v) > 0.0001 ? '#f59e0b' : '#94a3b8';
         group.appendChild(addText(e.v.toFixed(4), x, subY+15, 12, valCol));
     });
 

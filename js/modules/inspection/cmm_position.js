@@ -41,7 +41,7 @@ function saveState() {
 
 // --- LAYOUT (px) ---
 const PLOT = { x: 30, y: 30, w: 540, h: 560 };
-const TABLE_X = 600;
+const TABLE_X = 585;
 const ZONE_PX = 38;            // Largest allowed zone radius drawn per hole
 const MAX_ROWS = 18;
 
@@ -181,11 +181,11 @@ function drawTable(results) {
     // Header
     const cols = [
         { key: 'id', label: 'HOLE', x: TABLE_X, anchor: 'start' },
-        { key: 'size', label: 'SIZE Ø', x: TABLE_X + 118, anchor: 'end' },
-        { key: 'pos', label: 'POS Ø', x: TABLE_X + 190, anchor: 'end' },
+        { key: 'size', label: 'SIZE Ø', x: TABLE_X + 112, anchor: 'end' },
+        { key: 'pos', label: 'POS Ø', x: TABLE_X + 184, anchor: 'end' },
         { key: 'bonus', label: 'BONUS', x: TABLE_X + 256, anchor: 'end' },
-        { key: 'allowed', label: 'ALLOWED', x: TABLE_X + 328, anchor: 'end' },
-        { key: 'result', label: '', x: TABLE_X + 378, anchor: 'middle' }
+        { key: 'allowed', label: 'ALLOWED', x: TABLE_X + 338, anchor: 'end' },
+        { key: 'result', label: '', x: TABLE_X + 382, anchor: 'middle' }
     ];
     const hy = 142;
     for (const c of cols) {

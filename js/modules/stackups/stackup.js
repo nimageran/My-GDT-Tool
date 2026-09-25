@@ -192,7 +192,7 @@ function drawContributors(r) {
         // Direction pill
         g.appendChild(createSVG('rect', { x: LINE.x, y: y - 13, width: 20, height: 17, rx: 4, fill: c.row.dir > 0 ? '#dbeafe' : '#f1f5f9' }));
         g.appendChild(text(c.row.dir > 0 ? '+' : '−', LINE.x + 10, y, { size: 13, weight: 800, anchor: 'middle', fill: COLORS.ink }));
-        const name = c.row.name.length > 22 ? c.row.name.slice(0, 21) + '…' : c.row.name;
+        const name = c.row.name.length > 18 ? c.row.name.slice(0, 17) + '…' : c.row.name;
         g.appendChild(text(name, LINE.x + 28, y, { size: 12.5, weight: top1 ? 700 : 400, fill: COLORS.text }));
         const tag = c.row.type === 'dim' ? '' : c.row.type === 'pos' ? ' Ø pos' : ' profile';
         g.appendChild(text(`±${fmt(c.t)}${tag}`, barX - 10, y, { size: 11.5, mono: true, fill: COLORS.muted, anchor: 'end' }));
@@ -211,7 +211,7 @@ function drawPanel(r) {
     g.appendChild(title('1. NOMINAL GAP (WALK THE LOOP)', PANEL_X, y));
     const terms = state.rows.map((row, i) => `${i === 0 && row.dir > 0 ? '' : row.dir > 0 ? '+ ' : '− '}${fmt(row.nominal)}`).join(' ');
     const sum = `${terms} = ${fmt(r.nominal)}`;
-    const block = wrapText(sum, PANEL_X, y + 24, 42, 18, { size: 13, mono: true, fill: COLORS.ink });
+    const block = wrapText(sum, PANEL_X, y + 24, 38, 18, { size: 13, mono: true, fill: COLORS.ink });
     g.appendChild(block);
     y += 24 + 18 * block.childNodes.length;
     if (Math.abs(r.mean - r.nominal) > EPS) {

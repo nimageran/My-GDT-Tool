@@ -95,7 +95,7 @@ function drawDatumPlane() {
 
     // Datum Identifier
     const textStyle = { 
-        fill: '#1e293b', 'font-family': 'JetBrains Mono', 'font-weight': '900', 'font-size': '20' 
+        fill: '#1e293b', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-weight': '900', 'font-size': '20' 
     };
     
     // Top Label
@@ -147,7 +147,7 @@ function drawToleranceZone() {
     
     const label = createSVG('text', {
         x: center.x, y: dimY - 10,
-        fill: '#2563eb', 'font-family': 'JetBrains Mono', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'middle'
+        fill: '#2563eb', 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'middle'
     });
     label.textContent = `Tol Zone: ${toleranceWidth.toFixed(3)}"`;
 
@@ -227,7 +227,7 @@ function drawMedianAnalysis() {
     // Label for Median Plane
     const label = createSVG('text', {
         x: centerX, y: 170,
-        fill: planeColor, 'font-family': 'JetBrains Mono', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'middle'
+        fill: planeColor, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': '14', 'font-weight': 'bold', 'text-anchor': 'middle'
     });
     label.textContent = "DERIVED MEDIAN PLANE";
     group.appendChild(label);
@@ -272,7 +272,7 @@ function drawFuturisticHUD() {
     }));
 
     const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': 'JetBrains Mono', 'font-size': size, 'font-weight': weight });
+        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
         t.textContent = txt;
         return t;
     };

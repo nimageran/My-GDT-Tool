@@ -1,4 +1,5 @@
 // js/main.js
+import { watchCanvas } from './legibility.js';
 import { GDT_HIERARCHY } from './config.js';
 import { createSVG } from './drawing_utils.js';
 import { COLORS, text, wrapText } from './theme.js';
@@ -164,6 +165,7 @@ async function loadSymbolModule(catKey, symKey) {
     freshCanvas.style.display = '';
     canvas.replaceWith(freshCanvas);
     canvas = freshCanvas;
+    watchCanvas(canvas);
 
     if (symData.planned) {
         showPlannedTool(catKey, symData);

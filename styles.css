@@ -33,3 +33,14 @@
     cursor: help;
 }
 .gloss:hover, .gloss:focus { background: #dbeafe; outline: none; border-radius: 2px; }
+
+/* Sidebar readability: explanatory text (notes, tips, warnings) was 12 px and
+   often light grey. Raise it and darken it; buttons, labels and small
+   headings keep their compact size. */
+#controlsContent :is(p, li, ol, ul, div, span, td).text-xs {
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+#controlsContent :is(p, li, div, span).text-slate-400 { color: #64748b; }
+#controlsContent :is(p, li, div, span).text-slate-500 { color: #475569; }
+#controlsContent .opacity-90 { opacity: 1; }

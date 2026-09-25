@@ -364,7 +364,7 @@ function drawFuturisticHUD() {
     }));
 
     const addText = (txt, x, y, size, color, weight='bold') => {
-        const t = createSVG('text', { x, y, fill: color, 'font-family': 'JetBrains Mono', 'font-size': size, 'font-weight': weight });
+        const t = createSVG('text', { x, y, fill: color, 'font-family': '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', 'font-size': size, 'font-weight': weight });
         t.textContent = txt;
         return t;
     };
