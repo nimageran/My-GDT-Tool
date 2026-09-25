@@ -16,7 +16,7 @@ export function unload()                // OPTIONAL: stop animation loops/timers
 ```
 
 - The shell gives each module a fresh `<svg>` element, so listeners added to `canvas` never leak between modules.
-- Modules are registered in `config.js` under the `DECODE` tab ("Read Drawings", group "Decode callouts"). Tools not built yet are listed there as `planned: true` entries with a `summary`; they show greyed in the ribbon. To ship one, add its `filePath` and delete `planned` / `summary`:
+- Modules are registered in `config.js` under the `DECODE` tab ("Read Drawings", group "Decode callouts"). Tools not built yet are listed there as `planned: true` entries with a `summary`; they show greyed, with a "soon" badge, in the drop-down menu. To ship one, add its `filePath` and delete `planned` / `summary`:
 
 ```js
 DECODE: {

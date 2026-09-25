@@ -15,24 +15,26 @@ python3 -m http.server 8000
 
 ## Tabs
 
-Tabs are grouped by what you're trying to do. **Search** (header, or press `/`) finds any tool, symbol, term, note, line type, fit (`25 H7/g6`) or thread (`M8x1`) and opens it. Tools marked *planned* appear greyed with a "soon" badge and a description of their scope.
+The tool opens on a **Home** page ("What do you need to do?" start points and a map of every tool). The menu bar works like a desktop application: each tab opens a drop-down of its tools, in columns by group, with a one-line description; a path bar below shows where you are, with previous / next buttons. Tabs are in the order a drawing reader needs them. **Search** (header, or press `/`) finds any tool, symbol, term, note, line type, fit (`25 H7/g6`) or thread (`M8x1`) and opens it. Tools marked *planned* appear greyed with a "soon" badge and a description of their scope.
 
 | Tab | What it covers | Built | Planned |
 |---|---|---|---|
+| **Home** | Start page | Common jobs as start points, search, map of all tools | |
+| **Read Drawings** | Reading a drawing, from the sheet itself to hard callouts | *Drawing basics:* how to read a drawing (step-by-step on a sample sheet), title block, first vs third angle projection, lines & views, general tolerances (title block and ISO 2768), notes & abbreviations. *Decode callouts:* Symbol Finder (visual index of ~80 drawing symbols), feature control frames, frame legality checker, holes/threads/patterns, welding symbols, surface finish (ISO 1302 and US legacy) | |
 | **Characteristics** | The 14 geometric characteristics as interactive tolerance zones, grouped Form / Profile / Orientation / Location / Runout | All 14 (concentricity and symmetry flagged as removed in 2018) | |
 | **Material Condition** | Modifiers and the boundaries they create | Bonus tolerance (MMC / LMC / RFS), Rule #1 envelope (and independency), virtual & resultant condition (will the pin always fit the hole?), datum shift (MMB) | |
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D) | Datum targets |
-| **Read Drawings** | Reading a drawing, from the sheet itself to hard callouts | *Drawing basics:* how to read a drawing (step-by-step on a sample sheet), title block, first vs third angle projection, lines & views, general tolerances (title block and ISO 2768), notes & abbreviations. *Decode callouts:* Symbol Finder (visual index of ~80 drawing symbols), feature control frames, frame legality checker, holes/threads/patterns, welding symbols, surface finish (ISO 1302 and US legacy) | |
-| **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas, ISO fits (ISO 286: H7/g6 → limits, clearance or interference, preferred fits) | |
-| **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
+| **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
 | **Learn** | Standards and practice | Glossary (103 terms, searchable), ASME vs ISO GPS (which rulebook, and the differences that change pass / fail) | Practice scenarios, Y14.5-2009 vs 2018 |
+| **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
 
 ## Structure
 
 ```
 index.html, styles.css     Shell page
-js/main.js                 Navigation and module loading
+js/main.js                 Module loading
+js/menu.js                 Menu bar, drop-down menus and path bar
 js/config.js               Tabs and tools (the only place tools are registered)
 js/theme.js                Shared visual language: colours, fonts, legend, frame, results strip
 js/drawing_utils.js        createSVG(), readTolerance()
