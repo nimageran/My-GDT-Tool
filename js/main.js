@@ -2,6 +2,7 @@
 import { GDT_HIERARCHY } from './config.js';
 import { createSVG } from './drawing_utils.js';
 import { COLORS, text, wrapText } from './theme.js';
+import { hasExplanation, openExplain, closeExplain } from './explain.js';
 
 // --- GLOBAL STATE ---
 let activeCategory = null;
@@ -19,6 +20,7 @@ const controlsContent = document.getElementById('controlsContent');
 const controlsPanel = document.getElementById('controlsPanel');
 const toggleControlsBtn = document.getElementById('toggleControlsBtn');
 const expandControlsBtn = document.getElementById('expandControlsBtn');
+const explainBtn = document.getElementById('explainBtn');
 
 // --- INITIALIZATION ---
 function init() {
@@ -149,6 +151,10 @@ async function loadSymbolModule(catKey, symKey) {
     }
     currentModule = null;
 
+    // Explain button: shown when this tool has a plain-language explanation
+    closeExplain();
+    explainBtn.classList.toggle('hidden', !hasExplanation(symKey));
+
     // Remove anything a module mounted beside the canvas (e.g. a 3D view)
     document.querySelectorAll('[data-module-overlay]').forEach(el => el.remove());
 
@@ -205,6 +211,15 @@ function toggleSidebar() {
 function setupSidebarToggle() {
     toggleControlsBtn.onclick = toggleSidebar;
     expandControlsBtn.onclick = toggleSidebar;
+    explainBtn.onclick = () => openExplain(activeSymbolKey);
+
+    // The tools' own "Explain / Guide" buttons open the same shared panel
+    controlsContent.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-guide') && hasExplanation(activeSymbolKey)) {
+            e.stopPropagation();
+            openExplain(activeSymbolKey);
+        }
+    }, true);
 }
 
 // Tools can open another tool: window.dispatchEvent(new CustomEvent('gdt:navigate', { detail: { cat, sym } }))
