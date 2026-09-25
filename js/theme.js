@@ -222,15 +222,18 @@ export function callout(label, labelX, labelY, targetX, targetY, opts = {}) {
  * Feature control frame with its top-left corner at (x, y).
  * symbol: a gdtChar() key, e.g. 'perpendicularity'
  * diameter: prefix the tolerance with the diameter symbol
- * modifier: 'M' | 'L' | null, circled material condition after the tolerance
+ * modifier: 'M' | 'L' | ['M', 'P'] | null, circled letters after the tolerance
+ * projected: projected zone height shown after a P modifier, e.g. '10'
  * Returns { g, width, height }.
  */
-export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diameter = false, modifier = null, h = 34 }) {
+export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diameter = false, modifier = null, projected = null, h = 34 }) {
     const g = createSVG('g', {});
+    const mods = [].concat(modifier ?? []);
     const textW = tolerance.length * 9.8;          // 16px monospace advance
     const diaW = diameter ? 20 : 0;
-    const modW = modifier ? 26 : 0;
-    const tolContentW = diaW + textW + modW;
+    const modW = mods.length * 24 + (mods.length ? 2 : 0);
+    const projW = projected ? projected.length * 9.8 + 6 : 0;
+    const tolContentW = diaW + textW + modW + projW;
     const cells = [
         { w: h, draw: (cx, cy) => g.appendChild(gdtChar(symbol, cx, cy, h * 0.62)) },
         { w: Math.max(h * 2.2, tolContentW + 22), draw: (cx, cy) => {
@@ -238,8 +241,12 @@ export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diam
             if (diameter) g.appendChild(diaSymbol(left - 1, cy + 6, 16));
             left += diaW;
             g.appendChild(text(tolerance, left, cy, { size: 16, weight: 600, mono: true, baseline: 'central', fill: COLORS.ink }));
-            left += textW;
-            if (modifier) g.appendChild(circledMod(left + 13, cy, 9.5, modifier));
+            left += textW + 2;
+            for (const m of mods) {
+                g.appendChild(circledMod(left + 12, cy, 9.5, m));
+                left += 24;
+            }
+            if (projected) g.appendChild(text(projected, left + 6, cy, { size: 16, weight: 600, mono: true, baseline: 'central', fill: COLORS.ink }));
         } },
         ...datums.map(d => ({ w: h, draw: (cx, cy) =>
             g.appendChild(text(d, cx, cy, { size: 17, weight: 700, anchor: 'middle', baseline: 'central', fill: COLORS.ink })) }))
@@ -324,8 +331,10 @@ export function legend(x, y, items, { title = 'KEY', note } = {}) {
  *   measured: { label, value }, allowed: { label, value },   // numbers
  *   unit: '"' | ' mm', decimals,
  *   sentence: string,
- *   compact: boolean   // smaller type for sentences over ~200 characters
+ *   compact: boolean,  // smaller type for sentences over ~200 characters
+ *   gauge: false       // hide the gauge (e.g. when values are ranges)
  * }
+ * measured / allowed may carry `text` to show instead of the formatted value.
  */
 export function resultsStrip(results) {
     const { pass, measured, allowed, sentence } = results;
@@ -353,10 +362,12 @@ export function resultsStrip(results) {
     // 2. Measured vs allowed, with a gauge
     const nx = 195;
     g.appendChild(text(measured.label.toUpperCase(), nx, top + 36, { size: 11, weight: 700, fill: COLORS.muted, letterSpacing: '0.06em' }));
-    g.appendChild(text(measured.value.toFixed(dec) + unit, nx, top + 66, { size: 26, weight: 700, fill: accent, mono: true }));
+    const show = m => m.text ?? (m.value.toFixed(dec) + unit);
+    const valueSize = (measured.text || allowed.text) ? 20 : 26;
+    g.appendChild(text(show(measured), nx, top + 66, { size: valueSize, weight: 700, fill: accent, mono: true }));
     g.appendChild(text(allowed.label.toUpperCase(), nx + 170, top + 36, { size: 11, weight: 700, fill: COLORS.muted, letterSpacing: '0.06em' }));
-    g.appendChild(text(allowed.value.toFixed(dec) + unit, nx + 170, top + 66, { size: 26, weight: 700, fill: COLORS.text, mono: true }));
-    g.appendChild(gauge(nx, top + 92, 320, measured.value, allowed.value, accent));
+    g.appendChild(text(show(allowed), nx + 170, top + 66, { size: valueSize, weight: 700, fill: COLORS.text, mono: true }));
+    if (results.gauge !== false) g.appendChild(gauge(nx, top + 92, 320, measured.value, allowed.value, accent));
 
     // 3. Plain English
     const sx = 560;

@@ -100,10 +100,8 @@ export const GDT_HIERARCHY = {
         label: "Stack-ups & Fits",
         icon: "fa-layer-group",
         symbols: {
-            stackup: { name: "Tolerance Stack-up", iconChar: "≡", planned: true,
-                summary: "Worst-case and RSS (statistical) loops, with position and profile tolerances as contributors." },
-            fasteners: { name: "Fastener Formulas", iconChar: "⊕", planned: true,
-                summary: "Floating fastener T = H − F and fixed fastener T = (H − F) / 2: size clearance holes and position tolerance for a given bolt." },
+            stackup: { name: "Tolerance Stack-up", iconChar: "≡", filePath: './modules/stackups/stackup.js' },
+            fasteners: { name: "Fastener Formulas", iconChar: "⊕", filePath: './modules/stackups/fasteners.js' },
             fits: { name: "ISO Fits (H7/g6)", iconChar: "⌗", planned: true,
                 summary: "ISO 286 fit decoder: nominal size + fit class → limit dimensions, clearance or interference range, and fit character, with a shaft-in-hole zone diagram." }
         }
