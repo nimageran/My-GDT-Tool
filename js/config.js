@@ -94,8 +94,7 @@ export const GDT_HIERARCHY = {
         symbols: {
             drf: { name: "Datum Reference Frame (3D)", iconChar: "⌗", filePath: './modules/datums/drf.js', desc: "How datums A, B and C hold the part, in 3D." },
             precedence: { name: "Datum Precedence (3D)", iconChar: "⇅", filePath: './modules/datums/drf.js', desc: "Why the order of the datums changes the result, in 3D." },
-            datum_targets: { name: "Datum Targets", iconChar: "⊗", planned: true,
-                summary: "Target points, lines and areas for castings, forgings and sheet metal, and how to build the fixture that simulates them." }
+            datum_targets: { name: "Datum Targets", iconChar: "⊗", filePath: './modules/datums/datum_targets.js', desc: "Points, lines and areas that set the datums on castings, forgings and sheet metal." }
         }
     },
 
