@@ -125,6 +125,7 @@ export const GDT_HIERARCHY = {
         label: "Learn",
         icon: "fa-graduation-cap",
         symbols: {
+            glossary: { name: "Glossary", iconChar: "Aa", filePath: './modules/learn/glossary.js' },
             practice: { name: "Practice Scenarios", iconChar: "?", planned: true,
                 summary: "Pass or fail, and why? Scenario quizzes built from real drawing callouts." },
             y14_changes: { name: "Y14.5-2009 vs 2018", iconChar: "Δ", planned: true,

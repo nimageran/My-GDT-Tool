@@ -3,6 +3,7 @@ import { GDT_HIERARCHY } from './config.js';
 import { createSVG } from './drawing_utils.js';
 import { COLORS, text, wrapText } from './theme.js';
 import { hasExplanation, openExplain, closeExplain } from './explain.js';
+import { linkify } from './glossary.js';
 
 // --- GLOBAL STATE ---
 let activeCategory = null;
@@ -221,6 +222,22 @@ function setupSidebarToggle() {
         }
     }, true);
 }
+
+// Glossary underlines in the sidebar's explanatory text (notes, warnings,
+// descriptions). Tools rebuild their controls often, so watch for changes.
+const NOTE_SELECTOR = '.leading-relaxed, li, p';
+let glossTimer = null;
+const glossObserver = new MutationObserver(() => {
+    clearTimeout(glossTimer);
+    glossTimer = setTimeout(() => {
+        glossObserver.disconnect();
+        controlsContent.querySelectorAll(NOTE_SELECTOR).forEach(el => {
+            if (!el.querySelector(NOTE_SELECTOR)) linkify(el);
+        });
+        glossObserver.observe(controlsContent, { childList: true, subtree: true });
+    }, 120);
+});
+glossObserver.observe(controlsContent, { childList: true, subtree: true });
 
 // Tools can open another tool: window.dispatchEvent(new CustomEvent('gdt:navigate', { detail: { cat, sym } }))
 window.addEventListener('gdt:navigate', (e) => {

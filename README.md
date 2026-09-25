@@ -26,7 +26,7 @@ Tabs are grouped by what you're trying to do. Tools marked *planned* appear grey
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas | ISO fits |
 | **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
-| **Learn** | Standards and practice | | Practice scenarios, Y14.5-2009 vs 2018, ASME vs ISO GPS |
+| **Learn** | Standards and practice | Glossary (75 terms, searchable) | Practice scenarios, Y14.5-2009 vs 2018, ASME vs ISO GPS |
 
 ## Structure
 
@@ -37,6 +37,8 @@ js/config.js               Tabs and tools (the only place tools are registered)
 js/theme.js                Shared visual language: colours, fonts, legend, frame, results strip
 js/drawing_utils.js        createSVG(), readTolerance()
 js/gdt_math.js             Shared calculations (position, bonus, virtual condition)
+js/explain.js              Plain-language Explain panel content for every tool
+js/glossary.js             Glossary terms + dotted-underline hover definitions
 js/modules/<area>/*.js     One file per tool
 js/modules/decode/         Decoders, symbols.js geometry library, DECODER_SPEC.md
 ```
