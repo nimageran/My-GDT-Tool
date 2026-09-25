@@ -72,6 +72,7 @@ export const GDT_HIERARCHY = {
         label: "Decode Drawings",
         icon: "fa-magnifying-glass",
         symbols: {
+            symbol_finder: { name: "Symbol Finder", iconChar: "⌕", filePath: './modules/decode/symbol_finder.js' },
             composite_frames: { name: "Feature Control Frames", iconChar: "▣", filePath: './modules/decode/composite_frames.js' },
             hole_callouts: { name: "Holes, Threads & Patterns", iconChar: "⌀", filePath: './modules/decode/hole_callouts.js' },
             welding: { name: "Welding Symbols", iconChar: "▷", filePath: './modules/decode/welding.js' },
