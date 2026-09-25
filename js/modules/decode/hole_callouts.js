@@ -39,23 +39,23 @@ const COARSE = { 3: 0.5, 4: 0.7, 5: 0.8, 6: 1, 8: 1.25, 10: 1.5, 12: 1.75, 14: 2
 // --------------------------------------------------------------------------
 const GOTCHAS = [
     { when: s => s.count > 1 && s.feature !== 'none',
-      text: s => `Scope rule: ${s.count}X applies to the ENTIRE stack below it — all ${s.count} holes get the ${s.feature === 'cbore' ? 'counterbore' : s.feature === 'csink' ? 'countersink' : 'spotface'} too.` },
+      text: s => `${s.count}X applies to every line of the note below it: all ${s.count} holes get the ${s.feature === 'cbore' ? 'counterbore' : s.feature === 'csink' ? 'countersink' : 'spotface'} too.` },
     { when: s => s.feature === 'csink',
-      text: s => `${s.csinkAngle} degrees is the INCLUDED angle (full cone), not the angle per side.` },
+      text: s => `${s.csinkAngle}° is the included angle (the full cone), not the angle on each side.` },
     { when: s => s.feature === 'spotface' && s.sfDepth == null,
-      text: () => `Spotface with no depth = machine only enough to clean up the surface for seating (a legal, common omission).` },
+      text: () => `A spotface with no depth means: machine only enough to give a clean, flat seat. This is allowed and common.` },
     { when: s => s.threaded && s.system === 'metric' && COARSE[s.mSize] === s.mPitch,
-      text: s => `M${s.mSize} x ${s.mPitch} is the COARSE pitch — drawings may legally write just "M${s.mSize}" with the pitch omitted. Omitted pitch ALWAYS means coarse.` },
+      text: s => `M${s.mSize} × ${s.mPitch} is the coarse pitch, so a drawing may just say M${s.mSize}. No pitch written always means coarse.` },
     { when: s => s.threaded,
       text: s => s.system === 'metric'
-          ? `Thread class case matters: "${s.mClass}" with a CAPITAL letter = internal (hole); lowercase (e.g. 6g) = external (shaft).`
-          : `Unified class letters: B = internal (hole), A = external (shaft) — ${s.uClass} here is ${s.uClass.endsWith('B') ? 'internal' : 'external'}.` },
+          ? `Upper or lower case matters: ${s.mClass} with a capital letter is for an internal thread (a hole); lower case, like 6g, is for an external thread (a bolt).`
+          : `In unified threads, B means internal (a hole) and A means external (a bolt): ${s.uClass} is ${s.uClass.endsWith('B') ? 'internal' : 'external'}.` },
     { when: s => s.pattern === 'bc',
-      text: s => `The ${s.bcDia} mm B.C. passes through the hole CENTERS, not their edges.` },
+      text: s => `The ${s.bcDia} mm bolt circle (B.C.) passes through the hole centres, not their edges.` },
     { when: s => !s.thru && s.holeDepth == null && !s.threaded,
-      text: () => `No THRU and no depth = an ambiguous callout — flag it, don't guess.` },
+      text: () => `No THRU and no depth: the callout is incomplete. Ask the designer rather than guessing.` },
     { when: s => !s.thru && s.holeDepth != null,
-      text: () => `The depth symbol measures the FULL-DIAMETER depth; the 118-degree drill point extends beyond it.` }
+      text: () => `The depth is to the end of the full diameter; the drill point goes further.` }
 ];
 
 // --------------------------------------------------------------------------
@@ -321,14 +321,15 @@ function renderSentence(g, s) {
     if (s.pattern === 'bc') parts.push(`${s.eqsp ? 'equally spaced ' : ''}on a ${s.bcDia} mm bolt circle`);
 
     const sentence = parts.join(', ') + '.';
-    wrapText(g, sentence.charAt(0).toUpperCase() + sentence.slice(1), 40, 680, 900, 19, '#0f172a', 26);
+    const long = sentence.length > 260;
+    const lastY = wrapText(g, sentence.charAt(0).toUpperCase() + sentence.slice(1), 40, 680, 900, long ? 17 : 19, '#0f172a', long ? 22 : 26);
 
-    let gy = 680 + 26 * Math.ceil(sentence.length / 88) + 14;
+    let gy = lastY + 22;
     const fired = GOTCHAS.filter(x => x.when(s)).slice(0, 4);
     for (const gotcha of fired) {
+        if (gy > 785) break;
         g.appendChild(el('path', { d: `M40 ${gy - 4} l7 -12 l7 12 Z`, fill: '#f59e0b' }));
-        wrapText(g, gotcha.text(state), 62, gy, 880, 13, '#b45309', 17);
-        gy += 17 * Math.ceil(gotcha.text(state).length / 130) + 6;
+        gy = wrapText(g, gotcha.text(state), 62, gy, 880, 13, '#b45309', 17) + 23;
     }
 }
 
@@ -343,6 +344,7 @@ function wrapText(g, str, x, y, maxW, size, fill, lineH) {
         } else line = (line + ' ' + w).trim();
     }
     if (line) g.appendChild(txt(line, x, ly, { size, fill }));
+    return ly;
 }
 
 // ==========================================================================

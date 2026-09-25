@@ -28,7 +28,6 @@ const state = {
     
     // UI State
     isDragging: false,
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -126,7 +125,6 @@ function renderScene() {
     drawFuturisticHUD();
 
     // 8. Guide
-    if (state.showGuide) drawGuideOverlay();
 }
 
 // --- DRAWING HELPERS ---
@@ -329,7 +327,7 @@ function drawStripChart() {
     
     // Label
     const text = createSVG('text', { x: chartX+5, y: chartY+15, 'font-family': 'sans-serif', 'font-size': '10', fill: '#64748b' });
-    text.textContent = "PROBE READINGS (TIR)";
+    text.textContent = "DIAL READINGS (ONE TURN)";
     group.appendChild(text);
 
     svgContainer.appendChild(group);
@@ -373,10 +371,10 @@ function drawFuturisticHUD() {
     const col1 = bx+20;
     const col2 = bx+240;
     
-    group.appendChild(addText('FIM (TOTAL RUNOUT):', col1, by+80, 14, '#cbd5e1'));
+    group.appendChild(addText('DIAL MOVEMENT (FIM):', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(fim.toFixed(4)+'"', col2, by+80, 16, accent));
     
-    group.appendChild(addText('ALLOWED LIMIT:', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText('ALLOWED:', col1, by+105, 14, '#cbd5e1'));
     group.appendChild(addText(toleranceRunout.toFixed(4)+'"', col2, by+105, 14, 'white'));
     
     const statusText = isPass ? "PASS" : "FAIL";
@@ -398,56 +396,10 @@ function drawFuturisticHUD() {
     group.appendChild(createSVG('rect', { x: bx+20, y: barY+2, width: fillPix, height: 8, fill: accent, rx: 4 }));
 
     // Component breakdown hint
-    group.appendChild(addText(`Eccentricity: ${state.eccentricity.toFixed(4)}"`, bx+20, by+180, 12, '#64748b'));
-    group.appendChild(addText(`Ovality: ${state.ovality.toFixed(4)}"`, bx+200, by+180, 12, '#64748b'));
+    group.appendChild(addText(`Off-centre: ${state.eccentricity.toFixed(4)}"`, bx+20, by+180, 12, '#64748b'));
+    group.appendChild(addText(`Oval error: ${state.ovality.toFixed(4)}"`, bx+200, by+180, 12, '#64748b'));
 
     svgContainer.appendChild(group);
-}
-
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: CIRCULAR RUNOUT", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. WHAT IS IT?", 24, '#6366f1', 'bold');
-    write("Controls surface variation relative to a DATUM AXIS.", 18, '#cbd5e1');
-    write("Combines Circularity (Form) + Concentricity (Location).", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. FIM (Full Indicator Movement)", 24, '#6366f1', 'bold');
-    write("The deviation is measured by a Dial Indicator as the part rotates.", 18, '#cbd5e1');
-    write("Runout = Max Reading - Min Reading (Total Sweep).", 18, '#f59e0b');
-    yPos += 20;
-    
-    write("3. INTERACTION", 24, '#6366f1', 'bold');
-    write("Adjust Eccentricity (Off-center) and Ovality (Shape error).", 18, '#cbd5e1');
-    write("Watch the Strip Chart to see if you stay within the red dashed lines.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
 }
 
 // --- INTERACTION LOGIC ---
@@ -479,17 +431,17 @@ function renderControls() {
             </div>
             
             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Manufacturing Errors</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Add errors</h4>
             
             <div class="space-y-4">
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Eccentricity (Offset Axis)</span>
+                        <span>Off-centre (eccentricity)</span>
                         <span id="val-ecc">0.000</span>
                     </div>
                     <input type="range" id="slide-ecc" min="0" max="0.010" step="0.0001" value="${state.eccentricity}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -497,7 +449,7 @@ function renderControls() {
                 
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Ovality (Form Error)</span>
+                        <span>Oval (out of round)</span>
                         <span id="val-oval">0.000</span>
                     </div>
                     <input type="range" id="slide-oval" min="0" max="0.010" step="0.0001" value="${state.ovality}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -521,7 +473,6 @@ function renderControls() {
 function bindControlEvents() {
     const inputTol = document.getElementById('ctrl-tol');
     const inputSpeed = document.getElementById('ctrl-speed');
-    const btnGuide = document.getElementById('btn-guide');
     const btnReset = document.getElementById('btn-reset');
     
     // Sliders
@@ -534,7 +485,6 @@ function bindControlEvents() {
 
     inputTol.oninput = (e) => { state.toleranceRunout = readTolerance(e.target.value); };
     inputSpeed.oninput = (e) => { state.speed = parseFloat(e.target.value); };
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateDeforms = () => {
         state.eccentricity = parseFloat(sEcc.value);

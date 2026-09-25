@@ -64,33 +64,33 @@ const state = {
 const activeDatums = row => row.d.filter(d => d.r.trim());
 const GOTCHAS = [
     { when: s => s.structure === 'composite',
-      text: () => `COMPOSITE frame (one shared symbol, two rows): the TOP row locates the pattern to the datums (PLTZF); the BOTTOM row only controls feature-to-feature spacing and ORIENTATION to its datums — it does NOT locate. Repeated datums in the lower row constrain rotation only.` },
+      text: () => `Composite frame (one symbol shared by two rows): the top row places the whole pattern relative to the datums. The bottom row only controls the spacing between the features and their angle to its datums; it does not locate the pattern.` },
     { when: s => s.structure === 'multi',
-      text: () => `Two SEPARATE symbols stacked = multi-single-segment: two fully INDEPENDENT requirements. Unlike a composite, the lower row's datums locate AND orient. Same-looking frame, different meaning — check whether the symbol is shared.` },
+      text: () => `Two separate frames stacked: two independent requirements, each checked on its own. Unlike a composite frame, the lower frame's datums also control location. Check whether the symbol box is shared or not.` },
     { when: s => s.rows[0].mod === 'M' || (s.structure !== 'single' && s.rows[1].mod === 'M'),
-      text: () => `The M after the tolerance = BONUS tolerance: as the feature departs from MMC toward LMC, the zone grows by exactly that departure. A 0.25 zone on a hole 0.2 over its MMC size becomes 0.45.` },
+      text: () => `(M) after the tolerance means bonus: the zone grows as the feature moves away from its MMC size. Example: a 0.25 zone on a hole made 0.2 over its smallest size becomes 0.45.` },
     { when: s => s.rows.some((r, i) => (i === 0 || s.structure !== 'single') && activeDatums(r).some(d => d.m === 'M')),
-      text: () => `M on a DATUM letter is not bonus — it is DATUM SHIFT: the whole zone framework may float as the datum feature departs from its boundary. Different mechanism, different math.` },
+      text: () => `(M) after a datum letter is not bonus. The datum is held by a fixed-size gauge, so the whole part may shift a little on it (datum shift).` },
     { when: s => FORM.includes(s.char) && activeDatums(s.rows[0]).length > 0,
-      text: () => `Form tolerances (straightness, flatness, circularity, cylindricity) NEVER take a datum — a form control with datums is an illegal callout. Flag the drawing.` },
+      text: () => `Form controls (straightness, flatness, circularity, cylindricity) never take a datum. A form control with a datum is not valid: ask the designer.` },
     { when: s => activeDatums(s.rows[0]).length >= 2,
-      text: s => `Datum ORDER = fixturing order: ${activeDatums(s.rows[0]).map(d => d.r).join(' then ')} means seat on ${activeDatums(s.rows[0])[0].r} first. Reordering the same letters is a DIFFERENT requirement.` },
+      text: s => `Datum order is the set-up order: ${activeDatums(s.rows[0]).map(d => d.r).join(', then ')}. The part sits on ${activeDatums(s.rows[0])[0].r} first. The same letters in a different order are a different requirement.` },
     { when: s => s.char === 'position' && s.rows[0].zone === 'none',
-      text: () => `Position with NO diameter symbol = the zone is two parallel planes, controlling one direction only. For a hole this is almost always a drawing error — expect a diameter symbol.` },
+      text: () => `Position without a diameter symbol: the zone is two parallel planes, controlling one direction only. For a hole this is almost always a drawing mistake; expect a diameter symbol.` },
     { when: s => LEGACY.includes(s.char),
-      text: () => `Concentricity and symmetry were REMOVED from Y14.5 in 2018 (they required expensive median-point measurement). On new drawings expect position or runout instead; decode legacy prints as drawn.` },
+      text: () => `Concentricity and symmetry were removed from Y14.5 in 2018 because they are hard to measure. New drawings use position or runout instead; read old drawings as drawn.` },
     { when: s => s.rows[0].pHeight != null,
-      text: s => `P = projected tolerance zone: the ${s.rows[0].value} zone applies ${s.rows[0].pHeight} mm ABOVE the surface, where the mating fastener actually lives — standard for threaded and press-fit holes.` },
+      text: s => `(P) means a projected zone: the ${s.rows[0].value} zone applies ${s.rows[0].pHeight} mm above the surface, where the mating bolt or pin sits. Standard for tapped and press-fit holes.` },
     { when: s => s.rows[0].U && s.rows[0].uVal != null,
-      text: s => `U modifier: of the total ${s.rows[0].value} profile band, ${s.rows[0].uVal} lies OUTSIDE the material (in the direction adding material); the rest lies inside.` },
+      text: s => `(U) means an unequal profile band: of the total ${s.rows[0].value}, ${s.rows[0].uVal} lies on the side that adds material and the rest on the other side.` },
     { when: s => RUNOUT.includes(s.char) && activeDatums(s.rows[0]).length === 0,
-      text: () => `Runout is meaningless without a datum AXIS — expect a single datum or a compound axis like A-B (part spun between centers).` },
-    { when: s => (s.rows[0].mod !== 'none' || true) && s.rows[0].mod === 'none' && s.char === 'position',
-      text: () => `No modifier after the tolerance = RFS (regardless of feature size) BY DEFAULT since 1994 — the zone stays fixed no matter the produced size. No S symbol is needed or drawn.` },
+      text: () => `Runout needs a datum axis to spin about. Expect a datum like A, or A-B (two features that together make one axis).` },
+    { when: s => s.rows[0].mod === 'none' && s.char === 'position',
+      text: () => `No modifier after the tolerance means RFS (regardless of feature size): the zone stays the same whatever size the feature is made. This is the default, so no symbol is drawn.` },
     { when: s => s.sim !== 'none',
       text: s => s.sim === 'SIM'
-          ? `SIM REQT: this frame and its partners act as ONE pattern — gauged together in a single setup.`
-          : `SEP REQT: explicitly breaks the default simultaneity — each requirement is gauged independently.` }
+          ? `SIM REQT (simultaneous requirement): this frame and its partners are checked together, as one pattern, in one set-up.`
+          : `SEP REQT (separate requirement): each frame is checked on its own, in its own set-up.` }
 ];
 
 // --------------------------------------------------------------------------
@@ -104,7 +104,7 @@ export function draw(canvas) {
     defs.appendChild(mk);
     canvas.appendChild(defs);
 
-    [[260, 'WHAT IT MEANS SPATIALLY'], [620, 'IN PLAIN ENGLISH']].forEach(([y, label]) => {
+    [[260, 'WHAT IT MEANS ON THE PART'], [620, 'IN PLAIN ENGLISH']].forEach(([y, label]) => {
         canvas.appendChild(el('line', { x1: 0, y1: y, x2: 1000, y2: y, stroke: '#e2e8f0', 'stroke-width': 1 }));
         canvas.appendChild(txt(label, 40, y + 20, { size: 10, fill: '#94a3b8', spacing: 2, bold: true }));
     });
@@ -272,7 +272,7 @@ function orientationPreview(g, s) {
     grp.appendChild(el('rect', { x: 540, y: 522, width: 190, height: 36, ...ZONE }));
     grp.appendChild(el('line', { x1: 548, y1: 540, x2: 722, y2: 540, stroke: '#0f172a', 'stroke-width': 2.5 }));
     g.appendChild(grp);
-    zlabel(g, `zone: ${zoneWord(s.rows[0], true)} held at ${s.char === 'perpendicularity' ? '90\u00B0' : s.char === 'parallelism' ? '0\u00B0' : 'the BASIC angle'} to the datum`, 300, 330);
+    zlabel(g, `zone: ${zoneWord(s.rows[0], true)} held at ${s.char === 'perpendicularity' ? '90\u00B0' : s.char === 'parallelism' ? '0\u00B0' : 'the exact (boxed) angle'} to the datum`, 300, 330);
 }
 
 function profilePreview(g, s) {
@@ -292,7 +292,7 @@ function runoutPreview(g, s) {
     g.appendChild(el('line', { x1: 540, y1: 340, x2: 540, y2: 380, stroke: '#0f172a', 'stroke-width': 2.5 }));
     g.appendChild(el('path', { d: 'M532 380 L548 380 L540 392 Z', fill: '#0f172a' }));
     dframe(g, activeDatums(state.rows[0])[0]?.r || 'A', 300, 480);
-    zlabel(g, `${s.char === 'totalRunout' ? 'FIM over the WHOLE surface at once' : 'FIM at each cross-section'} \u2264 ${s.rows[0].value}, spun on the datum axis`, 320, 330);
+    zlabel(g, `${s.char === 'totalRunout' ? 'dial movement over the whole surface' : 'dial movement at each slice'} \u2264 ${s.rows[0].value}, spun on the datum axis`, 320, 330);
 }
 
 function locationPreview(g, s) {
@@ -314,7 +314,7 @@ function locationPreview(g, s) {
         g.appendChild(el('rect', { x: 512, y: 344, width: 96, height: 40, ...ZONE2 }));
         zlabel(g, `projected ${s.rows[0].pHeight} above surface (P)`, 630, 358);
     }
-    zlabel(g, `${zoneWord(s.rows[0], true)} at TRUE position${s.rows[0].mod === 'M' ? ' — grows with bonus at MMC' : ''}`, 330, 330);
+    zlabel(g, `${zoneWord(s.rows[0], true)} at its perfect position${s.rows[0].mod === 'M' ? ', grows with bonus at MMC' : ''}`, 330, 330);
 }
 
 function compositePreview(g, s) {
@@ -329,8 +329,8 @@ function compositePreview(g, s) {
         g.appendChild(el('circle', { cx: x, cy: y, r: 22, ...ZONE }));
         g.appendChild(el('circle', { cx: x, cy: y, r: 15, stroke: '#0f172a', 'stroke-width': 2, fill: '#f8fafc' }));
     }
-    zlabel(g, `blue = top row ${s.rows[0].value}: locates the PATTERN to the datums`, 300, 320, '#1d4ed8');
-    zlabel(g, `red = bottom row ${s.rows[1].value}: holds the holes to EACH OTHER (and orientation only)`, 300, 344, '#b91c1c');
+    zlabel(g, `blue = top row ${s.rows[0].value}: whole pattern relative to the datums`, 300, 320, '#1d4ed8');
+    zlabel(g, `red = bottom row ${s.rows[1].value}: holes relative to each other`, 300, 344, '#b91c1c');
 }
 
 function dframe(g, letter, x, y) {
@@ -344,8 +344,8 @@ function zlabel(g, str, x, y, fill = '#475569') { g.appendChild(txt(str, x, y, {
 // RENDERER 3 — THE SENTENCE + GOTCHAS
 // ==========================================================================
 function zoneWord(row, short = false) {
-    if (row.zone === 'dia') return short ? `a ${row.value} dia cylindrical zone` : `a cylindrical tolerance zone ${row.value} mm in diameter`;
-    if (row.zone === 'sdia') return `a spherical tolerance zone ${row.value} mm in diameter`;
+    if (row.zone === 'dia') return short ? `a round zone ${row.value} across` : `a round (cylindrical) zone ${row.value} mm in diameter`;
+    if (row.zone === 'sdia') return `a ball-shaped (spherical) zone ${row.value} mm in diameter`;
     return short ? `two planes ${row.value} apart` : `two parallel planes ${row.value} mm apart`;
 }
 function datumPhrase(row) {
@@ -353,30 +353,30 @@ function datumPhrase(row) {
     const ds = activeDatums(row);
     if (!ds.length) return '';
     return 'relative to ' + ds.map((d, i) =>
-        `datum ${d.r.toUpperCase()} (${names[i]}${d.m !== 'none' ? `, at ${d.m === 'M' ? 'MMB — datum shift allowed' : 'LMB'}` : ''})`
+        `datum ${d.r.toUpperCase()} (${names[i]}${d.m !== 'none' ? `, held at ${d.m === 'M' ? 'MMB, so the part may shift a little' : 'LMB'}` : ''})`
     ).join(', ');
 }
 
 function rowSentence(charKey, row, s) {
     const v = row.value, dp = datumPhrase(row);
-    const mod = row.mod === 'M' ? ' at MMC (bonus tolerance as the feature departs from MMC)'
+    const mod = row.mod === 'M' ? ' at MMC (the zone grows with bonus as the feature moves away from MMC size)'
              : row.mod === 'L' ? ' at LMC' : '';
     const per = row.perUnit.trim() ? ` per each ${row.perUnit.trim()} of length` : '';
     switch (charKey) {
-        case 'straightness': return `each line element (or the axis, if applied to a size) must lie within ${zoneWord(row)}${per}${mod}`;
-        case 'flatness': return `the entire surface must lie between two parallel planes ${v} mm apart${per}`;
-        case 'circularity': return `every circular cross-section must lie between two concentric circles ${v} mm apart radially`;
-        case 'cylindricity': return `the whole cylindrical surface must lie between two coaxial cylinders ${v} mm apart radially`;
-        case 'profileLine': return `each line element of the profile must stay within a band ${v} mm wide about the true (basic) profile ${dp}`;
-        case 'profileSurface': return `the entire surface must stay within a three-dimensional band ${v} mm wide about the true (basic) profile ${dp}`;
-        case 'angularity': return `the feature must lie within ${zoneWord(row)} held at its BASIC angle ${dp}${mod}`;
-        case 'perpendicularity': return `the feature must lie within ${zoneWord(row)} held exactly 90 degrees ${dp}${mod}`;
-        case 'parallelism': return `the feature must lie within ${zoneWord(row)} held parallel ${dp}${mod}`;
-        case 'position': return `the feature's axis or center must lie within ${zoneWord(row)} located at true (basic) position ${dp}${mod}${row.pHeight != null ? `, the zone projected ${row.pHeight} mm above the surface` : ''}`;
-        case 'concentricity': return `(legacy) all median points must lie within a ${v} mm diameter zone coaxial with ${dp.replace('relative to ', '')}`;
-        case 'symmetry': return `(legacy) all median points must lie within a zone ${v} mm wide, symmetric about the datum center plane ${dp}`;
-        case 'circularRunout': return `at every cross-section, the full indicator movement must not exceed ${v} mm when the part is rotated about the datum axis ${dp}`;
-        case 'totalRunout': return `the full indicator movement over the ENTIRE surface, checked simultaneously, must not exceed ${v} mm about the datum axis ${dp}`;
+        case 'straightness': return `each straight line along the surface (or the axis, when a diameter symbol is used) must fit within ${zoneWord(row)}${per}${mod}`;
+        case 'flatness': return `the whole surface must fit between two parallel planes ${v} mm apart${per}`;
+        case 'circularity': return `each slice across the feature must fit between two circles with the same centre, ${v} mm apart on the radius`;
+        case 'cylindricity': return `the whole round surface must fit between two cylinders with the same axis, ${v} mm apart on the radius`;
+        case 'profileLine': return `each slice of the surface must stay within a band ${v} mm wide around its perfect shape (set by basic dimensions) ${dp}`;
+        case 'profileSurface': return `the whole surface must stay within a 3D band ${v} mm wide around its perfect shape (set by basic dimensions) ${dp}`;
+        case 'angularity': return `the feature must fit within ${zoneWord(row)} held at the exact (boxed) angle ${dp}${mod}`;
+        case 'perpendicularity': return `the feature must fit within ${zoneWord(row)} held at exactly 90 degrees ${dp}${mod}`;
+        case 'parallelism': return `the feature must fit within ${zoneWord(row)} held parallel ${dp}${mod}`;
+        case 'position': return `the centre of the feature (its axis or centre plane) must be within ${zoneWord(row)} around its perfect location (set by basic dimensions) ${dp}${mod}${row.pHeight != null ? `, with the zone projected ${row.pHeight} mm above the surface` : ''}`;
+        case 'concentricity': return `(legacy) the midpoints of opposite points must be within a zone ${v} mm in diameter around the axis of ${dp.replace('relative to ', '')}`;
+        case 'symmetry': return `(legacy) the midpoints between the two walls must be within a zone ${v} mm wide, centred on the datum centre plane ${dp}`;
+        case 'circularRunout': return `at each slice, a dial indicator must not move more than ${v} mm in one turn of the part about the datum axis ${dp}`;
+        case 'totalRunout': return `with the dial indicator sliding along the whole surface while the part turns about the datum axis ${dp}, the needle must not move more than ${v} mm in total`;
         default: return '';
     }
 }
@@ -384,13 +384,13 @@ function rowSentence(charKey, row, s) {
 function renderSentence(g, s) {
     const bits = [];
     if (s.prefix.trim()) bits.push(`Applies to ${s.prefix.trim().toUpperCase().replace('X', '')} features (${s.prefix.trim().toUpperCase()})`);
-    if (s.allOver) bits.push('applies ALL OVER the part');
+    if (s.allOver) bits.push('applies to every surface of the part (all over)');
     if (s.allAround) bits.push('applies all around the outline');
     if (s.between.trim()) bits.push(`applies only between points ${s.between.trim().toUpperCase()}`);
 
     let main;
     if (s.structure === 'composite') {
-        main = `Composite ${CHARS[s.char].name.toLowerCase()}: TOP row — ${rowSentence(s.char, s.rows[0], s)}. BOTTOM row — the features must additionally hold ${zoneWord(s.rows[1])} to EACH OTHER${activeDatums(s.rows[1]).length ? `, oriented (not located) to ${activeDatums(s.rows[1]).map(d => d.r.toUpperCase()).join(', ')}` : ''}${s.rows[1].mod === 'M' ? ', at MMC' : ''}`;
+        main = `Composite ${CHARS[s.char].name.toLowerCase()}. Top row: ${rowSentence(s.char, s.rows[0], s)}. Bottom row: the features must also be within ${zoneWord(s.rows[1])} of each other${activeDatums(s.rows[1]).length ? `, and lined up with ${activeDatums(s.rows[1]).map(d => d.r.toUpperCase()).join(', ')} (this row controls angle only, not location)` : ''}${s.rows[1].mod === 'M' ? ', at MMC' : ''}`;
     } else if (s.structure === 'multi') {
         main = `Two independent requirements. First: ${rowSentence(s.char, s.rows[0], s)}. Second: ${rowSentence(s.char2, s.rows[1], s)}`;
     } else {
@@ -398,14 +398,15 @@ function renderSentence(g, s) {
     }
 
     const sentence = (bits.length ? bits.join('; ') + '. ' : '') + main + '.';
-    wrapText(g, sentence, 40, 658, 900, 17, '#0f172a', 24);
+    const long = sentence.length > 260;
+    const lastY = wrapText(g, sentence, 40, 658, 900, long ? 15 : 17, '#0f172a', long ? 20 : 24);
 
-    let gy = 658 + 24 * Math.ceil(sentence.length / 96) + 12;
+    let gy = lastY + 22;
     const fired = GOTCHAS.filter(x => x.when(s)).slice(0, 4);
     for (const gotcha of fired) {
+        if (gy > 785) break;
         g.appendChild(el('path', { d: `M40 ${gy - 4} l7 -12 l7 12 Z`, fill: '#f59e0b' }));
-        wrapText(g, gotcha.text(state), 62, gy, 880, 12.5, '#b45309', 16);
-        gy += 16 * Math.ceil(gotcha.text(state).length / 135) + 6;
+        gy = wrapText(g, gotcha.text(state), 62, gy, 880, 12.5, '#b45309', 16) + 22;
     }
 }
 
@@ -420,6 +421,7 @@ function wrapText(g, str, x, y, maxW, size, fill, lineH) {
         } else line = (line + ' ' + w).trim();
     }
     if (line) g.appendChild(txt(line, x, ly, { size, fill }));
+    return ly;
 }
 
 // ==========================================================================

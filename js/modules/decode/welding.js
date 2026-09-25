@@ -60,23 +60,23 @@ const FINISH_WORDS = { G: 'grind', M: 'machine', C: 'chip', H: 'hammer' };
 // --------------------------------------------------------------------------
 const GOTCHAS = [
     { when: s => s.pitch && s.length && s.pitch > s.length,
-      text: s => `Pitch is CENTER-TO-CENTER, not the gap: ${s.length}-${s.pitch} means ${s.pitch - s.length} mm gaps between segments.` },
+      text: s => `The pitch (second number) is centre to centre, not the gap: ${s.length}-${s.pitch} means ${s.pitch - s.length} mm gaps between welds.` },
     { when: s => s.pitch && s.length && s.pitch <= s.length,
-      text: () => `Invalid callout: pitch must be greater than segment length (pitch is center-to-center).` },
+      text: () => `Not valid: the pitch must be bigger than the weld length (pitch is measured centre to centre).` },
     { when: s => GROOVES.includes(s.weldType) && s.depth == null,
-      text: () => `Silent rule: NO depth dimension on a groove symbol = CJP (complete joint penetration).` },
+      text: () => `No depth on a groove weld means complete joint penetration (CJP): the weld must go all the way through the joint.` },
     { when: s => ['bevel', 'j', 'flareBevel'].includes(s.weldType),
-      text: () => `Bevel/J grooves prepare only ONE member — the (broken) arrow points at the member to be beveled.` },
+      text: () => `Bevel and J grooves prepare only one of the two parts. The arrow (bent if needed) points to the part to be prepared.` },
     { when: s => s.standard === 'ISO' && s.weldType === 'fillet',
-      text: () => `ISO sizes: z = leg, a = throat (a is the ISO default; a is only about 0.7 of z — misreading undersizes the weld).` },
+      text: () => `ISO sizes: z is the leg length, a is the throat thickness. ISO uses a by default, and a is only about 0.7 × z, so misreading it gives a weld that is too small.` },
     { when: s => s.standard === 'ISO' && s.pitch && s.length,
-      text: s => `ISO intermittent writes length (gap): ${s.length} (${s.pitch - s.length}) — the parenthesis is the GAP, not the AWS pitch.` },
+      text: s => `ISO intermittent welds are written length (gap): ${s.length} (${s.pitch - s.length}). The number in brackets is the gap, not the AWS pitch.` },
     { when: s => s.sides === 'both' && s.pitch && s.stagger === 'staggered',
-      text: () => `Staggered: far-side segments fall in the near side's gaps — read it from the symbols being OFFSET along the reference line.` },
+      text: () => `Staggered: the welds on the far side sit in the gaps of the near side. You can tell because the two symbols are offset along the reference line.` },
     { when: s => s.sides === 'other',
       text: s => s.standard === 'AWS'
-          ? `Symbol ABOVE the reference line = weld the side OPPOSITE the arrow.`
-          : `Symbol on the DASHED identification line = weld the side opposite the arrow (ISO 2553).` }
+          ? `Symbol above the reference line: weld the side opposite the arrow.`
+          : `Symbol on the dashed line: weld the side opposite the arrow (ISO 2553).` }
 ];
 
 // --------------------------------------------------------------------------
@@ -410,15 +410,15 @@ function renderSentence(g, s) {
     if (s.nde !== 'none') parts.push(`${s.nde} examination required`);
 
     const sentence = parts.join(', ') + '.';
-    wrapText(g, sentence.charAt(0).toUpperCase() + sentence.slice(1), 40, 680, 900, 19, '#0f172a', 26);
+    const long = sentence.length > 260;
+    const lastY = wrapText(g, sentence.charAt(0).toUpperCase() + sentence.slice(1), 40, 680, 900, long ? 17 : 19, '#0f172a', long ? 22 : 26);
 
-    // gotchas (max 4)
-    let gy = 680 + 26 * Math.ceil(sentence.length / 88) + 14;
+    let gy = lastY + 22;
     const fired = GOTCHAS.filter(x => x.when(s)).slice(0, 4);
     for (const gotcha of fired) {
+        if (gy > 785) break;
         g.appendChild(el('path', { d: `M40 ${gy - 4} l7 -12 l7 12 Z`, fill: '#f59e0b' }));
-        wrapText(g, gotcha.text(state), 62, gy, 880, 13, '#b45309', 17);
-        gy += 17 * Math.ceil(gotcha.text(state).length / 130) + 6;
+        gy = wrapText(g, gotcha.text(state), 62, gy, 880, 13, '#b45309', 17) + 23;
     }
 }
 
@@ -433,6 +433,7 @@ function wrapText(g, str, x, y, maxW, size, fill, lineH) {
         } else line = (line + ' ' + w).trim();
     }
     if (line) g.appendChild(txt(line, x, ly, { size, fill }));
+    return ly;
 }
 
 // ==========================================================================

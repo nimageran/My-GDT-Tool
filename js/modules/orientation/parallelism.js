@@ -76,7 +76,7 @@ export function draw(svg) {
     }));
     
     const title = createSVG('text', { x: 20, y: 30, 'font-size': 11, 'font-weight': 'bold', fill: '#64748b', 'text-transform': 'uppercase' });
-    title.textContent = "Total Indicator Reading (TIR)";
+    title.textContent = "Measured: dial high − low";
     bannerGroup.appendChild(title);
 
     const val = createSVG('text', { id: 'bannerVal', x: 20, y: 65, 'font-size': 32, 'font-weight': '900', fill: '#1e293b', 'font-family': 'monospace' });
@@ -113,7 +113,7 @@ export function loadControls(container) {
         </div>
 
         <div class="col-span-3">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Measurement Simulation (CMM / Indicator)</h4>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Simulate the part</h4>
             
             <div class="space-y-4">
                 <div>

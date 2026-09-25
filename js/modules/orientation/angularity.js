@@ -22,7 +22,6 @@ const state = {
     
     // UI State
     isDragging: false,
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -67,7 +66,6 @@ function renderScene() {
     drawFuturisticHUD();
 
     // 7. Guide
-    if (state.showGuide) drawGuideOverlay();
 }
 
 // --- MATH HELPERS ---
@@ -319,7 +317,7 @@ function drawFuturisticHUD() {
         return t;
     };
 
-    group.appendChild(addText('ANGULARITY ANALYSIS', bx+20, by+35, 18, '#94a3b8'));
+    group.appendChild(addText('ANGULARITY CHECK', bx+20, by+35, 18, '#94a3b8'));
     group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
 
     const col1 = bx+20;
@@ -328,10 +326,10 @@ function drawFuturisticHUD() {
     group.appendChild(addText('ANGLE ERROR:', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(angleDeviation.toFixed(2)+'°', col2, by+80, 16, accent));
     
-    group.appendChild(addText('CALC. WIDTH (H):', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText('ZONE NEEDED:', col1, by+105, 14, '#cbd5e1'));
     group.appendChild(addText(actualLinear.toFixed(4)+'"', col2, by+105, 14, 'white'));
     
-    group.appendChild(addText('TOLERANCE:', col1, by+130, 14, '#cbd5e1'));
+    group.appendChild(addText('ALLOWED:', col1, by+130, 14, '#cbd5e1'));
     group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+130, 14, 'white'));
 
     const statusText = isPass ? "PASS" : "FAIL";
@@ -353,55 +351,9 @@ function drawFuturisticHUD() {
     group.appendChild(createSVG('rect', { x: bx+20, y: barY+2, width: fillPix, height: 8, fill: accent, rx: 4 }));
     
     // Formula
-    group.appendChild(addText('Formula: Length × sin(AngleError)', bx+20, by+190, 10, '#64748b', 'normal'));
+    group.appendChild(addText('Zone needed = length × sin(angle error)', bx+20, by+190, 10, '#64748b', 'normal'));
 
     svgContainer.appendChild(group);
-}
-
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: ANGULARITY", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. DEFINITION", 24, '#6366f1', 'bold');
-    write("Controls orientation at a specific Basic Angle.", 18, '#cbd5e1');
-    write("The Tolerance Zone is a WIDTH (Linear), not degrees.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. BASIC DIMENSION", 24, '#6366f1', 'bold');
-    write("The boxed angle (e.g. 45°) is exact.", 18, '#cbd5e1');
-    write("It defines the rotation of the Blue Tolerance Zone.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("3. INTERACTION", 24, '#6366f1', 'bold');
-    write("Drag the tip of the wedge to Tilt it.", 18, '#cbd5e1');
-    write("Change the Basic Angle in controls to rotate the Zone.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
 }
 
 // --- INTERACTION LOGIC ---
@@ -416,7 +368,6 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if(state.showGuide) return; 
         
         const m = getMousePos(evt);
         // Calculate where the tip is
@@ -483,7 +434,7 @@ function renderControls() {
             </div>
             
             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
@@ -493,7 +444,7 @@ function renderControls() {
             <div class="space-y-4">
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Basic Angle (Design)</span>
+                        <span>Basic angle (on the drawing)</span>
                         <span id="val-basic" class="font-bold border border-black px-1">${state.basicAngle}°</span>
                     </div>
                     <input type="range" id="slide-basic" min="15" max="75" step="5" value="${state.basicAngle}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -501,7 +452,7 @@ function renderControls() {
                 
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Angle Deviation (Error)</span>
+                        <span>Angle error (as made)</span>
                         <span id="val-dev">0.00°</span>
                     </div>
                     <input type="range" id="slide-dev" min="-5" max="5" step="0.1" value="${state.angleDeviation}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -517,7 +468,6 @@ function renderControls() {
 
 function bindControlEvents() {
     const inputTol = document.getElementById('ctrl-tol');
-    const btnGuide = document.getElementById('btn-guide');
     const btnReset = document.getElementById('btn-reset');
     
     const sBasic = document.getElementById('slide-basic');
@@ -527,7 +477,6 @@ function bindControlEvents() {
     const vDev = document.getElementById('val-dev');
 
     inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateParams = () => {
         state.basicAngle = parseFloat(sBasic.value);

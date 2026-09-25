@@ -28,7 +28,6 @@ const state = {
     midpoints: [],           // History of derived median points
     
     // UI State
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -151,7 +150,6 @@ function renderScene() {
     drawMicroscopeView(); // The Zoomed tolerance check
     drawFuturisticHUD();
     
-    if (state.showGuide) drawGuideOverlay();
 }
 
 // --- DRAWING HELPERS ---
@@ -371,13 +369,13 @@ function drawFuturisticHUD() {
         return t;
     };
 
-    group.appendChild(addText('CONCENTRICITY SCAN', bx+20, by+35, 18, '#94a3b8'));
+    group.appendChild(addText('CONCENTRICITY CHECK', bx+20, by+35, 18, '#94a3b8'));
     group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
 
     const col1 = bx+20;
     const col2 = bx+240;
     
-    group.appendChild(addText('MEDIAN DEVIATION:', col1, by+80, 14, '#cbd5e1'));
+    group.appendChild(addText('MIDPOINTS OFF AXIS (Ø):', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(maxDev.toFixed(5)+'"', col2, by+80, 16, accent));
     
     group.appendChild(addText('ALLOWED ZONE (Ø):', col1, by+105, 14, '#cbd5e1'));
@@ -404,57 +402,11 @@ function drawFuturisticHUD() {
     // Explanation
     const noteX = bx+20;
     const noteY = by+190;
-    group.appendChild(addText("Calculation Logic:", noteX, noteY, 10, '#64748b'));
-    group.appendChild(addText("1. Measure opposed points (P1, P2)", noteX, noteY+15, 10, '#64748b', 'normal'));
-    group.appendChild(addText("2. Compute Midpoint M = (P1+P2)/2", noteX, noteY+30, 10, '#64748b', 'normal'));
+    group.appendChild(addText("How it is measured:", noteX, noteY, 10, '#64748b'));
+    group.appendChild(addText("1. Measure two opposite points (P1, P2)", noteX, noteY+15, 10, '#64748b', 'normal'));
+    group.appendChild(addText("2. Take their midpoint M = (P1 + P2) / 2", noteX, noteY+30, 10, '#64748b', 'normal'));
 
     svgContainer.appendChild(group);
-}
-
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: CONCENTRICITY", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. THE DEFINITION", 24, '#6366f1', 'bold');
-    write("Concentricity controls the Derived Median Points.", 18, '#cbd5e1');
-    write("It is NOT just about the surface circle.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. THE SCAN", 24, '#6366f1', 'bold');
-    write("The red probes act as calipers measuring diameter.", 18, '#cbd5e1');
-    write("We plot the CENTER of that caliper measurement.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("3. THE MICROSCOPE", 24, '#6366f1', 'bold');
-    write("The center view magnifies errors 3000x.", 18, '#cbd5e1');
-    write("Even if the part looks round, the center might wobble.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
 }
 
 // --- INTERACTION LOGIC ---
@@ -486,17 +438,17 @@ function renderControls() {
             </div>
             
             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Geometric Errors (in)</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Add errors (in)</h4>
             
             <div class="space-y-4">
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Eccentricity (Offset)</span>
+                        <span>Off-centre (eccentricity)</span>
                         <span id="val-ecc">0.000</span>
                     </div>
                     <input type="range" id="slide-ecc" min="0" max="0.005" step="0.0001" value="${state.eccentricity}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -504,7 +456,7 @@ function renderControls() {
                 
                 <div>
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>3-Lobe (Form Error)</span>
+                        <span>3-lobe (triangle-like)</span>
                         <span id="val-lobe">0.000</span>
                     </div>
                     <input type="range" id="slide-lobe" min="0" max="0.005" step="0.0001" value="${state.lobing}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -523,7 +475,7 @@ function renderControls() {
         </div>
         
         <div class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed mt-4">
-             <i class="fa-solid fa-info-circle"></i> <strong>Pro Tip:</strong> Increase 3-Lobe error. The part stays "round" (constant diameter), but the center point creates a triangle path, causing concentricity failure!
+             <i class="fa-solid fa-info-circle"></i> <strong>Try it:</strong> increase the 3-lobe error. A caliper reads the same diameter everywhere, but the midpoints move off the axis, so concentricity fails.
         </div>
     `;
 
@@ -532,7 +484,6 @@ function renderControls() {
 
 function bindControlEvents() {
     const inputTol = document.getElementById('ctrl-tol');
-    const btnGuide = document.getElementById('btn-guide');
     const btnReset = document.getElementById('btn-reset');
     
     const sEcc = document.getElementById('slide-ecc');
@@ -544,7 +495,6 @@ function bindControlEvents() {
     const vAsym = document.getElementById('val-asym');
 
     inputTol.oninput = (e) => { state.toleranceDiam = readTolerance(e.target.value); };
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const updateParams = () => {
         state.eccentricity = parseFloat(sEcc.value);

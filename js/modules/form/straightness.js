@@ -25,7 +25,6 @@ const state = {
     
     // UI State
     activeHandleIdx: -1,
-    showGuide: false
 };
 
 // --- DOM REFERENCES ---
@@ -112,7 +111,6 @@ function renderScene() {
     drawFuturisticHUD();
 
     // 7. Guide
-    if (state.showGuide) drawGuideOverlay();
 }
 
 // --- DRAWING HELPERS ---
@@ -317,16 +315,16 @@ function drawFuturisticHUD() {
         return t;
     };
 
-    group.appendChild(addText('STRAIGHTNESS SCAN', bx+20, by+35, 18, '#94a3b8'));
+    group.appendChild(addText('STRAIGHTNESS CHECK', bx+20, by+35, 18, '#94a3b8'));
     group.appendChild(createSVG('line', { x1: bx+20, y1: by+45, x2: bx+bw-20, y2: by+45, stroke: '#334155' }));
 
     const col1 = bx+20;
     const col2 = bx+240;
     
-    group.appendChild(addText('ACTUAL ERROR:', col1, by+80, 14, '#cbd5e1'));
+    group.appendChild(addText('MEASURED:', col1, by+80, 14, '#cbd5e1'));
     group.appendChild(addText(error.toFixed(4)+'"', col2, by+80, 16, accent));
     
-    group.appendChild(addText('TOLERANCE:', col1, by+105, 14, '#cbd5e1'));
+    group.appendChild(addText('ALLOWED:', col1, by+105, 14, '#cbd5e1'));
     group.appendChild(addText(toleranceWidth.toFixed(4)+'"', col2, by+105, 14, 'white'));
 
     const statusText = isPass ? "PASS" : "FAIL";
@@ -348,55 +346,9 @@ function drawFuturisticHUD() {
     group.appendChild(createSVG('rect', { x: bx+20, y: barY+2, width: fillPix, height: 8, fill: accent, rx: 4 }));
     
     // Algorithm note
-    group.appendChild(addText('METHOD: LEAST SQUARES FIT', bx+20, by+180, 10, '#64748b', 'normal'));
+    group.appendChild(addText('Reference line: best fit to the points', bx+20, by+180, 10, '#64748b', 'normal'));
 
     svgContainer.appendChild(group);
-}
-
-function drawGuideOverlay() {
-    const bg = createSVG('rect', {
-        x: 0, y: 0, width: 1000, height: 800,
-        fill: 'rgba(15, 23, 42, 0.95)'
-    });
-    svgContainer.appendChild(bg);
-
-    const group = createSVG('g', {});
-    let yPos = 180;
-    const write = (text, size=20, color='white', weight='normal') => {
-        const t = createSVG('text', { x: 500, y: yPos, fill: color, 'font-family': 'sans-serif', 'font-size': size, 'font-weight': weight, 'text-anchor': 'middle' });
-        t.textContent = text;
-        group.appendChild(t);
-        yPos += (size * 1.6);
-    };
-
-    write("TOOL GUIDE: STRAIGHTNESS", 40, '#f59e0b', 'bold');
-    yPos += 20;
-    
-    write("1. CONCEPT", 24, '#6366f1', 'bold');
-    write("Controls the straightness of a surface element or axis.", 18, '#cbd5e1');
-    write("It does NOT control size or angle, only the line's form.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("2. TOLERANCE ZONE", 24, '#6366f1', 'bold');
-    write("The Blue Band represents two parallel lines.", 18, '#cbd5e1');
-    write("The zone FLOATS (rotates/shifts) to best fit the surface.", 18, '#cbd5e1');
-    yPos += 20;
-    
-    write("3. INTERACTION", 24, '#6366f1', 'bold');
-    write("Drag points to create a 'Banana' bend or waves.", 18, '#cbd5e1');
-    write("Observe how the error is calculated from the Best Fit Line.", 18, '#cbd5e1');
-    
-    yPos += 40;
-    write("[ CLICK TO CLOSE ]", 16, '#94a3b8');
-
-    const overlay = createSVG('rect', { x: 0, y: 0, width: 1000, height: 800, fill: 'transparent', class: 'cursor-pointer' });
-    overlay.addEventListener('click', () => {
-        state.showGuide = false;
-        renderScene();
-    });
-
-    svgContainer.appendChild(group);
-    svgContainer.appendChild(overlay);
 }
 
 // --- INTERACTION LOGIC ---
@@ -411,7 +363,6 @@ function setupInteractions(svg) {
     };
 
     svg.addEventListener('mousedown', (evt) => {
-        if(state.showGuide) return; 
         const target = evt.target;
         if (target.dataset.idx) {
             state.activeHandleIdx = parseInt(target.dataset.idx);
@@ -460,16 +411,16 @@ function renderControls() {
             </div>
             
             <button id="btn-guide" class="mt-4 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 transition-colors font-bold text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-question"></i> EXPLAIN SYMBOL
+                <i class="fa-solid fa-circle-question"></i> EXPLAIN IN SIMPLE WORDS
             </button>
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Form Presets</h4>
+            <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Try a shape</h4>
             
             <div class="grid grid-cols-2 gap-2 mb-4">
                 <button id="btn-flat" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">PERFECT</button>
-                <button id="btn-bow" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">BOW (BANANA)</button>
+                <button id="btn-bow" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">BOW (CURVED)</button>
                 <button id="btn-wave" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">WAVE</button>
                 <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">NOISE</button>
             </div>
@@ -485,11 +436,9 @@ function renderControls() {
 function bindControlEvents() {
     const inputTol = document.getElementById('ctrl-tol');
     const inputZoom = document.getElementById('ctrl-zoom');
-    const btnGuide = document.getElementById('btn-guide');
     
     inputTol.oninput = (e) => { state.toleranceWidth = readTolerance(e.target.value); renderScene(); };
     inputZoom.oninput = (e) => { state.scale = parseFloat(e.target.value); renderScene(); };
-    btnGuide.onclick = () => { state.showGuide = !state.showGuide; renderScene(); }
 
     const setOffsets = (fn) => {
         state.offsets = state.offsets.map((_, i) => fn(i, state.numPoints));
