@@ -22,11 +22,11 @@ Tabs are grouped by what you're trying to do. Tools marked *planned* appear grey
 | **Characteristics** | The 14 geometric characteristics as interactive tolerance zones, grouped Form / Profile / Orientation / Location / Runout | All 14 (concentricity and symmetry flagged as removed in 2018) | |
 | **Material Condition** | Modifiers and the boundaries they create | Bonus tolerance (MMC / LMC / RFS) | Virtual & resultant condition, Rule #1 envelope, datum shift (MMB) |
 | **Datums** | How parts are held and measured from | Datum reference frame and datum precedence (3D) | Datum targets |
-| **Decode Drawings** | Reading hard callouts | Symbol Finder (visual index of ~80 drawing symbols), feature control frames, frame legality checker, holes/threads/patterns, welding symbols, surface finish (ISO 1302 and US legacy) | |
+| **Read Drawings** | Reading a drawing, from the sheet itself to hard callouts | *Drawing basics:* how to read a drawing (step-by-step on a sample sheet), title block, first vs third angle projection, lines & views, general tolerances (title block and ISO 2768), notes & abbreviations. *Decode callouts:* Symbol Finder (visual index of ~80 drawing symbols), feature control frames, frame legality checker, holes/threads/patterns, welding symbols, surface finish (ISO 1302 and US legacy) | |
 | **Inspection** | What quality does with the drawing | CMM position calculator | Measurement methods, functional gauge designer |
 | **Stack-ups & Fits** | Assembly math | Tolerance stack-up (worst case and RSS), fastener formulas | ISO fits |
 | **Manufacturing** | Can the shop make it, and at what cost | | Process capability guide, Cp/Cpk, ± to position |
-| **Learn** | Standards and practice | Glossary (75 terms, searchable) | Practice scenarios, Y14.5-2009 vs 2018, ASME vs ISO GPS |
+| **Learn** | Standards and practice | Glossary (93 terms, searchable) | Practice scenarios, Y14.5-2009 vs 2018, ASME vs ISO GPS |
 
 ## Structure
 
@@ -41,6 +41,7 @@ js/explain.js              Plain-language Explain panel content for every tool
 js/glossary.js             Glossary terms + dotted-underline hover definitions
 js/modules/<area>/*.js     One file per tool
 js/modules/decode/         Decoders, symbols.js geometry library, DECODER_SPEC.md
+js/modules/drawing/        Drawing basics; sheet.js (line styles, title block, dims) and dictionary.js (searchable card pages)
 ```
 
 ## Adding a tool
