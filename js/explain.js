@@ -616,6 +616,29 @@ export const EXPLAIN = {
         tool: 'Change B\'s size, switch B Ⓜ and B (RMB), edit the hole offsets, or try the presets.'
     },
 
+    datum_targets: {
+        title: 'Datum targets',
+        terms: [
+            ['Datum target', 'A named spot (point, line or small area) where the part is touched to set a datum.'],
+            ['Target symbol', 'A circle split in two: target size on top (for areas), datum letter and number below (A1).'],
+            ['Basic dimension', 'A boxed, exact dimension. Here it places each target.'],
+            ['Fixture', 'The holder with pads and pins at the target spots.']
+        ],
+        simple: [
+            'A **rough surface** (casting, forging, sheet metal) is **never flat**, so resting it on the whole face would rock.',
+            '**Datum targets** name the **exact spots** to touch instead: **X** for a point, a **phantom line** for a line, a **hatched patch** for an area.',
+            'Usually **3 targets** set the primary datum, **2** the secondary and **1** the tertiary (**3-2-1**).',
+            '**Boxed dimensions** place each target, and the **fixture** has a pad or pin at each one.',
+            'Machining and inspection must use the **same targets**, or their results will not agree.'
+        ],
+        example: [
+            'A cast bracket shows A1, A2, A3 on its bottom face and B1, B2 on one edge, C1 on the end.',
+            'The inspection fixture has three rest pads, two edge pins and one end pin at those basic positions.',
+            'The part is set on the pads, pushed against B1 and B2, then against C1: every casting now sits the same way.'
+        ],
+        tool: 'Switch between the drawing and the fixture, pick points, lines or areas, and click a target to see its basic dimensions.'
+    },
+
     notebook: {
         title: 'My Notebook',
         terms: [
