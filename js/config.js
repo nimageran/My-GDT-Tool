@@ -116,8 +116,7 @@ export const GDT_HIERARCHY = {
         symbols: {
             cmm_position: { name: "CMM Position Calculator", iconChar: "⌖", filePath: './modules/inspection/cmm_position.js', desc: "Check hole positions from a CMM report, with bonus." },
             methods: { name: "Measurement Methods", iconChar: "⏚", filePath: './modules/inspection/methods.js', desc: "How each callout is actually checked, and where each method can mislead." },
-            functional_gauge: { name: "Functional Gauge Designer", iconChar: "⊞", planned: true,
-                summary: "Size gauge pins at virtual condition and lay out a go gauge for a hole pattern, including datum pins at MMB." }
+            functional_gauge: { name: "Functional Gauge Designer", iconChar: "⊞", filePath: './modules/inspection/functional_gauge.js', desc: "Size the pins of a go gauge for a hole pattern, then try a part on it." }
         }
     },
 
