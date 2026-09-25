@@ -15,7 +15,7 @@
 // ============================================================================
 
 import { createSVG } from './drawing_utils.js';
-import { gdtChar } from './modules/decode/symbols.js';
+import { gdtChar, circledMod, diaSymbol } from './modules/decode/symbols.js';
 
 export const COLORS = {
     ink: '#0f172a',
@@ -106,6 +106,14 @@ export function addDefs(svg) {
         m.appendChild(createSVG('path', { d: 'M0,0 L10,5 L0,10 Z', fill: color }));
         defs.appendChild(m);
     }
+    // Hatched zone fill, used for bonus tolerance
+    const hatch = createSVG('pattern', {
+        id: 'thm-hatch-zone', patternUnits: 'userSpaceOnUse', width: 8, height: 8,
+        patternTransform: 'rotate(45)'
+    });
+    hatch.appendChild(createSVG('rect', { x: 0, y: 0, width: 8, height: 8, fill: COLORS.zoneFill }));
+    hatch.appendChild(createSVG('line', { x1: 0, y1: 0, x2: 0, y2: 8, stroke: COLORS.zoneStroke, 'stroke-width': 1.5, opacity: 0.45 }));
+    defs.appendChild(hatch);
     svg.appendChild(defs);
 }
 
@@ -213,14 +221,26 @@ export function callout(label, labelX, labelY, targetX, targetY, opts = {}) {
 /**
  * Feature control frame with its top-left corner at (x, y).
  * symbol: a gdtChar() key, e.g. 'perpendicularity'
+ * diameter: prefix the tolerance with the diameter symbol
+ * modifier: 'M' | 'L' | null, circled material condition after the tolerance
  * Returns { g, width, height }.
  */
-export function featureControlFrame(x, y, { symbol, tolerance, datums = [], h = 34 }) {
+export function featureControlFrame(x, y, { symbol, tolerance, datums = [], diameter = false, modifier = null, h = 34 }) {
     const g = createSVG('g', {});
+    const textW = tolerance.length * 9.8;          // 16px monospace advance
+    const diaW = diameter ? 20 : 0;
+    const modW = modifier ? 26 : 0;
+    const tolContentW = diaW + textW + modW;
     const cells = [
         { w: h, draw: (cx, cy) => g.appendChild(gdtChar(symbol, cx, cy, h * 0.62)) },
-        { w: Math.max(h * 2.2, tolerance.length * 10 + 20), draw: (cx, cy) =>
-            g.appendChild(text(tolerance, cx, cy, { size: 16, weight: 600, mono: true, anchor: 'middle', baseline: 'central', fill: COLORS.ink })) },
+        { w: Math.max(h * 2.2, tolContentW + 22), draw: (cx, cy) => {
+            let left = cx - tolContentW / 2;
+            if (diameter) g.appendChild(diaSymbol(left - 1, cy + 6, 16));
+            left += diaW;
+            g.appendChild(text(tolerance, left, cy, { size: 16, weight: 600, mono: true, baseline: 'central', fill: COLORS.ink }));
+            left += textW;
+            if (modifier) g.appendChild(circledMod(left + 13, cy, 9.5, modifier));
+        } },
         ...datums.map(d => ({ w: h, draw: (cx, cy) =>
             g.appendChild(text(d, cx, cy, { size: 17, weight: 700, anchor: 'middle', baseline: 'central', fill: COLORS.ink })) }))
     ];
@@ -241,7 +261,7 @@ export function featureControlFrame(x, y, { symbol, tolerance, datums = [], h = 
 
 /**
  * Legend card at (x, y). items: [{ kind, label }], kind one of
- * 'zone' | 'actual' | 'nominal' | 'datum' | 'fail'
+ * 'zone' | 'zoneOutline' | 'bonus' | 'actual' | 'point' | 'nominal' | 'datum' | 'fail'
  */
 export function legend(x, y, items, { title = 'KEY', note } = {}) {
     const g = createSVG('g', {});
@@ -272,6 +292,15 @@ export function legend(x, y, items, { title = 'KEY', note } = {}) {
             case 'datum':
                 g.appendChild(datumGround(sx, sx + 28, sy - 3));
                 break;
+            case 'bonus':
+                g.appendChild(createSVG('rect', { x: sx, y: sy - 9, width: 28, height: 12, fill: 'url(#thm-hatch-zone)' }));
+                break;
+            case 'zoneOutline':
+                g.appendChild(createSVG('rect', { x: sx + 1, y: sy - 9, width: 26, height: 12, fill: COLORS.zoneFill, stroke: COLORS.zoneStroke, 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }));
+                break;
+            case 'point':
+                g.appendChild(createSVG('circle', { cx: sx + 14, cy: sy - 3, r: 5, fill: COLORS.actual }));
+                break;
             case 'fail':
                 g.appendChild(createSVG('line', { x1: sx, y1: sy - 3, x2: sx + 28, y2: sy - 3, stroke: COLORS.fail, 'stroke-width': 4, 'stroke-linecap': 'round' }));
                 break;
@@ -294,7 +323,8 @@ export function legend(x, y, items, { title = 'KEY', note } = {}) {
  *   pass: boolean,
  *   measured: { label, value }, allowed: { label, value },   // numbers
  *   unit: '"' | ' mm', decimals,
- *   sentence: string
+ *   sentence: string,
+ *   compact: boolean   // smaller type for sentences over ~200 characters
  * }
  */
 export function resultsStrip(results) {
@@ -332,7 +362,9 @@ export function resultsStrip(results) {
     const sx = 560;
     g.appendChild(createSVG('line', { x1: sx - 20, y1: top + 24, x2: sx - 20, y2: top + 126, stroke: COLORS.cardBorder }));
     g.appendChild(text('IN PLAIN ENGLISH', sx, top + 36, { size: 11, weight: 700, fill: COLORS.muted, letterSpacing: '0.06em' }));
-    g.appendChild(wrapText(sentence, sx, top + 60, 50, 21, { size: 15, fill: COLORS.text }));
+    const compact = results.compact;   // for longer sentences
+    g.appendChild(wrapText(sentence, sx, top + (compact ? 58 : 60), compact ? 58 : 50, compact ? 19 : 21,
+        { size: compact ? 13.5 : 15, fill: COLORS.text }));
 
     return g;
 }
