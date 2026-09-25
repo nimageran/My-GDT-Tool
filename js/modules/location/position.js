@@ -3,6 +3,7 @@
 // size limits, bonus tolerance, allowed zone and virtual condition.
 
 import { createSVG, readTolerance } from '../../drawing_utils.js';
+import { evaluatePosition, EPS } from '../../gdt_math.js';
 import {
     COLORS, text, wrapText, addDefs, nominalLine, callout,
     featureControlFrame, legend, resultsStrip
@@ -34,7 +35,6 @@ const ZC = { x: 320, y: 410 };   // True position in the zone view
 const R_MAX = 180;               // Largest zone radius drawn
 const PANEL_X = 620;             // Right-hand size / bonus panel
 const PANEL_W = 330;
-const EPS = 1e-9;
 
 // --- DOM REFERENCES ---
 let svgContainer = null;
@@ -58,37 +58,11 @@ export function loadControls(container) {
 const f4 = v => v.toFixed(4);
 
 function evaluate() {
-    const { featureType, modifier, toleranceDiam, nominal, plusTol, minusTol, actualSize, deviationX, deviationY } = state;
-    const isHole = featureType === 'hole';
-    const lower = nominal - minusTol;
-    const upper = nominal + plusTol;
-    const mmc = isHole ? lower : upper;          // Most material: smallest hole, largest pin
-    const lmc = isHole ? upper : lower;
-    const sizeRange = upper - lower;
-    const sizeOK = actualSize >= lower - EPS && actualSize <= upper + EPS;
-
-    // Bonus = how far the actual size has departed from the modifier's condition
-    let bonusRaw = 0;
-    if (modifier === 'MMC') bonusRaw = isHole ? actualSize - mmc : mmc - actualSize;
-    if (modifier === 'LMC') bonusRaw = isHole ? lmc - actualSize : actualSize - lmc;
-    const bonus = Math.min(Math.max(bonusRaw, 0), sizeRange);
-    const maxBonus = modifier === 'RFS' ? 0 : sizeRange;
-
-    const allowed = toleranceDiam + bonus;
-    const radial = Math.hypot(deviationX, deviationY);
-    const position = 2 * radial;
-    const posOK = position <= allowed + EPS;
-
-    // Virtual condition: the constant worst-case boundary (not defined for RFS)
-    let vc = null;
-    if (modifier === 'MMC') vc = isHole ? mmc - toleranceDiam : mmc + toleranceDiam;
-    if (modifier === 'LMC') vc = isHole ? lmc + toleranceDiam : lmc - toleranceDiam;
-
-    return {
-        isHole, lower, upper, mmc, lmc, sizeRange, sizeOK,
-        bonus, maxBonus, allowed, radial, position, posOK, vc,
-        pass: sizeOK && posOK
-    };
+    return evaluatePosition({
+        featureType: state.featureType, modifier: state.modifier, tolerance: state.toleranceDiam,
+        nominal: state.nominal, plusTol: state.plusTol, minusTol: state.minusTol,
+        actualSize: state.actualSize, dx: state.deviationX, dy: state.deviationY
+    });
 }
 
 // px per inch in the zone view: fits the largest zone the size range can
