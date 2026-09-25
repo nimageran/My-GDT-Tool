@@ -218,6 +218,28 @@ export const GLOSSARY = [
       meaning: 'Assuming every part is at its worst limit at the same time. Guaranteed to work, but pessimistic.',
       see: tool('STACKUPS', 'stackup', 'Tolerance Stack-up') },
 
+    // Fits
+    { term: 'ISO fit', match: ['ISO fit', 'ISO fits', 'H7/g6', 'fit class'],
+      meaning: 'A code like Ø20 H7/g6 that gives a hole (capital letter) and a shaft (small letter) tolerance zones from the ISO 286 tables, and so sets how tightly they fit.',
+      example: 'Ø20 H7/g6: hole 20.000 to 20.021, shaft 19.980 to 19.993, always a 0.007 to 0.041 mm gap.',
+      see: tool('STACKUPS', 'fits', 'ISO Fits') },
+    { term: 'IT grade', match: ['IT grade', 'IT grades', 'tolerance grade'],
+      meaning: 'The number in a fit class like H7. It sets how wide the tolerance is: a lower number is tighter. The width also grows with the size.',
+      example: 'IT7 is 21 µm wide at 20 mm and 35 µm wide at 100 mm.',
+      see: tool('STACKUPS', 'fits', 'ISO Fits') },
+    { term: 'Clearance fit', match: ['clearance fit', 'clearance fits', 'running fit', 'sliding fit'],
+      meaning: 'A fit where the shaft is always smaller than the hole, so there is always a gap and it slides in.',
+      see: tool('STACKUPS', 'fits', 'ISO Fits') },
+    { term: 'Transition fit', match: ['transition fit', 'transition fits'],
+      meaning: 'A fit that can end up with a small gap or a slight press, depending on the actual sizes. Used for accurate location.',
+      see: tool('STACKUPS', 'fits', 'ISO Fits') },
+    { term: 'Interference fit', match: ['interference fit', 'interference fits', 'press fit', 'press-fit', 'shrink fit'],
+      meaning: 'A fit where the shaft is always bigger than the hole, so it must be pressed in, or the hole heated or the shaft cooled first.',
+      see: tool('STACKUPS', 'fits', 'ISO Fits') },
+    { term: 'Hole basis', match: ['hole basis', 'hole-basis'],
+      meaning: 'The usual way to choose fits: the hole is always H (smallest size = nominal), and the shaft letter sets the fit. Holes are made with fixed-size tools, so this keeps tooling simple.',
+      see: tool('STACKUPS', 'fits', 'ISO Fits') },
+
     // Drawing basics
     { term: 'Title block', match: ['title block'],
       meaning: 'The box in the bottom-right corner of a drawing: part number, revision, material, units, standard and default tolerances.',
