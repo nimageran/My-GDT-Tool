@@ -6,6 +6,7 @@ import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { evaluatePosition, EPS } from '../../gdt_math.js';
 import { COLORS, text, addDefs, featureControlFrame, resultsStrip } from '../../theme.js';
 import { syncUnits, step } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['tolerance', 'nominal', 'plusTol', 'minusTol'],
     custom: (s, conv) => { s.holes = s.holes.map(h => ({ ...h, bx: conv(h.bx), by: conv(h.by), mx: conv(h.mx), my: conv(h.my), dia: conv(h.dia) })); } };
@@ -329,9 +330,9 @@ function renderControls() {
                 <tbody>${rows}</tbody>
             </table>
             <div class="flex gap-2 mt-3">
-                <button id="cmm-add" class="flex-1 ${smallBtn}"><i class="fa-solid fa-plus"></i> ADD HOLE</button>
-                <button id="cmm-example" class="flex-1 ${smallBtn}">LOAD EXAMPLE</button>
-                <button id="cmm-clear" class="flex-1 ${smallBtn}">CLEAR</button>
+                <button id="cmm-add" class="flex-1 ${smallBtn}"><i class="fa-solid fa-plus"></i> Add hole</button>
+                <button id="cmm-example" class="flex-1 ${smallBtn}">Load example</button>
+                <button id="cmm-clear" class="flex-1 ${smallBtn}">Clear</button>
             </div>
         </div>
 
@@ -339,12 +340,12 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-1">Paste from a CMM report or Excel</h4>
             <p class="text-xs text-slate-400 mb-2">One hole per line: <span class="font-mono">ID, basic X, basic Y, meas X, meas Y, size</span>. The ID is optional; header lines are skipped.</p>
             <textarea id="cmm-paste" rows="4" class="w-full px-2 py-1.5 border border-slate-300 rounded font-mono text-xs" placeholder="H1  1.000  1.000  1.0060  1.0110  0.5060"></textarea>
-            <button id="cmm-import" class="mt-2 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 font-bold text-sm">REPLACE TABLE WITH PASTED DATA</button>
+            <button id="cmm-import" class="mt-2 w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 font-bold text-sm">Replace table with pasted data</button>
             ${pasteMessage ? `<p class="text-xs mt-2 ${pasteMessage.startsWith('Loaded') ? 'text-green-700' : 'text-red-600'}">${pasteMessage}</p>` : ''}
         </div>
 
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
-            <button id="cmm-copy" class="w-full ${smallBtn} py-2"><i class="fa-solid fa-copy"></i> COPY RESULTS (CSV)</button>
+            <button id="cmm-copy" class="w-full ${smallBtn} py-2"><i class="fa-solid fa-copy"></i> Copy results (CSV)</button>
             <p id="cmm-copy-msg" class="text-xs text-slate-400 mt-2 hidden">Copied. Paste into Excel or a report.</p>
         </div>
 
@@ -433,3 +434,6 @@ function bindControlEvents() {
         }
     };
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'featureType', 'modifier', 'tolerance', 'nominal', 'plusTol', 'minusTol', 'holes']);

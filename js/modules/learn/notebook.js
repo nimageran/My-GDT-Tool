@@ -144,9 +144,9 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Backup</h4>
             <p class="text-xs text-slate-600 mb-2">Notes are kept in this browser only. Clearing browser data, or using another computer, loses them unless you export.</p>
             <div class="grid grid-cols-2 gap-2">
-                <button id="nb-export" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded text-slate-700 font-bold" ${notes.length ? '' : 'disabled'}><i class="fa-solid fa-download mr-1"></i>BACKUP FILE</button>
-                <button id="nb-import" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded text-slate-700 font-bold"><i class="fa-solid fa-upload mr-1"></i>RESTORE</button>
-                <button id="nb-text" class="col-span-2 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded text-slate-700 font-bold" ${notes.length ? '' : 'disabled'}><i class="fa-solid fa-file-lines mr-1"></i>EXPORT AS TEXT (TO PRINT OR SHARE)</button>
+                <button id="nb-export" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded text-slate-700 font-bold" ${notes.length ? '' : 'disabled'}><i class="fa-solid fa-download mr-1"></i>Backup file</button>
+                <button id="nb-import" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded text-slate-700 font-bold"><i class="fa-solid fa-upload mr-1"></i>Restore</button>
+                <button id="nb-text" class="col-span-2 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded text-slate-700 font-bold" ${notes.length ? '' : 'disabled'}><i class="fa-solid fa-file-lines mr-1"></i>Export as text (to print or share)</button>
             </div>
             <input id="nb-file" type="file" accept=".json,application/json" class="hidden">
             <p id="nb-msg" class="text-xs mt-2 hidden"></p>

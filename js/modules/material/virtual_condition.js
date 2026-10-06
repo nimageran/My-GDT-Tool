@@ -8,6 +8,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, addDefs, text, wrapText, legend, resultsStrip, featureControlFrame } from '../../theme.js';
 import { syncUnits, step, suffix, decimals } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const INCH_START = { hole: { nominal: 0.500, plus: 0.004, minus: 0, tol: 0.008, mod: 'MMC' }, pin: { nominal: 0.484, plus: 0, minus: 0.004, tol: 0.004, mod: 'MMC' } };
 const UNITS = { native: 'mm', lengths: ['hole', 'pin'], nice: { in: INCH_START } };
@@ -250,3 +251,6 @@ function update() {
     render();
     renderControls();
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'hole', 'pin']);

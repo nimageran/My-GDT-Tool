@@ -9,6 +9,7 @@ import {
     GRADES, SHAFT_LETTERS, HOLE_LETTERS, PREFERRED, computeFit, mainRange, parseClass
 } from './iso286.js';
 import { takeFocus } from '../../focus.js';
+import { shareable } from '../../share.js';
 
 const state = { size: 20, hole: { letter: 'H', grade: 7 }, shaft: { letter: 'g', grade: 6 } };
 let svgRef = null, controlsRoot = null;
@@ -264,3 +265,6 @@ function update() {
     render();
     renderControls();
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['size', 'hole', 'shaft']);

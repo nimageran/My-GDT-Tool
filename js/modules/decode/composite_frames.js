@@ -15,6 +15,7 @@
 
 import { el, gdtChar, circledMod, diaSymbol } from './symbols.js';
 import { backdrop } from '../../theme.js';
+import { shareable } from '../../share.js';
 
 // --------------------------------------------------------------------------
 // CHARACTERISTIC METADATA
@@ -550,3 +551,6 @@ function syncControlVisibility() {
         e.classList.toggle('hidden', !conds[e.dataset.when]);
     });
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['structure', 'char', 'char2', 'rows', 'prefix', 'allOver', 'allAround', 'between', 'sim']);

@@ -8,6 +8,7 @@
 // ============================================================================
 
 import { el, gdtChar, circledMod, diaSymbol } from './symbols.js';
+import { shareable } from '../../share.js';
 
 // --------------------------------------------------------------------------
 // VOCABULARY
@@ -421,3 +422,6 @@ function render() {
     } catch (e) { /* storage unavailable */ }
     update();
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, Object.keys(DEFAULT));

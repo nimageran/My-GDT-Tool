@@ -9,6 +9,7 @@ import {
     featureControlFrame, legend, resultsStrip
 } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName, decimals } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceDiam', 'nominal', 'plusTol', 'minusTol', 'actualSize', 'deviationX', 'deviationY'],
     nice: { mm: { toleranceDiam: 0.75, nominal: 12.0, plusTol: 0.25, minusTol: 0, actualSize: 12.15, deviationX: 0.3, deviationY: 0.3 } } };
@@ -474,8 +475,8 @@ function renderControls() {
             </div>
             <input type="range" id="slide-size" min="${sMin}" max="${sMax}" step="${fromIn(0.0001)}" value="${state.actualSize}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
             <div class="flex gap-2 mt-2">
-                <button id="btn-at-mmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">SET TO MMC</button>
-                <button id="btn-at-lmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">SET TO LMC</button>
+                <button id="btn-at-mmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Set to MMC</button>
+                <button id="btn-at-lmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Set to LMC</button>
             </div>
         </div>
 
@@ -562,3 +563,6 @@ function updateReadouts() {
         if (inputY) inputY.value = f4(state.deviationY);
     }
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'featureType', 'modifier', 'toleranceDiam', 'nominal', 'plusTol', 'minusTol', 'actualSize', 'deviationX', 'deviationY']);

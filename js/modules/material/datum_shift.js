@@ -9,6 +9,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, addDefs, text, wrapText, legend, resultsStrip, featureControlFrame } from '../../theme.js';
 import { getUnits, step, unitName, decimals } from '../../units.js';
+import { shareable } from '../../share.js';
 
 // The example part in each unit: datum hole B (MMB and largest size), hole
 // pitch from B, and g, the size of the deviations compared with the mm example.
@@ -277,3 +278,6 @@ function update() {
     render();
     renderControls();
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'tol', 'bRef', 'bSize', 'dev']);

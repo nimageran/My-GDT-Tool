@@ -3,6 +3,7 @@
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName, decimals } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceRunout', 'eccentricity', 'ovality', 'history'], perLength: ['scale'],
     nice: { mm: { toleranceRunout: 0.25, scale: 80 } } };
@@ -408,7 +409,7 @@ function renderControls() {
                 </div>
             </div>
             
-            <button id="btn-reset" class="mt-4 w-full text-xs bg-slate-200 hover:bg-slate-300 px-2 py-2 rounded text-slate-700 font-bold">RESET PART</button>
+            <button id="btn-reset" class="mt-4 w-full text-xs bg-slate-200 hover:bg-slate-300 px-2 py-2 rounded text-slate-700 font-bold">Reset part</button>
         </div>
         
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
@@ -455,3 +456,6 @@ function bindControlEvents() {
         state.history = [];
     };
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'scale', 'toleranceRunout', 'eccentricity', 'ovality']);

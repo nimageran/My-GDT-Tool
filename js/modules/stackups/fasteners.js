@@ -8,6 +8,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, text, wrapText, addDefs, dimension, nominalLine, featureControlFrame, legend, resultsStrip } from '../../theme.js';
 import { syncUnits, fromMm } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'mm', lengths: ['F', 'H', 'holeTol', 'T', 'T1', 'T2', 'projected'],
     nice: { in: { screw: 'custom', F: 0.3125, H: 0.344, holeTol: 0.008, T: 0.031, T1: 0.015, T2: 0.015, projected: 0.375 } } };
@@ -315,7 +316,7 @@ function renderControls() {
             ${floating ? `
                 <div class="grid grid-cols-2 gap-2 items-end">
                     ${num('fx-T', 'T: EACH PART (Ø)', state.T, 0.01)}
-                    <button id="fx-max" class="${smallBtn} py-2">USE MAXIMUM</button>
+                    <button id="fx-max" class="${smallBtn} py-2">Use maximum</button>
                 </div>` : `
                 <div class="grid grid-cols-2 gap-2">
                     ${num('fx-T1', 'T₁: THREADED PART (Ø)', state.T1, 0.01)}
@@ -323,7 +324,7 @@ function renderControls() {
                 </div>
                 <div class="grid grid-cols-2 gap-2 mt-2 items-end">
                     ${num('fx-P', 'Ⓟ PROJECTED HEIGHT', state.projected, 1)}
-                    <button id="fx-split" class="${smallBtn} py-2">SPLIT MAXIMUM EQUALLY</button>
+                    <button id="fx-split" class="${smallBtn} py-2">Split maximum equally</button>
                 </div>`}
         </div>
 
@@ -378,3 +379,6 @@ function bindControls() {
     if ($('fx-max')) $('fx-max').onclick = () => { state.T = +max().toFixed(4); rerender(true); };
     if ($('fx-split')) $('fx-split').onclick = () => { state.T1 = state.T2 = +(max() / 2).toFixed(4); rerender(true); };
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'mode', 'screw', 'fit', 'F', 'H', 'holeTol', 'T', 'T1', 'T2', 'projected']);

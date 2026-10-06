@@ -8,6 +8,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { COLORS, addDefs, text, wrapText, featureControlFrame } from '../../theme.js';
 import { UI } from '../drawing/sheet.js';
 import { syncUnits } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'mm', lengths: ['tx', 'ty', 'dx', 'dy'], nice: { in: { tx: 0.004, ty: 0.004, dx: 0.005, dy: 0.001 } } };
 
@@ -193,3 +194,6 @@ function syncInputs() {
     if (dx) dx.value = +state.dx.toFixed(4);
     if (dy) dy.value = +state.dy.toFixed(4);
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'tx', 'ty', 'dx', 'dy']);

@@ -9,6 +9,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { COLORS, addDefs, text, wrapText, featureControlFrame, resultsStrip } from '../../theme.js';
 import { UI } from '../drawing/sheet.js';
 import { getUnits } from '../../units.js';
+import { shareable } from '../../share.js';
 
 // Basic geometry per unit: plate W × H, holes at xs × ys from the lower-left corner.
 const GEOM = {
@@ -372,3 +373,6 @@ function preset(p) {
         state.bAct = state.bLmc;
     }
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'scheme', 'mmcMod', 'gaugePct', 'sel', 'mmc', 'lmc', 'tol', 'bMmc', 'bLmc', 'bAct', 'holes']);
