@@ -273,7 +273,7 @@ function renderControls() {
                 <li>After each answer you see why, and a link to the tool that explains it.</li>
                 <li>Your progress is saved in this browser only.</li>
             </ul>
-            <button id="pq-reset" class="mt-3 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold w-full">RESET MY PROGRESS</button>
+            <button id="pq-reset" class="mt-3 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold w-full">Reset my progress</button>
         </div>`;
     controlsRoot.querySelectorAll('[data-quiz]').forEach(b => b.onclick = () => startQuiz(+b.dataset.quiz));
     controlsRoot.querySelector('#pq-reset').onclick = () => {

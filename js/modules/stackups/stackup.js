@@ -5,10 +5,37 @@
 import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, text, wrapText, addDefs, resultsStrip } from '../../theme.js';
-import { syncUnits, step } from '../../units.js';
+import { syncUnits, step, getUnits } from '../../units.js';
 
+// The same example in clean inch numbers: used instead of converting while the example is untouched
+const EXAMPLE_IN = {
+    minGap: 0.002, maxGap: 0.018,
+    rows: [
+        { name: 'Housing bore depth', dir: 1, type: 'dim', nominal: 0.787, plus: 0.004, minus: 0.004 },
+        { name: 'Spacer width', dir: -1, type: 'dim', nominal: 0.315, plus: 0.002, minus: 0.002 },
+        { name: 'Bearing width', dir: -1, type: 'dim', nominal: 0.394, plus: 0.000, minus: 0.005 },
+        { name: 'Cover lip height', dir: -1, type: 'dim', nominal: 0.071, plus: 0.002, minus: 0.002 },
+        { name: 'Housing face profile', dir: 1, type: 'profile', nominal: 0, plus: 0.004, minus: 0 }
+    ]
+};
+const isExample = (s, unit) => {
+    const ex = unit === 'mm' ? { minGap: DEFAULTS.minGap, maxGap: DEFAULTS.maxGap, rows: EXAMPLE } : EXAMPLE_IN;
+    return s.minGap === ex.minGap && s.maxGap === ex.maxGap && JSON.stringify(s.rows) === JSON.stringify(ex.rows);
+};
 const UNITS = { native: 'mm', lengths: ['minGap', 'maxGap'],
-    custom: (s, conv) => { s.rows = s.rows.map(r => ({ ...r, nominal: conv(r.nominal), plus: conv(r.plus), minus: conv(r.minus) })); } };
+    custom: (s, conv) => {
+        s.rows = s.rows.map(r => ({ ...r, nominal: conv(r.nominal), plus: conv(r.plus), minus: conv(r.minus) }));
+    } };
+/** Switch units: swap the untouched example for the other unit's example, else convert. */
+function followUnits() {
+    const from = state.units;
+    if (from && from !== getUnits() && isExample(state, from)) {
+        Object.assign(state, structuredClone(getUnits() === 'in' ? EXAMPLE_IN : { minGap: DEFAULTS.minGap, maxGap: DEFAULTS.maxGap, rows: EXAMPLE }));
+        state.units = getUnits();
+        return true;
+    }
+    return syncUnits(state, UNITS);
+}
 
 const STORAGE_KEY = 'stackup_v1';
 
@@ -51,13 +78,13 @@ let svgContainer = null;
 let controlsContainer = null;
 
 export function draw(svg) {
-    if (syncUnits(state, UNITS)) saveState();
+    if (followUnits()) saveState();
     svgContainer = svg;
     renderScene();
 }
 
 export function loadControls(container) {
-    if (syncUnits(state, UNITS)) saveState();
+    if (followUnits()) saveState();
     controlsContainer = container;
     renderControls();
 }
@@ -328,8 +355,8 @@ function renderControls() {
             <div class="space-y-2">${rows}</div>
             <div class="flex gap-2 mt-3">
                 <button id="su-add" class="flex-1 ${smallBtn}"><i class="fa-solid fa-plus"></i> ADD</button>
-                <button id="su-example" class="flex-1 ${smallBtn}">LOAD EXAMPLE</button>
-                <button id="su-clear" class="flex-1 ${smallBtn}">CLEAR</button>
+                <button id="su-example" class="flex-1 ${smallBtn}">Load example</button>
+                <button id="su-clear" class="flex-1 ${smallBtn}">Clear</button>
             </div>
         </div>
 

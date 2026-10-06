@@ -584,8 +584,8 @@ function renderControls() {
                     </button>`).join('')}
             </div>
             <div class="flex gap-2 mt-3">
-                <button id="drf-reset" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded text-slate-700 font-bold">RESET</button>
-                <button id="drf-next" class="flex-1 text-xs bg-slate-800 hover:bg-slate-700 px-2 py-2 rounded text-white font-bold" ${state.step === 3 ? 'disabled style="opacity:.4"' : ''}>NEXT STEP ▶</button>
+                <button id="drf-reset" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded text-slate-700 font-bold">Reset</button>
+                <button id="drf-next" class="flex-1 text-xs bg-slate-800 hover:bg-slate-700 px-2 py-2 rounded text-white font-bold" ${state.step === 3 ? 'disabled style="opacity:.4"' : ''}>Next step ▶</button>
             </div>
             <label class="flex items-center gap-2 mt-3 text-sm text-slate-600">
                 <input type="checkbox" id="drf-arrows" ${state.showArrows ? 'checked' : ''}> Show free directions (orange arrows)

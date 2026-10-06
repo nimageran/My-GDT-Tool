@@ -233,7 +233,7 @@ function renderControls() {
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-0.5">UNITS</label>
                         <select id="gt-unit" class="${UI.input}">${['mm', 'in'].map(u => `<option ${state.block.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select></div>
                 </div>
-                <button id="gt-reset" class="${UI.smallBtn} w-full mt-2">RESET TO EXAMPLE VALUES</button>
+                <button id="gt-reset" class="${UI.smallBtn} w-full mt-2">Reset to example values</button>
             </div>
         </div>`}
         <div class="${UI.warn}">

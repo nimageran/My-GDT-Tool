@@ -344,12 +344,12 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Try a shape</h4>
             
             <div class="grid grid-cols-2 gap-2 mb-4">
-                <button id="btn-flat" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">FLAT</button>
-                <button id="btn-bowl" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">BOWL</button>
-                <button id="btn-dome" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">DOME</button>
-                <button id="btn-saddle" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">SADDLE</button>
-                <button id="btn-twist" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">TWIST</button>
-                <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">RANDOM</button>
+                <button id="btn-flat" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Flat</button>
+                <button id="btn-bowl" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Bowl</button>
+                <button id="btn-dome" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Dome</button>
+                <button id="btn-saddle" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Saddle</button>
+                <button id="btn-twist" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Twist</button>
+                <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Random</button>
             </div>
             
             <div class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed">

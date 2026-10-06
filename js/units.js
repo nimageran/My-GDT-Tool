@@ -44,7 +44,7 @@ export const perFromIn = v => (current === 'in' ? v : v / MM_PER_IN);
 /** A length written in mm (a constant in the code), in the current unit. */
 export const fromMm = v => (current === 'mm' ? v : v / MM_PER_IN);
 
-const round = (v, u) => +v.toFixed(u === 'in' ? 5 : 4);
+const round = (v, u) => +v.toFixed(u === 'in' ? 6 : 4);   // enough that mm → in → mm comes back exact
 
 /**
  * Bring a tool's stored numbers into the current unit. Call at the start of

@@ -380,10 +380,10 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">Try a shape</h4>
             
             <div class="grid grid-cols-2 gap-2 mb-4">
-                <button id="btn-flat" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">PERFECT</button>
-                <button id="btn-bow" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">BOW (CURVED)</button>
-                <button id="btn-wave" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">WAVE</button>
-                <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">NOISE</button>
+                <button id="btn-flat" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Perfect</button>
+                <button id="btn-bow" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Bow (curved)</button>
+                <button id="btn-wave" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Wave</button>
+                <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Noise</button>
             </div>
             
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">View Zoom</h4>

@@ -238,8 +238,8 @@ function renderControls() {
             <textarea id="ck-data" rows="7" class="${UI.input}" placeholder="Paste values: one per line, or separated by spaces, commas or tabs (e.g. a column copied from Excel)">${esc(state.raw)}</textarea>
             <p class="text-xs text-slate-500 mt-1">${values.length} values read${skipped ? `, ${skipped} ignored (not numbers)` : ''}.</p>
             <div class="flex gap-2 mt-2">
-                <button id="ck-example" class="${UI.smallBtn}">LOAD EXAMPLE</button>
-                <button id="ck-clear" class="${UI.smallBtn}">CLEAR</button>
+                <button id="ck-example" class="${UI.smallBtn}">Load example</button>
+                <button id="ck-clear" class="${UI.smallBtn}">Clear</button>
             </div>
         </div>
         <div class="${UI.warn}">

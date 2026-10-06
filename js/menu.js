@@ -126,14 +126,16 @@ function item(cat, sym, d) {
       </button>`;
 }
 
-function open(cat) {
+function open(cat, anchor = null) {
     close(false);
     openCat = cat;
     panel = document.createElement('div');
     panel.id = 'menuPanel';
     panel.setAttribute('role', 'menu');
     panel.className = 'fixed z-50 bg-white rounded-xl shadow-2xl border border-slate-200 p-3 flex flex-wrap gap-2';
-    panel.style.maxWidth = 'calc(100vw - 16px)';
+    // Exact width (columns × 18rem + gaps + padding), so it can be placed under its tab
+    const nCols = columns(cat).length;
+    panel.style.width = `${Math.min(nCols * 288 + (nCols - 1) * 8 + 26, window.innerWidth - 16)}px`;
     panel.innerHTML = columns(cat).map(col => `
         <div class="w-[18rem] space-y-2">
           ${col.map(g => `
@@ -145,7 +147,9 @@ function open(cat) {
     document.body.appendChild(panel);
 
     // Place under the tab, kept inside the window
-    const r = nav.querySelector(`[data-cat="${cat}"]`).getBoundingClientRect();
+    // Under its tab; when the tab row is hidden (☰ mode), under whatever opened it
+    let r = nav.querySelector(`[data-cat="${cat}"]`).getBoundingClientRect();
+    if (!r.width && anchor) r = anchor.getBoundingClientRect();
     panel.style.top = `${r.bottom + 6}px`;
     panel.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - panel.offsetWidth - 8))}px`;
 
@@ -255,7 +259,7 @@ function renderPath() {
     crumbs.innerHTML = parts.join('');
     crumbs.querySelector('[data-home]').onclick = () => { close(); pick('HOME', 'home'); };
     const t = crumbs.querySelector('[data-open-tab]');
-    if (t) t.onclick = e => { e.stopPropagation(); openCat === cat ? close() : open(cat); };
+    if (t) t.onclick = e => { e.stopPropagation(); openCat === cat ? close() : open(cat, t); };
 
     const list = built(cat), i = list.indexOf(sym);
     count.textContent = list.length > 1 && i >= 0 ? `${i + 1} of ${list.length}` : '';

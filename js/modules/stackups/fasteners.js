@@ -315,7 +315,7 @@ function renderControls() {
             ${floating ? `
                 <div class="grid grid-cols-2 gap-2 items-end">
                     ${num('fx-T', 'T: EACH PART (Ø)', state.T, 0.01)}
-                    <button id="fx-max" class="${smallBtn} py-2">USE MAXIMUM</button>
+                    <button id="fx-max" class="${smallBtn} py-2">Use maximum</button>
                 </div>` : `
                 <div class="grid grid-cols-2 gap-2">
                     ${num('fx-T1', 'T₁: THREADED PART (Ø)', state.T1, 0.01)}
@@ -323,7 +323,7 @@ function renderControls() {
                 </div>
                 <div class="grid grid-cols-2 gap-2 mt-2 items-end">
                     ${num('fx-P', 'Ⓟ PROJECTED HEIGHT', state.projected, 1)}
-                    <button id="fx-split" class="${smallBtn} py-2">SPLIT MAXIMUM EQUALLY</button>
+                    <button id="fx-split" class="${smallBtn} py-2">Split maximum equally</button>
                 </div>`}
         </div>
 

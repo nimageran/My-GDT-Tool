@@ -65,3 +65,16 @@
     /* Text pages and 3D views manage their own size */
     #canvas-container:has([data-module-overlay]) #zoomBtn { display: none; }
 }
+
+/* ------------------------------------------------------------------------
+   Readability floor for side panels and text pages: no label below 12 px
+   (small uppercase headings and table headers were 10–11 px).
+   ------------------------------------------------------------------------ */
+:is(#controlsContent, [data-module-overlay], #menuPanel, #mobileMenu) :is(.text-\[10px\], .text-\[11px\]) {
+    font-size: 12px;
+}
+/* Text-link buttons ("Position ▶", "see …"): a taller target to click or tap */
+:is(#controlsContent, [data-module-overlay]) button.hover\:underline {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}

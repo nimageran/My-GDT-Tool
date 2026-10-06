@@ -474,8 +474,8 @@ function renderControls() {
             </div>
             <input type="range" id="slide-size" min="${sMin}" max="${sMax}" step="${fromIn(0.0001)}" value="${state.actualSize}" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
             <div class="flex gap-2 mt-2">
-                <button id="btn-at-mmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">SET TO MMC</button>
-                <button id="btn-at-lmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">SET TO LMC</button>
+                <button id="btn-at-mmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Set to MMC</button>
+                <button id="btn-at-lmc" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded text-slate-700 font-bold">Set to LMC</button>
             </div>
         </div>
 
