@@ -352,7 +352,7 @@ function renderControls() {
             <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
                 <div class="font-bold mb-1"><i class="fa-solid fa-ruler-vertical"></i> Engineering Note</div>
                 <div class="text-xs opacity-90 leading-relaxed">
-                    Perpendicularity is angularity at exactly 90°. The zone may slide sideways to fit the surface, but it always stays at 90° to the datum.
+                    Perpendicularity is angularity at exactly 90°. The zone may slide sideways to fit the surface, but it always stays at 90° to the datum. For a hole or pin (the frame under the Ø size), see <b>Perpendicularity of a Hole / Pin</b>.
                 </div>
             </div>
         </div>

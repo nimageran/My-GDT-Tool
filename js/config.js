@@ -64,6 +64,7 @@ export const GDT_HIERARCHY = {
 
             angularity: { group: "Orientation", name: "Angularity", iconChar: "∠", filePath: './modules/orientation/angularity.js' },
             perpendicularity: { group: "Orientation", name: "Perpendicularity", iconChar: "⊥", filePath: './modules/orientation/perpendicularity.js' },
+            axis_perpendicularity: { group: "Orientation", name: "Perpendicularity of a Hole / Pin (Ⓜ)", iconChar: "⊥", filePath: './modules/orientation/axis_perpendicularity.js', desc: "A hole or pin axis square to a datum, with bonus at MMC and the gauge pin size." },
             parallelism: { group: "Orientation", name: "Parallelism", iconChar: "∥", filePath: './modules/orientation/parallelism.js' },
 
             position: { group: "Location", name: "Position", iconChar: "⌖", filePath: './modules/location/position.js' },

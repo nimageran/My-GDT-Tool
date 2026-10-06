@@ -62,7 +62,10 @@ function showPlannedTool(catKey, data) {
 }
 
 // --- 4. MODULE LOADING ---
+let loadToken = 0;   // a newer load makes an older, still-importing one stop
+
 async function loadSymbolModule(catKey, symKey) {
+    const token = ++loadToken;
     activeSymbolKey = symKey;
     setActive(catKey, symKey);
 
@@ -100,7 +103,9 @@ async function loadSymbolModule(catKey, symKey) {
     controlsContent.innerHTML = '<div class="flex items-center justify-center h-40"><i class="fa-solid fa-circle-notch fa-spin text-blue-500 text-2xl"></i></div>';
 
     try {
-        currentModule = await import(symData.filePath);
+        const mod = await import(symData.filePath);
+        if (token !== loadToken) return;          // another tool was opened meanwhile
+        currentModule = mod;
         
         if (typeof currentModule.draw === 'function') {
             currentModule.draw(canvas);

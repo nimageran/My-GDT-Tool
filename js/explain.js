@@ -212,6 +212,30 @@ export const EXPLAIN = {
         tool: 'Drag an end of the top face (or use the sliders) to add tilt and waviness, and watch the dial reading.'
     },
 
+    axis_perpendicularity: {
+        title: 'Perpendicularity of a hole / pin',
+        terms: [
+            ['Axis', 'The centreline of a hole or pin.'],
+            ['Zone (axis)', 'A cylinder square to the datum. The axis must stay inside it; the cylinder may slide sideways.'],
+            ['Bonus', 'With Ⓜ, extra tolerance equal to how far the size is from MMC.'],
+            ['Virtual condition', 'The gauge size: hole = MMC − tolerance, pin = MMC + tolerance.']
+        ],
+        simple: [
+            'When the frame sits **under the size** (Ø), it controls the **axis**, not a surface.',
+            'The axis must fit in a **cylinder square to datum A**; what counts is how far it **leans** over its length.',
+            'With **Ⓜ**, a hole **bigger than MMC** (or a pin smaller) earns **bonus**: the cylinder grows.',
+            'One **gauge pin at virtual condition**, standing square on a plate, checks size and tilt together.',
+            '**Zero at MMC** means no tilt at MMC, but all the size departure becomes tilt allowance.'
+        ],
+        example: [
+            'A Ø.500 +.010/−0 hole has ⊥ Ø.010 Ⓜ A. It is made at Ø.506 and its axis leans .014 over its depth.',
+            'Stated .010 + bonus .006 = .016 allowed, so the .014 lean passes.',
+            'The same lean on a hole made at Ø.500 (MMC) would fail: no bonus there.',
+            'Gauge pin: .500 − .010 = Ø.490, square to the plate.'
+        ],
+        tool: 'Pick hole or pin and the modifier, set the measured size, then drag the axis or type the lean.'
+    },
+
     position: {
         title: 'Position (with MMC and bonus)',
         terms: [

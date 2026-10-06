@@ -46,6 +46,7 @@ const datumLabels = {};
 // --- EXPORTED METHODS ---
 
 export function draw(svg) {
+    if (rafId) unload();          // never run two scenes (and two loops) at once
     svgRef = svg;
     const host = svg.parentElement;
     svg.style.display = 'none';
@@ -525,6 +526,7 @@ function sentence() {
 // --- RENDER LOOP ---
 
 function loop() {
+    if (!renderer || !controls) { rafId = null; return; }   // closed: stop this loop
     rafId = requestAnimationFrame(loop);
     if (tween) {
         const k = Math.min(1, (performance.now() - tween.t0) / tween.ms);
