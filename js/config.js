@@ -68,6 +68,7 @@ export const GDT_HIERARCHY = {
             parallelism: { group: "Orientation", name: "Parallelism", iconChar: "∥", filePath: './modules/orientation/parallelism.js' },
 
             position: { group: "Location", name: "Position", iconChar: "⌖", filePath: './modules/location/position.js' },
+            composite_position: { group: "Location", name: "Composite Position (2 rows)", iconChar: "⌖", filePath: './modules/location/composite_position.js', desc: "Upper row locates the hole pattern, lower row the holes to each other: drag and see." },
             concentricity: { group: "Location", name: "Concentricity", iconChar: "◎", filePath: './modules/location/concentricity.js', legacy: true },
             symmetry: { group: "Location", name: "Symmetry", iconChar: "⌯", filePath: './modules/location/symmetry.js', legacy: true },
 

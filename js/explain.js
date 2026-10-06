@@ -212,6 +212,30 @@ export const EXPLAIN = {
         tool: 'Drag an end of the top face (or use the sliders) to add tilt and waviness, and watch the dial reading.'
     },
 
+    composite_position: {
+        title: 'Composite position',
+        terms: [
+            ['Composite frame', 'Two rows sharing ONE position symbol.'],
+            ['Upper row (PLTZF)', 'Pattern-locating zones: big zones at true position from all the datums. They place the pattern.'],
+            ['Lower row (FRTZF)', 'Feature-relating zones: small zones, basic to each other, that may slide (and turn with A only) as a group.'],
+            ['Lower-row datums', 'Only orient the small zones (square to A, parallel to B); they never locate them.']
+        ],
+        simple: [
+            'A composite frame gives **two requirements** on one pattern of holes.',
+            'The **upper row** says how far the **whole pattern** may be from **A, B, C**: big zones.',
+            'The **lower row** says how accurate the holes are **to each other**: small zones that may **move together**.',
+            'Every hole must be in **both** its big zone and its small zone.',
+            'So the pattern can be **off a lot** from the edges while the holes stay **tight to each other**: that is the point.'
+        ],
+        example: [
+            '4X holes: ⌖ Ø.030 Ⓜ A B C over Ø.010 Ⓜ A.',
+            'All four holes are made .012 to the right of true position: each is Ø.024 from A, B, C, inside Ø.030.',
+            'Relative to each other they are perfect (the small zones slide .012 too), so both rows pass.',
+            'If only one hole were .012 off, the lower row would fail: it is out of line with the other three.'
+        ],
+        tool: 'Drag the hole centres (or use the presets) and switch the lower row between A only and A and B.'
+    },
+
     axis_perpendicularity: {
         title: 'Perpendicularity of a hole / pin',
         terms: [
