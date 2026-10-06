@@ -9,7 +9,9 @@ import { createSVG } from './drawing_utils.js';
 import { COLORS, text, wrapText } from './theme.js';
 import { hasExplanation, openExplain, closeExplain } from './explain.js';
 import { linkify } from './glossary.js';
-import { getUnits, setUnits } from './units.js';
+import { getUnits, setUnits, unitName } from './units.js';
+import { toolHash, parseHash, copyText, toast, resultText } from './share.js';
+import { refFor } from './explain.js';
 
 // --- GLOBAL STATE ---
 let activeSymbolKey = null;
@@ -38,8 +40,51 @@ function init() {
     document.getElementById('notebookBtn').onclick = () => loadSymbolModule('LEARN', 'notebook');
     setupUnitsToggle();
     setupPhone();
-    // Open on the start page, never straight into a specialist tool
-    loadSymbolModule('HOME', 'home');
+    setupShare();
+    // Open the tool in the address (a link or a bookmark), else the start page
+    const h = parseHash();
+    if (h && GDT_HIERARCHY[h.cat]?.symbols[h.sym]) {
+        if (h.units) setUnits(h.units);
+        pendingShare = h.settings ? h : null;
+        loadSymbolModule(h.cat, h.sym, { push: false });
+    } else {
+        loadSymbolModule('HOME', 'home', { push: false });
+    }
+    // Back / forward between tools
+    window.addEventListener('popstate', () => {
+        const p = parseHash();
+        if (p && GDT_HIERARCHY[p.cat]?.symbols[p.sym]) loadSymbolModule(p.cat, p.sym, { push: false });
+        else loadSymbolModule('HOME', 'home', { push: false });
+    });
+}
+
+// --- LINKS AND COPIED RESULTS (js/share.js) ---
+let pendingShare = null;        // settings from a shared link, applied when its tool loads
+
+function linkFor(t, withSettings = true) {
+    const settings = withSettings ? currentModule?.share?.get() : null;
+    const hash = toolHash(t.cat, t.sym, settings, settings ? getUnits() : null);
+    return { url: location.origin + location.pathname + hash, withNumbers: !!settings };
+}
+
+function setupShare() {
+    document.getElementById('shareBtn').onclick = async () => {
+        const t = getActive();
+        if (!t) return;
+        const { url, withNumbers } = linkFor(t);
+        const ok = await copyText(url);
+        toast(!ok ? 'Could not copy. Copy the address from the address bar instead.'
+            : withNumbers ? 'Link copied: it opens this tool with the same numbers.' : 'Link copied: it opens this tool.');
+    };
+    document.getElementById('copyBtn').onclick = async () => {
+        const t = getActive();
+        if (!t) return;
+        const result = resultText(canvas);
+        if (!result) { toast('This page has no result to copy. Use Link to share it.'); return; }
+        const ref = refFor(t.sym);
+        const text = [`${t.name} (GD&T tool, units: ${unitName()})`, result, ref ? `Standard: ${ref}` : '', `Open: ${linkFor(t).url}`].filter(Boolean).join('\n');
+        toast(await copyText(text) ? 'Result copied, with a link to this case.' : 'Could not copy on this browser.');
+    };
 }
 
 // Roadmap entry: describe the planned tool instead of loading a module
@@ -64,10 +109,14 @@ function showPlannedTool(catKey, data) {
 // --- 4. MODULE LOADING ---
 let loadToken = 0;   // a newer load makes an older, still-importing one stop
 
-async function loadSymbolModule(catKey, symKey) {
+async function loadSymbolModule(catKey, symKey, { push = true } = {}) {
     const token = ++loadToken;
     activeSymbolKey = symKey;
     setActive(catKey, symKey);
+    // Each tool has its own address, so Back works and it can be bookmarked
+    const hash = toolHash(catKey, symKey);
+    if (push && location.hash !== hash) history.pushState(null, '', hash);
+    else if (!push && location.hash !== hash) history.replaceState(null, '', hash);
 
     const catData = GDT_HIERARCHY[catKey];
     const symData = catData.symbols[symKey];
@@ -106,6 +155,11 @@ async function loadSymbolModule(catKey, symKey) {
         const mod = await import(symData.filePath);
         if (token !== loadToken) return;          // another tool was opened meanwhile
         currentModule = mod;
+        // A shared link: put its numbers in before the tool draws
+        if (pendingShare && pendingShare.cat === catKey && pendingShare.sym === symKey) {
+            mod.share?.set(pendingShare.settings);
+            pendingShare = null;
+        }
         
         if (typeof currentModule.draw === 'function') {
             currentModule.draw(canvas);

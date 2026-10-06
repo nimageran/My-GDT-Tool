@@ -392,6 +392,8 @@ export function resultsStrip(results) {
     g.appendChild(text(show(allowed), nx + 170, top + 66, { size: valueSize, weight: 700, fill: COLORS.text, mono: true }));
     if (results.gauge !== false) g.appendChild(gauge(nx, top + 92, 320, measured.value, allowed.value, accent));
 
+    g.dataset.summary = `${pass ? 'PASS' : 'FAIL'} · ${measured.label}: ${show(measured)} · ${allowed.label}: ${show(allowed)}\n${sentence}`;
+
     // 3. Plain English
     const sx = 560;
     g.appendChild(createSVG('line', { x1: sx - 20, y1: top + 24, x2: sx - 20, y2: top + 126, stroke: COLORS.cardBorder }));
@@ -445,6 +447,7 @@ export function resultsCard({ x = 20, y = 20, w = 340, title, pass, rows = [], m
         g.appendChild(text(note, x + 18, cy + 6, { size: 12, italic: true, fill: COLORS.muted }));
         cy += 20;
     }
+    g.dataset.summary = `${title}: ${pass ? 'PASS' : 'FAIL'} · ${rows.map(([l, v]) => `${l} ${v}`).join(' · ')}${sentence ? `\n${sentence}` : ''}`;
     const height = cy - y + 6;
     bg.setAttribute('height', height);
     bar.setAttribute('height', height);
@@ -454,7 +457,7 @@ export function resultsCard({ x = 20, y = 20, w = 340, title, pass, rows = [], m
 /** Horizontal gauge: bar fills to value; tick marks the limit (scale 0–1.5×limit). */
 export function gauge(x, y, w, value, limit, accent) {
     const g = createSVG('g', {});
-    const max = limit * 1.5;
+    const max = limit > 0 ? limit * 1.5 : Math.max(value * 1.5, 1e-9);   // zero tolerance: scale on the value
     const limitX = x + (limit / max) * w;
     const valW = Math.min(w, (Math.max(0, value) / max) * w);
     g.appendChild(createSVG('rect', { x, y, width: w, height: 10, rx: 5, fill: '#f1f5f9' }));

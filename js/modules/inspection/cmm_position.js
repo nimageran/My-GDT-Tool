@@ -6,6 +6,7 @@ import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { evaluatePosition, EPS } from '../../gdt_math.js';
 import { COLORS, text, addDefs, featureControlFrame, resultsStrip } from '../../theme.js';
 import { syncUnits, step } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['tolerance', 'nominal', 'plusTol', 'minusTol'],
     custom: (s, conv) => { s.holes = s.holes.map(h => ({ ...h, bx: conv(h.bx), by: conv(h.by), mx: conv(h.mx), my: conv(h.my), dia: conv(h.dia) })); } };
@@ -433,3 +434,6 @@ function bindControlEvents() {
         }
     };
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'featureType', 'modifier', 'tolerance', 'nominal', 'plusTol', 'minusTol', 'holes']);

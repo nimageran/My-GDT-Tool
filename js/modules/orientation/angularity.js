@@ -3,6 +3,7 @@
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'surfaceLength', 'offsetDeviation'], perLength: ['scale'],
     nice: { mm: { toleranceWidth: 0.5, surfaceLength: 7.5, scale: 60 } } };
@@ -447,3 +448,6 @@ function bindControlEvents() {
         updateParams();
     };
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'scale', 'toleranceWidth', 'surfaceLength', 'basicAngle', 'angleDeviation', 'offsetDeviation']);

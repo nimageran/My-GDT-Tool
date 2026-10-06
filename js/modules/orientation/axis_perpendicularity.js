@@ -9,6 +9,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, text, wrapText, addDefs, datumGround, datumFeatureSymbol, featureControlFrame, legend, resultsStrip, halo } from '../../theme.js';
 import { syncUnits, fromIn, step, suffix, unitName, decimals } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const SIZES = {
     in: { hole: { nominal: 0.500, plus: 0.010, minus: 0, actual: 0.506 }, pin: { nominal: 0.490, plus: 0, minus: 0.010, actual: 0.484 } },
@@ -312,3 +313,6 @@ function update() {
     render();
     renderControls();
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'feature', 'modifier', 'tol', 'nominal', 'plus', 'minus', 'actual', 'lean', 'length']);

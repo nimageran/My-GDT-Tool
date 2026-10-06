@@ -9,6 +9,7 @@ import {
     featureControlFrame, legend, resultsStrip
 } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName, decimals } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceDiam', 'nominal', 'plusTol', 'minusTol', 'actualSize', 'deviationX', 'deviationY'],
     nice: { mm: { toleranceDiam: 0.75, nominal: 12.0, plusTol: 0.25, minusTol: 0, actualSize: 12.15, deviationX: 0.3, deviationY: 0.3 } } };
@@ -562,3 +563,6 @@ function updateReadouts() {
         if (inputY) inputY.value = f4(state.deviationY);
     }
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'featureType', 'modifier', 'toleranceDiam', 'nominal', 'plusTol', 'minusTol', 'actualSize', 'deviationX', 'deviationY']);

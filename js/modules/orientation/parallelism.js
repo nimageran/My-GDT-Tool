@@ -10,6 +10,7 @@ import {
     datumFeatureSymbol, featureControlFrame, legend, resultsStrip
 } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['tolerance', 'tilt', 'wave'], perLength: ['scale'],
     nice: { mm: { tolerance: 0.25, tilt: 0.1, wave: 0.08, scale: 240 } } };
@@ -262,3 +263,6 @@ function syncInputs() {
         if (s) s.value = state[key];
     }
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'scale', 'tolerance', 'tilt', 'wave']);

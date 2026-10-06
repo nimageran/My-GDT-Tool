@@ -3,6 +3,7 @@
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard, halo } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'slotWidth', 'deviation'], perLength: ['scale'],
     nice: { mm: { toleranceWidth: 0.5, slotWidth: 12, deviation: 0.12, scale: 71 } } };
@@ -410,3 +411,6 @@ function updateReadouts() {
         if(slideDev) slideDev.value = state.deviation;
     }
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'scale', 'toleranceWidth', 'slotWidth', 'deviation']);

@@ -1056,6 +1056,58 @@ export const EXPLAIN = {
 import { GLOSSARY, linkify } from './glossary.js';
 
 // Tools that share another tool's explanation
+// Where each topic is in the standard. Section level only (ASME Y14.5-2018:
+// 4 Fundamental Rules, 5 Tolerancing / Limits of Size / Material Condition,
+// 6 Symbology, 7 Datum Reference Frames, 8 Form, 9 Orientation, 10 Location,
+// 11 Profile, 12 Runout). Topics outside Y14.5 name their own standard.
+const Y = 'ASME Y14.5-2018';
+export const REFS = {
+    straightness: `${Y}, Section 8 (Tolerances of Form)`,
+    flatness: `${Y}, Section 8 (Tolerances of Form)`,
+    circularity: `${Y}, Section 8 (Tolerances of Form)`,
+    cylindricity: `${Y}, Section 8 (Tolerances of Form)`,
+    line_profile: `${Y}, Section 11 (Tolerances of Profile)`,
+    surface_profile: `${Y}, Section 11 (Tolerances of Profile)`,
+    angularity: `${Y}, Section 9 (Tolerances of Orientation)`,
+    perpendicularity: `${Y}, Section 9 (Tolerances of Orientation)`,
+    parallelism: `${Y}, Section 9 (Tolerances of Orientation)`,
+    axis_perpendicularity: `${Y}, Section 9 (Tolerances of Orientation); Section 5 for Ⓜ / Ⓛ, bonus and virtual condition`,
+    position: `${Y}, Section 10 (Tolerances of Location); Section 5 for MMC, LMC and bonus`,
+    composite_position: `${Y}, Section 10 (Tolerances of Location): composite positional tolerancing`,
+    plus_minus: `${Y}, Section 10 (Tolerances of Location)`,
+    concentricity: 'ASME Y14.5-2009 (removed in Y14.5-2018, where position, runout or profile are used instead)',
+    symmetry: 'ASME Y14.5-2009 (removed in Y14.5-2018, where position or profile are used instead)',
+    circular_runout: `${Y}, Section 12 (Tolerances of Runout)`,
+    total_runout: `${Y}, Section 12 (Tolerances of Runout)`,
+    rule1: `${Y}, Section 5 (limits of size, Rule #1)`,
+    virtual_condition: `${Y}, Section 5 (material condition, virtual and resultant condition)`,
+    datum_shift: `${Y}, Section 7 (Datum Reference Frames: datum features at MMB / LMB)`,
+    drf: `${Y}, Section 7 (Datum Reference Frames)`,
+    datum_targets: `${Y}, Section 7 (Datum Reference Frames: datum targets)`,
+    symbol_finder: `${Y}, Section 6 (Symbology)`,
+    composite_frames: `${Y}, Section 6 (Symbology: feature control frames); each characteristic in Sections 8 to 12`,
+    frame_checker: `${Y}, Section 6 (Symbology); each characteristic in Sections 8 to 12`,
+    hole_callouts: `${Y}, Sections 4 and 6 (dimensioning practices; counterbore, countersink, depth symbols)`,
+    functional_gauge: `${Y}, Section 10 (position at MMC); gauge design: ASME Y14.43`,
+    cmm_position: `${Y}, Section 10 (Tolerances of Location)`,
+    methods: 'Y14.5 states the requirement, not how to measure it. Gauges: ASME Y14.43',
+    fasteners: `${Y}, Nonmandatory Appendix B (formulas for positional tolerancing)`,
+    stackup: 'Not defined in Y14.5 (tolerance analysis); it uses the tolerance zones Y14.5 defines',
+    asme_iso: 'ASME Y14.5-2018; ISO 1101 (geometrical tolerancing); ISO 8015 (fundamental rules)',
+    y14_changes: 'ASME Y14.5-2018 compared with ASME Y14.5-2009',
+    fits: 'ISO 286-1 and ISO 286-2 (not part of Y14.5)',
+    general_tolerances: 'Title block / general notes; ISO 2768-1 and ISO 2768-2',
+    title_block: 'ASME Y14.1 (drawing sheet size and format)',
+    projection: 'ASME Y14.3 (orthographic and pictorial views); ISO 128',
+    lines_views: 'ASME Y14.2 (line conventions); ASME Y14.3 (views)',
+    drawing_notes: 'ASME Y14.38 (abbreviations)',
+    welding: 'AWS A2.4; ISO 2553 (not part of Y14.5)',
+    surface_finish: 'ASME Y14.36; ISO 1302 (not part of Y14.5)',
+    process_capability: 'Not part of Y14.5 (manufacturing practice)',
+    cpk: 'Not part of Y14.5 (statistical process control)'
+};
+export const refFor = symKey => REFS[symKey] ?? REFS[ALIASES[symKey]] ?? null;
+
 export const ALIASES = { bonus: 'position', precedence: 'drf' };
 
 export function hasExplanation(symKey) {
@@ -1107,6 +1159,7 @@ export function openExplain(symKey) {
             <p class="leading-relaxed text-slate-800">${e.example.map(rich).join(' ')}</p>
           </section>
           <p class="text-sm text-slate-500"><i class="fa-solid fa-hand-pointer mr-1"></i><span class="font-semibold">In this tool:</span> ${rich(e.tool)}</p>
+          ${refFor(symKey) ? `<p class="text-sm text-slate-500 mt-2"><i class="fa-solid fa-book mr-1"></i><span class="font-semibold">Standard:</span> ${rich(refFor(symKey))}</p>` : ''}
         </div>
       </div>`;
 

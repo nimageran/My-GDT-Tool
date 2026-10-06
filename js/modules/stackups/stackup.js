@@ -6,6 +6,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, text, wrapText, addDefs, resultsStrip } from '../../theme.js';
 import { syncUnits, step, getUnits } from '../../units.js';
+import { shareable } from '../../share.js';
 
 // The same example in clean inch numbers: used instead of converting while the example is untouched
 const EXAMPLE_IN = {
@@ -405,3 +406,6 @@ function bind() {
     $('su-example').onclick = () => { Object.assign(state, structuredClone(DEFAULTS)); changed(true); };
     $('su-clear').onclick = () => { state.rows = []; changed(true); };
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'method', 'gapName', 'minGap', 'maxGap', 'rows']);

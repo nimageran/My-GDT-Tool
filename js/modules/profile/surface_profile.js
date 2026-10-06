@@ -3,6 +3,7 @@
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'zValues'], perLength: ['zScale'],
     nice: { mm: { toleranceWidth: 0.8, zScale: 200 } } };
@@ -405,3 +406,6 @@ function bindControlEvents() {
     });
     document.getElementById('btn-random').onclick = () => setGrid(() => fromIn((Math.random() * 0.04) - 0.02));
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'zScale', 'toleranceWidth', 'zValues']);

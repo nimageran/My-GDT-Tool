@@ -8,6 +8,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, addDefs, text, wrapText, legend, resultsStrip } from '../../theme.js';
 import { syncUnits, fromMm, step, decimals } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'mm', lengths: ['nominal', 'plus', 'minus', 'size', 'bend'],
     nice: { in: { nominal: 0.375, plus: 0.004, minus: 0.004, size: 0.373, bend: 0.002 } } };
@@ -302,3 +303,6 @@ function update() {
     render();
     renderControls();
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'feature', 'principle', 'nominal', 'plus', 'minus', 'size', 'bend']);

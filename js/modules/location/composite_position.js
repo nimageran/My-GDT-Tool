@@ -11,6 +11,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, addDefs, text, wrapText, featureControlFrame, resultsStrip, halo } from '../../theme.js';
 import { getUnits, step, unitName, decimals } from '../../units.js';
+import { shareable } from '../../share.js';
 
 // Basic geometry per unit (not converted: each unit has its own clean example)
 const GEO = {
@@ -152,7 +153,7 @@ function render() {
     addDefs(svg);
     const g = GEO[units], r = evaluate();
     const maxA1 = state.t1 + (state.mmcMod ? state.lmc - state.mmc : 0);
-    M = (BR - 8) / Math.max(maxA1 / 2, ...state.dev.map(d => Math.hypot(...d)), 1e-9);
+    M = (BR - 8) / Math.max(maxA1 / 2, ...state.dev.map(d => Math.hypot(...d)), g.sx * 1e-4);   // floor: zero tolerances and perfect holes
 
     // Plate, datums B (bottom edge) and C (left edge), basic dimensions
     const L = 70, T = 70, R = 530, B = 400;
@@ -369,3 +370,8 @@ function update() {
     render();
     renderControls();
 }
+
+// What a shared link carries (see js/share.js). The link sets the units first,
+// so mark them as followed: the shared numbers must not be replaced by the example.
+const base = shareable(state, ['lowerRef', 'mmcMod', 'sel', 't1', 't2', 'mmc', 'lmc', 'actual', 'dev']);
+export const share = { get: base.get, set(o) { units = getUnits(); base.set(o); } };

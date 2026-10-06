@@ -3,6 +3,7 @@
 import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const f4 = v => fmt(v);
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'offsets'], perLength: ['scale'],
@@ -418,3 +419,6 @@ function bindControlEvents() {
     });
     document.getElementById('btn-random').onclick = () => setOffsets(() => fromIn((Math.random() * 0.02) - 0.01));
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'scale', 'toleranceWidth', 'offsets']);

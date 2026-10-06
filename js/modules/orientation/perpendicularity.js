@@ -6,6 +6,7 @@ import {
     datumFeatureSymbol, dimension, featureControlFrame, legend, resultsStrip
 } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'featureHeight', 'topDeviation'], perLength: ['scale'],
     nice: { mm: { toleranceWidth: 0.4, featureHeight: 8, topDeviation: 0.12, scale: 200 } } };
@@ -398,3 +399,6 @@ function updateReadouts() {
         if(slideDev) slideDev.value = state.topDeviation;
     }
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'scale', 'toleranceWidth', 'featureHeight', 'topDeviation']);

@@ -8,6 +8,7 @@ import { createSVG } from '../../drawing_utils.js';
 import { EPS } from '../../gdt_math.js';
 import { COLORS, text, wrapText, addDefs, dimension, nominalLine, featureControlFrame, legend, resultsStrip } from '../../theme.js';
 import { syncUnits, fromMm } from '../../units.js';
+import { shareable } from '../../share.js';
 
 const UNITS = { native: 'mm', lengths: ['F', 'H', 'holeTol', 'T', 'T1', 'T2', 'projected'],
     nice: { in: { screw: 'custom', F: 0.3125, H: 0.344, holeTol: 0.008, T: 0.031, T1: 0.015, T2: 0.015, projected: 0.375 } } };
@@ -378,3 +379,6 @@ function bindControls() {
     if ($('fx-max')) $('fx-max').onclick = () => { state.T = +max().toFixed(4); rerender(true); };
     if ($('fx-split')) $('fx-split').onclick = () => { state.T1 = state.T2 = +(max() / 2).toFixed(4); rerender(true); };
 }
+
+// What a shared link carries (see js/share.js)
+export const share = shareable(state, ['units', 'mode', 'screw', 'fit', 'F', 'H', 'holeTol', 'T', 'T1', 'T2', 'projected']);
