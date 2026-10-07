@@ -4,6 +4,7 @@ import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard, halo } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 import { shareable } from '../../share.js';
+import { measuredCard, bindMeasured } from '../../measured.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'deviations'], perLength: ['scale'],
     nice: { mm: { toleranceWidth: 0.8, scale: 50 } } };
@@ -54,9 +55,12 @@ export function loadControls(container) {
 
 // --- RENDERING ORCHESTRATION ---
 
+let refreshMeasured = null;        // shows the current readings in the Measured points box
+
 function renderScene() {
     if (!svgContainer) return;
-    svgContainer.innerHTML = ''; 
+    svgContainer.innerHTML = '';
+    refreshMeasured?.(state.deviations);
 
     // 1. Background Grid
     drawGrid();
@@ -451,6 +455,8 @@ function renderControls() {
                 </div>
             </div>
         </div>
+        ${measuredCard({ id: 'lm', count: 3, cols: 3, values: state.deviations,
+            order: 'at the three points along the curve, left to right', sign: 'Deviation from the true profile, square to it (+ = outward, − = inward)' })}
     `;
 
     bindControlEvents();
@@ -496,6 +502,16 @@ function bindControlEvents() {
         s1.value = 0; s2.value = 0; s3.value = 0;
         updateDevs();
     };
+
+    // Typed / pasted deviations: use them (the sliders follow), and zoom to fit
+    refreshMeasured = bindMeasured(controlsContainer, { id: 'lm', count: 3, cols: 3, onApply: v => {
+        state.deviations = v;
+        [s1, s2, s3].forEach((sl, i) => { sl.value = v[i]; });
+        [v1, v2, v3].forEach((lab, i) => { lab.innerText = f4(v[i]); });
+        state.scale = 36 / Math.max(2 * Math.max(...v.map(Math.abs)), state.toleranceWidth, 1e-9);
+        if (inputZoom) inputZoom.value = state.scale;
+        renderScene();
+    } });
 
     btnRandom.onclick = () => {
         const r = () => fromIn((Math.random() * 0.04) - 0.02);

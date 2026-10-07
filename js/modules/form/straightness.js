@@ -4,6 +4,7 @@ import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step } from '../../units.js';
 import { shareable } from '../../share.js';
+import { measuredCard, bindMeasured } from '../../measured.js';
 
 const f4 = v => fmt(v);
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'offsets'], perLength: ['scale'],
@@ -57,49 +58,37 @@ export function loadControls(container) {
 
 // Calculates the "Best Fit Line" (y = mx + c) and the Straightness Error
 function calculateStraightness() {
-    const { startX, shaftLength, numPoints, offsets, scale } = state;
+    // Minimum zone: the narrowest pair of parallel lines around the points
+    // (they may tilt to fit). Width w(slope) = max − min of y − slope·x is
+    // convex in the slope, so a ternary search finds the minimum.
+    const { shaftLength, numPoints, offsets } = state;
     const step = shaftLength / (numPoints - 1);
-    
-    // Collect points (x in pixels, y in INCHES relative to zero)
-    // We analyze the 'offsets' array directly since that represents the surface profile
     const points = offsets.map((off, i) => ({ x: i * step, y: off }));
-    
-    // Least Squares Linear Regression
-    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-    const n = points.length;
-    
-    points.forEach(p => {
-        sumX += p.x;
-        sumY += p.y;
-        sumXY += p.x * p.y;
-        sumXX += p.x * p.x;
-    });
-    
-    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-    const intercept = (sumY - slope * sumX) / n;
-    
-    // Calculate Deviations from this best fit line
-    let maxPos = -Infinity; // Highest point above line
-    let maxNeg = Infinity;  // Lowest point below line
-    
-    points.forEach(p => {
-        const predictedY = slope * p.x + intercept;
-        const diff = p.y - predictedY;
-        if (diff > maxPos) maxPos = diff;
-        if (diff < maxNeg) maxNeg = diff;
-    });
-    
-    // Straightness Error = Range (Max - Min)
-    const error = maxPos - maxNeg;
-    
-    return { slope, intercept, error, maxPos, maxNeg };
+    const spread = a => {
+        let hi = -Infinity, lo = Infinity;
+        for (const p of points) { const r = p.y - a * p.x; if (r > hi) hi = r; if (r < lo) lo = r; }
+        return { hi, lo, w: hi - lo };
+    };
+    const range = Math.max(...offsets) - Math.min(...offsets);
+    let a0 = -2 * range / shaftLength - 1e-12, a1 = 2 * range / shaftLength + 1e-12;
+    for (let it = 0; it < 100; it++) {
+        const m1 = a0 + (a1 - a0) / 3, m2 = a1 - (a1 - a0) / 3;
+        if (spread(m1).w <= spread(m2).w) a1 = m2; else a0 = m1;
+    }
+    const slope = (a0 + a1) / 2;
+    const { hi, lo, w } = spread(slope);
+    const intercept = (hi + lo) / 2;
+    return { slope, intercept, error: w, maxPos: hi - intercept, maxNeg: lo - intercept };
 }
 
 // --- RENDERING ORCHESTRATION ---
 
+let refreshMeasured = null;        // shows the current readings in the Measured points box
+
 function renderScene() {
     if (!svgContainer) return;
-    svgContainer.innerHTML = ''; 
+    svgContainer.innerHTML = '';
+    refreshMeasured?.(state.offsets);
     
     // 1. Defs (Gradient)
     drawDefs();
@@ -312,7 +301,7 @@ function drawResultsCard() {
         measured: error, allowed: tol,
         sentence: pass ? `The line fits between two parallel lines ${f4(tol)} apart: it passes.`
             : `The line needs a band ${f4(error)} wide, more than the ${f4(tol)} allowed: it fails.`,
-        note: 'Reference line: best fit to the points'
+        note: 'Minimum zone: the narrowest pair of parallel lines'
     }).g);
 }
 
@@ -390,6 +379,9 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">View Zoom</h4>
             <input type="range" id="ctrl-zoom" min="${perFromIn(1000)}" max="${perFromIn(4000)}" step="${perFromIn(100)}" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
         </div>
+
+        ${measuredCard({ id: 'sm', count: state.numPoints, cols: state.numPoints, values: state.offsets,
+            order: 'equally spaced, left to right along the line', sign: 'Height of each point; tilt and a common offset do not matter' })}
     `;
 
     bindControlEvents();
@@ -418,6 +410,15 @@ function bindControlEvents() {
         return fromIn(0.008) * Math.sin(x);
     });
     document.getElementById('btn-random').onclick = () => setOffsets(() => fromIn((Math.random() * 0.02) - 0.01));
+
+    // Typed / pasted readings: use them, and zoom so they fill the view
+    refreshMeasured = bindMeasured(controlsContainer, { id: 'sm', count: state.numPoints, cols: state.numPoints, onApply: v => {
+        state.offsets = v;
+        const range = Math.max(...v) - Math.min(...v);
+        state.scale = 30 / Math.max(range, state.toleranceWidth, 1e-9);
+        if (inputZoom) inputZoom.value = state.scale;
+        renderScene();
+    } });
 }
 
 // What a shared link carries (see js/share.js)

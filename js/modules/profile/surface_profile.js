@@ -4,6 +4,7 @@ import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 import { shareable } from '../../share.js';
+import { measuredCard, bindMeasured } from '../../measured.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'zValues'], perLength: ['zScale'],
     nice: { mm: { toleranceWidth: 0.8, zScale: 200 } } };
@@ -78,9 +79,12 @@ function project(row, col, zDev) {
 
 // --- RENDERING ORCHESTRATION ---
 
+let refreshMeasured = null;        // shows the current readings in the Measured points box
+
 function renderScene() {
     if (!svgContainer) return;
-    svgContainer.innerHTML = ''; 
+    svgContainer.innerHTML = '';
+    refreshMeasured?.(state.zValues);
     
     // 1. Defs (Gradients/Filters)
     drawDefs();
@@ -365,6 +369,9 @@ function renderControls() {
             </div>
             <input type="range" id="ctrl-zscale" min="${perFromIn(1000)}" max="${perFromIn(8000)}" step="${perFromIn(100)}" value="${state.zScale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
         </div>
+
+        ${measuredCard({ id: 'pm', count: 16, cols: 4, values: state.zValues,
+            order: 'row by row (4 rows of 4)', sign: 'Deviation of each point from the true surface, measured in the datum reference frame (+ = above, − = below)' })}
     `;
 
     bindControlEvents();
@@ -405,6 +412,14 @@ function bindControlEvents() {
          return fromIn(0.005) * (dx * dy);
     });
     document.getElementById('btn-random').onclick = () => setGrid(() => fromIn((Math.random() * 0.04) - 0.02));
+
+    // Typed / pasted deviations (e.g. a CMM profile report): use them, and zoom to fit
+    refreshMeasured = bindMeasured(controlsContainer, { id: 'pm', count: 16, cols: 4, onApply: v => {
+        state.zValues = v;
+        state.zScale = 150 / Math.max(2 * Math.max(...v.map(Math.abs)), state.toleranceWidth, 1e-9);
+        if (inputZ) inputZ.value = state.zScale;
+        renderScene();
+    } });
 }
 
 // What a shared link carries (see js/share.js)
