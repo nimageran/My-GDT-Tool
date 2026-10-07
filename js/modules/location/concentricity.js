@@ -426,7 +426,7 @@ function renderControls() {
             <button id="btn-reset" class="mt-4 w-full text-xs bg-slate-200 hover:bg-slate-300 px-2 py-2 rounded text-slate-700 font-bold">Reset shape</button>
         </div>
         
-        <div class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed mt-4">
+        <div data-tip class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed mt-4">
              <i class="fa-solid fa-info-circle"></i> <strong>Try it:</strong> increase the 3-lobe error. A caliper reads the same diameter everywhere, but the midpoints move off the axis, so concentricity fails.
         </div>
     `;

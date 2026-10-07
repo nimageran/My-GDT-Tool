@@ -491,7 +491,7 @@ function renderControls() {
             <p class="text-xs text-slate-400 mt-2">Or drag the axis point on the drawing.</p>
         </div>
 
-        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
+        <div data-tip class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> Why bonus exists</div>
             <div class="text-xs opacity-90 leading-relaxed">
                 At MMC a hole has the least clearance around its mating bolt. A bigger hole has more room to be off location and still assemble, so the zone grows by exactly the size departure. That is why MMC is the default choice for clearance holes and bolt patterns.

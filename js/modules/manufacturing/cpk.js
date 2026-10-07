@@ -242,7 +242,7 @@ function renderControls() {
                 <button id="ck-clear" class="${UI.smallBtn}">Clear</button>
             </div>
         </div>
-        <div class="${UI.warn}">
+        <div data-tip class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Before you trust the number</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
                 <li>Use parts made in a row from a stable process: same machine, setup and material.</li>

@@ -277,7 +277,7 @@ function renderControls() {
                 <button data-p="zero" class="${smallBtn}">Zero tolerance at MMC</button>
             </div>
         </div>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+        <div data-tip class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> Surface or axis?</div>
             <div class="text-xs leading-relaxed">If the frame points at a <b>surface</b> (or its extension line), it controls that face: two planes. If it sits under the <b>size</b> (Ø), it controls the <b>axis</b>: a cylinder, and Ⓜ / Ⓛ may add bonus. Parallelism and angularity of an axis work the same way.</div>
         </div>`;

@@ -592,7 +592,7 @@ function renderControls() {
             </label>
         </div>
 
-        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
+        <div data-tip class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> The 3-2-1 rule</div>
             <div class="text-xs opacity-90 leading-relaxed">
                 The primary datum needs at least 3 points of contact, the secondary 2, the tertiary 1. Together they remove all 6 degrees of freedom, so inspection and machining set the part up the same way. The order in the frame is the order of contact, and on a real (imperfect) part, a different order gives a different setup.

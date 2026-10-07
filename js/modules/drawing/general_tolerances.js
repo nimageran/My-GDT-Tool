@@ -236,7 +236,7 @@ function renderControls() {
                 <button id="gt-reset" class="${UI.smallBtn} w-full mt-2">Reset to example values</button>
             </div>
         </div>`}
-        <div class="${UI.warn}">
+        <div data-tip class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Watch out</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
                 <li>A tolerance written next to a dimension always wins over the general one.</li>

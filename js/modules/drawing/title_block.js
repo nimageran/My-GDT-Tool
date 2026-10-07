@@ -153,7 +153,7 @@ function renderControls() {
             </div>
         </div>
         ${info.link ? `<button id="tb-link" class="${UI.smallBtn} w-full py-2">${esc(info.link[2])} ▶</button>` : ''}
-        <div class="${UI.warn}">
+        <div data-tip class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> First three things to check</div>
             <ol class="text-xs list-decimal pl-4 space-y-1">
                 <li>Part number matches your order.</li>

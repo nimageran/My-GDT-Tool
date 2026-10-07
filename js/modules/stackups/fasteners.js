@@ -328,7 +328,7 @@ function renderControls() {
                 </div>`}
         </div>
 
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+        <div data-tip class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Common mistakes</div>
             <ul class="text-xs leading-relaxed list-disc pl-4 space-y-1">
                 <li>Use the <b>smallest</b> hole (MMC) for H and the <b>largest</b> fastener for F, not nominal sizes.</li>

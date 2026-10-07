@@ -102,7 +102,7 @@ export function makeComparePage(cfg) {
                 <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Show</h4>
                 <div class="flex flex-wrap gap-1.5">${seg('all', 'All')}${cfg.groups.map(g => seg(g, g)).join('')}</div>
             </div>
-            <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+            <div data-tip class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
                 <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(cfg.remember.title)}</div>
                 <div class="text-xs leading-relaxed">${esc(cfg.remember.text)}</div>
             </div>

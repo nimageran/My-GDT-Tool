@@ -241,7 +241,7 @@ function renderControls() {
             <ul class="text-sm text-slate-700 space-y-1 mb-2">
                 ${s.check.map(c => `<li class="flex gap-2"><i class="fa-solid fa-check text-green-600 mt-1 text-xs"></i><span>${esc(c)}</span></li>`).join('')}
             </ul>
-            <p class="text-sm text-amber-900 bg-amber-50 rounded px-2 py-1.5"><span class="font-bold">Watch out:</span> ${esc(s.watch)}</p>
+            <p data-tip class="text-sm text-amber-900 bg-amber-50 rounded px-2 py-1.5"><span class="font-bold">Watch out:</span> ${esc(s.watch)}</p>
             ${s.link ? `<button id="rc-link" class="${UI.link} mt-2">${esc(s.link[2])} ▶</button>` : ''}
         </div>
         <div class="flex gap-2">

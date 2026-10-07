@@ -357,7 +357,7 @@ function renderControls() {
                 <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Random</button>
             </div>
             
-            <div class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed">
+            <div data-tip class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed">
                 <i class="fa-solid fa-mouse-pointer"></i> <strong>Try it:</strong> drag any white point up or down to change the surface at that spot.
             </div>
         </div>

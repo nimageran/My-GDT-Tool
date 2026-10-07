@@ -39,6 +39,7 @@ function init() {
     };
     document.getElementById('notebookBtn').onclick = () => loadSymbolModule('LEARN', 'notebook');
     setupUnitsToggle();
+    setupTips();
     setupPhone();
     setupShare();
     // Open the tool in the address (a link or a bookmark), else the start page
@@ -217,6 +218,26 @@ function setupUnitsToggle() {
         if (t) loadSymbolModule(t.cat, t.sym);
     });
     paint();
+}
+
+// --- TIPS: experts can hide the beginner tip / warning boxes ([data-tip]) ---
+function setupTips() {
+    const btn = document.getElementById('tipsBtn');
+    const paint = on => {
+        document.body.dataset.tips = on ? 'on' : 'off';
+        btn.setAttribute('aria-pressed', on);
+        btn.className = `text-xs font-bold rounded-full px-3 py-1 flex items-center gap-1.5 border ${on ? 'text-amber-800 bg-amber-50 hover:bg-amber-100 border-amber-200' : 'text-slate-500 bg-white hover:bg-slate-100 border-slate-300'}`;
+        btn.innerHTML = `<i class="fa-${on ? 'solid' : 'regular'} fa-lightbulb"></i> ${on ? 'Tips' : 'Tips off'}`;
+    };
+    let on = true;
+    try { on = localStorage.getItem('gdt-tips') !== 'off'; } catch (e) { /* ignore */ }
+    paint(on);
+    btn.onclick = () => {
+        on = !on;
+        paint(on);
+        try { localStorage.setItem('gdt-tips', on ? 'on' : 'off'); } catch (e) { /* ignore */ }
+        toast(on ? 'Tips shown' : 'Tips hidden. Click "Tips off" to show them again.');
+    };
 }
 
 // --- 5. UI UTILITIES (Sidebar Toggle) ---

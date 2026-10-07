@@ -76,7 +76,7 @@ export function makeDictionary(cfg) {
                 <h4 class="${UI.h4}">Show</h4>
                 <div class="flex flex-wrap gap-1.5">${seg('all', 'All')}${cfg.groups.map(g => seg(g.name, g.name)).join('')}</div>
             </div>
-            ${cfg.tip ? `<div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900" data-nogloss>
+            ${cfg.tip ? `<div data-tip class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900" data-nogloss>
                 <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> Tip</div>
                 <div class="text-xs opacity-90 leading-relaxed">${cfg.tip}</div></div>` : ''}`;
         const s = controlsRoot.querySelector('#dx-search');

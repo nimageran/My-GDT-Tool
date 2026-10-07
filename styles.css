@@ -64,6 +64,8 @@
     body[data-mzoom="2"] #mainCanvas { width: 200%; height: auto; aspect-ratio: 5 / 4; }
     /* Text pages and 3D views manage their own size */
     #canvas-container:has([data-module-overlay]) #zoomBtn { display: none; }
+    /* Zoom is for the drawing; in the controls view it would cover Tips / Explain */
+    body[data-mview="controls"] #zoomBtn { display: none; }
 }
 
 /* ------------------------------------------------------------------------
@@ -78,3 +80,6 @@
     padding-top: 4px;
     padding-bottom: 4px;
 }
+
+/* "Tips off" (js/main.js setupTips): hide the beginner tip / warning boxes in the side panel */
+body[data-tips="off"] #controlsContent [data-tip] { display: none !important; }

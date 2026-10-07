@@ -448,7 +448,7 @@ function renderControls() {
             </div>
             <input type="range" id="ctrl-zoom" min="${perFromIn(800)}" max="${perFromIn(2000)}" step="${perFromIn(100)}" value="${state.scale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
 
-            <div class="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
+            <div data-tip class="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
                 <div class="font-bold mb-1"><i class="fa-solid fa-wave-square"></i> Note</div>
                 <div class="text-xs opacity-90 leading-relaxed">
                     Profile of a line checks one slice at a time. The band follows the perfect curve, half on each side. The short lines show how far each point is from the perfect curve.

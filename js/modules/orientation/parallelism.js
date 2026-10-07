@@ -232,7 +232,7 @@ function renderControls() {
             </div>
         </div>
 
-        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
+        <div data-tip class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-ruler-horizontal"></i> Engineering Note</div>
             <div class="text-xs opacity-90 leading-relaxed">
                 Parallelism limits tilt and waviness, so it also limits the flatness of that face. It does not control the height: the zone may sit anywhere, and the size dimension checks the height. Check it by resting datum A on a surface plate and sweeping a dial across the top.

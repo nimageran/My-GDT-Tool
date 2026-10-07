@@ -518,7 +518,7 @@ function renderControls() {
 
         <div id="sf-links"></div>
 
-        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
+        <div data-tip class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> Reading a drawing</div>
             <div class="text-xs opacity-90 leading-relaxed">
                 Check the title block for the standard (ASME Y14.5 or ISO) first: some symbols mean different things in each. A frame is read left to right: characteristic, tolerance and modifiers, then datums in order of precedence.
