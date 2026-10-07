@@ -1,5 +1,5 @@
 // js/modules/learn/lessons.js
-// The learning path: six short lessons, each with the tools to study and a
+// The learning path: eight short lessons, each with the tools to study and a
 // five-question quiz built from real drawing callouts. Pure data.
 //
 // Question fields:
@@ -172,6 +172,60 @@ export const LESSONS = [
               options: ['0.3', '0.2', '0.1', '0.15'],
               answer: 2, why: 'The number after Ⓤ is the part of the zone outside the material: 0.1 outside, so 0.2 inside. In ISO the same zone is written 0.3 UZ−0.05.',
               tool: ['LEARN', 'asme_iso', 'ASME vs ISO GPS'] }
+        ]
+    },
+    {
+        id: 'practice', title: 'Form and orientation in practice',
+        goal: 'Check a hole or pin axis with bonus, size its gauge pin, and judge real readings: flatness ignores tilt, profile with datums also locates.',
+        study: [['CHARACTERISTICS', 'axis_perpendicularity', 'Perpendicularity of a Hole / Pin'], ['CHARACTERISTICS', 'flatness', 'Flatness'], ['CHARACTERISTICS', 'surface_profile', 'Surface Profile']],
+        questions: [
+            { id: 'o1', q: 'A hole is Ø.500 +.010/−.000 with this frame under its size. It measures Ø.506 and its axis leans .014 over its depth. Pass or fail?', fig: { fcf: { symbol: 'perpendicularity', tolerance: '.010', diameter: true, modifier: 'M', datums: ['A'] } },
+              options: ['Pass: .010 + .006 bonus = .016 is allowed', 'Fail: .014 is more than .010', 'Fail: the lean must be under half the tolerance', 'Cannot tell without the position of the hole'],
+              answer: 0, why: 'The hole is .006 bigger than MMC (.500), so it earns .006 bonus: the zone is Ø.016. A lean of .014 fits.',
+              tool: ['CHARACTERISTICS', 'axis_perpendicularity', 'Perpendicularity of a Hole / Pin'] },
+            { id: 'o2', q: 'Same hole and frame: Ø.500 +.010/−.000, ⊥ Ø.010 Ⓜ A. What size is the gauge pin that stands square on a plate (datum A)?',
+              options: ['Ø.490', 'Ø.500', 'Ø.510', 'Ø.520'],
+              answer: 0, why: 'The gauge pin is the virtual condition: MMC .500 − tolerance .010 = Ø.490. Every good hole goes over it, and size and tilt are checked in one go.',
+              tool: ['CHARACTERISTICS', 'axis_perpendicularity', 'Perpendicularity of a Hole / Pin'] },
+            { id: 'o3', q: 'The frame is zero at MMC. The hole is Ø.500 +.010/−.000, measures Ø.504, and its axis leans .003. Pass or fail?', fig: { fcf: { symbol: 'perpendicularity', tolerance: '0', diameter: true, modifier: 'M', datums: ['A'] } },
+              options: ['Fail: zero means no tilt at all', 'Pass: the hole is .004 from MMC, so .004 of tilt is allowed', 'Fail: zero tolerance at MMC is not allowed on a drawing'],
+              answer: 1, why: 'Zero at MMC is legal and common. No tilt is allowed at MMC, but every bit the size moves away from MMC becomes tilt allowance: .004 here.',
+              tool: ['CHARACTERISTICS', 'axis_perpendicularity', 'Perpendicularity of a Hole / Pin'] },
+            { id: 'o4', q: 'Flatness 0.05. A CMM reads a plate that rises evenly from 0.00 at one edge to 0.40 at the other: every point lies on one straight, tilted plane. Pass or fail?', fig: { fcf: { symbol: 'flatness', tolerance: '0.05' } },
+              options: ['Fail: 0.40 is more than 0.05', 'Pass: flatness ignores tilt, and the points lie on one plane', 'Cannot judge: flatness needs a datum'],
+              answer: 1, why: 'The two flatness planes may tilt to fit the surface. A tilted but perfectly flat plate needs a zone of 0, so it passes. Tilt to a datum would be parallelism or perpendicularity.',
+              tool: ['CHARACTERISTICS', 'flatness', 'Flatness'] },
+            { id: 'o5', q: 'Two drawings: one says profile of a surface 0.4 with no datums, the other 0.4 to A | B | C. What does the second one add?',
+              options: ['Nothing: the zone is the same', 'It also controls where the surface is and how it is turned (location and orientation)', 'It makes the zone half as wide', 'It allows bonus'],
+              answer: 1, why: 'Without datums, profile controls only the shape: the zone may float. With datums, the zone is fixed by basic dimensions from A, B and C, so shape, size, orientation and location are all controlled.',
+              tool: ['CHARACTERISTICS', 'surface_profile', 'Surface Profile'] }
+        ]
+    },
+    {
+        id: 'patterns', title: 'Patterns, gauges and targets',
+        goal: 'Read a composite position frame row by row, size a functional gauge pin, and read datum target symbols.',
+        study: [['CHARACTERISTICS', 'composite_position', 'Composite Position'], ['INSPECTION', 'functional_gauge', 'Functional Gauge Designer'], ['DATUMS', 'datum_targets', 'Datum Targets']],
+        questions: [
+            { id: 'c1', q: '4X holes with a composite frame: ⌖ Ø.030 Ⓜ A B C over Ø.010 Ⓜ A (holes at MMC). All four holes are made .012 to the right of true position, perfectly spaced. Result?',
+              options: ['Both rows pass', 'The upper row fails', 'The lower row fails', 'Both rows fail'],
+              answer: 0, why: 'Each hole is Ø.024 from true position, inside Ø.030 (upper row). The holes are perfect to each other, and the lower-row zones may shift together, so the lower row passes too.',
+              tool: ['CHARACTERISTICS', 'composite_position', 'Composite Position'] },
+            { id: 'c2', q: 'Same frame. Holes 1 to 3 are perfect; hole 4 alone is .012 to the right (Ø.024 from true position). Result?',
+              options: ['Both rows pass', 'The upper row fails', 'The lower row fails', 'Both rows fail'],
+              answer: 2, why: 'Ø.024 is inside the upper Ø.030. In the lower row the small zones can only move together: the best fit splits the error, leaving each hole .006 off, a Ø.012 zone, more than Ø.010.',
+              tool: ['CHARACTERISTICS', 'composite_position', 'Composite Position'] },
+            { id: 'c3', q: 'In a composite position frame, what do the datum letters in the LOWER row do?',
+              options: ['They locate the hole pattern, like the upper row', 'They only orient the pattern of small zones (square to A, parallel to B); they never locate it', 'Nothing: they are there for reference', 'They make the lower zones smaller'],
+              answer: 1, why: 'In a composite frame only the upper row ties the pattern to the datums. The lower row\'s datums control orientation only. Two separate frames would be different: there the lower datums also locate.',
+              tool: ['CHARACTERISTICS', 'composite_position', 'Composite Position'] },
+            { id: 'c4', q: '4X holes Ø8.2–8.4 with position Ø0.2 Ⓜ A B C. What size are the pins of the functional gauge (before gauge-maker tolerance)?',
+              options: ['Ø8.0', 'Ø8.2', 'Ø8.4', 'Ø8.6'],
+              answer: 0, why: 'Gauge pins are made at virtual condition: MMC 8.2 − 0.2 = Ø8.0, at true position. If the part drops on, every hole is good for position (sizes are checked separately).',
+              tool: ['INSPECTION', 'functional_gauge', 'Functional Gauge Designer'] },
+            { id: 'c5', q: 'A datum target symbol is a circle split in two: "A1" in the bottom half and "Ø8" in the top half. What does Ø8 mean?',
+              options: ['The part touches the fixture on a round pad Ø8 (a target area)', 'There is a Ø8 hole at the target', 'The target may be off by 8', 'There are 8 targets'],
+              answer: 0, why: 'The top half gives the size of a target area; it is empty for a target point or line. The bottom half is the datum letter and target number.',
+              tool: ['DATUMS', 'datum_targets', 'Datum Targets'] }
         ]
     }
 ];

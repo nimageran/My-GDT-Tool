@@ -855,7 +855,7 @@ export const EXPLAIN = {
             ['Progress', 'Your answers, saved in this browser so you can continue later.']
         ],
         simple: [
-            'The path has **six lessons in order**: the sheet, symbols and frames, size and bonus, datums, fits, and ASME vs ISO.',
+            'The path has **eight lessons in order**: the sheet, symbols and frames, size and bonus, datums, fits, ASME vs ISO, form and orientation in practice, and patterns, gauges and targets.',
             'For each lesson, **look at the tools listed first**, then **take the quiz**.',
             'Every question comes from a **real callout**, and after answering you see **why**, with a link to the tool that teaches it.',
             'Get **4 of 5** to complete a lesson; retry as often as you like.'

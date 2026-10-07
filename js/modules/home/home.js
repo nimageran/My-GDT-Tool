@@ -38,7 +38,7 @@ export function loadControls(container) {
     container.innerHTML = `
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">New here?</h4>
-            <p class="text-sm text-slate-700 leading-relaxed">Follow the <button data-go="LEARN:practice" class="font-semibold text-blue-700 hover:underline">learning path</button>: six short lessons, each with a quiz. Or, with a drawing in front of you, open <button data-go="DECODE:read_checklist" class="font-semibold text-blue-700 hover:underline">How to Read a Drawing</button> and go through it in 11 steps.</p>
+            <p class="text-sm text-slate-700 leading-relaxed">Follow the <button data-go="LEARN:practice" class="font-semibold text-blue-700 hover:underline">learning path</button>: eight short lessons, each with a quiz. Or, with a drawing in front of you, open <button data-go="DECODE:read_checklist" class="font-semibold text-blue-700 hover:underline">How to Read a Drawing</button> and go through it in 11 steps.</p>
         </div>
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Getting around</h4>
@@ -72,7 +72,7 @@ function learningBanner() {
     const title = next < 0 ? 'You have finished the learning path.' : started
         ? `Learning path: ${done} of ${LESSONS.length} lessons done` : 'Learn GD&T step by step';
     const sub = next < 0 ? 'Retry any quiz to keep it fresh.' : started
-        ? `Next: lesson ${next + 1}, ${LESSONS[next].title}.` : 'Six short lessons, each with a five-question quiz from real drawings.';
+        ? `Next: lesson ${next + 1}, ${LESSONS[next].title}.` : 'Eight short lessons, each with a five-question quiz from real drawings.';
     return `
         <div class="bg-white border border-slate-200 rounded-xl p-4 mb-10 flex flex-wrap items-center gap-4">
           <span class="w-10 h-10 rounded-lg bg-green-50 text-green-700 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></span>
