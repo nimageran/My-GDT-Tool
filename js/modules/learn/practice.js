@@ -1,5 +1,5 @@
 // js/modules/learn/practice.js
-// Learning path and quizzes: six short lessons in order, each with the tools
+// Learning path and quizzes: eight short lessons in order, each with the tools
 // to study and five questions built from real callouts. Instant feedback with
 // the reason and a link to the tool that teaches it. Progress is saved in this
 // browser. HTML beside the (hidden) canvas.
@@ -113,7 +113,7 @@ function renderPath() {
       <div class="max-w-3xl mx-auto px-6 py-8">
         <div class="text-[11px] font-bold tracking-widest text-slate-400 uppercase">Learn</div>
         <h2 class="text-3xl font-extrabold text-slate-900 mb-1">Learning path</h2>
-        <p class="text-slate-600 mb-5 leading-relaxed">Six short lessons, in the order you need them. For each one, look at the tools first, then check yourself with five questions. Get <b>${PASS_MARK} of 5</b> right to complete a lesson.</p>
+        <p class="text-slate-600 mb-5 leading-relaxed">Eight short lessons, in the order you need them. For each one, look at the tools first, then check yourself with five questions. Get <b>${PASS_MARK} of 5</b> right to complete a lesson.</p>
         <div class="bg-white border border-slate-200 rounded-xl p-4 mb-6">
           <div class="flex justify-between text-sm mb-2"><span class="font-bold text-slate-800">${done} of ${LESSONS.length} lessons complete</span><span class="text-slate-500">${correct} of ${total} questions right</span></div>
           <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-green-500 rounded-full" style="width:${done / LESSONS.length * 100}%"></div></div>
