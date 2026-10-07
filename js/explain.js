@@ -33,7 +33,7 @@ export const EXPLAIN = {
             'That line passes, because 0.0015 is less than 0.002.',
             'Repeat on other lines around the shaft: every one must pass.'
         ],
-        tool: 'Use the presets or drag the points to bend the line and watch it against the zone.'
+        tool: 'Use the presets or drag the points to bend the line and watch it against the zone. Or type / paste measured points (Measured points box).'
     },
 
     flatness: {
@@ -56,7 +56,7 @@ export const EXPLAIN = {
             'The spread is 0.003", so it passes.',
             'If one corner read +0.004", the spread would be 0.005" and it would fail.'
         ],
-        tool: 'Drag the white points up or down to bow or twist the plate.'
+        tool: 'Drag the white points up or down to bow or twist the plate. Or type / paste measured points (Measured points box).'
     },
 
     circularity: {
@@ -123,7 +123,7 @@ export const EXPLAIN = {
             'At one spot the edge is 0.010" outside: fine.',
             'At another spot it is 0.020" inside: that spot fails.'
         ],
-        tool: 'Add surface error and see where the curve leaves the band.'
+        tool: 'Add surface error and see where the curve leaves the band. Or type / paste measured points (Measured points box).'
     },
 
     surface_profile: {
@@ -145,7 +145,7 @@ export const EXPLAIN = {
             'A CMM scan finds one point 0.018" proud of the surface.',
             'That point fails, even though the rest of the surface is within ±0.005".'
         ],
-        tool: 'Drag the white points to deform the surface; red shows where it leaves the band.'
+        tool: 'Drag the white points to deform the surface; red shows where it leaves the band. Or type / paste measured points (Measured points box).'
     },
 
     angularity: {

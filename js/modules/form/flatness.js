@@ -4,6 +4,7 @@ import { createSVG, readTolerance } from '../../drawing_utils.js';
 import { COLORS, resultsCard } from '../../theme.js';
 import { syncUnits, fmt, fromIn, perFromIn, step, suffix, unitName } from '../../units.js';
 import { shareable } from '../../share.js';
+import { measuredCard, bindMeasured } from '../../measured.js';
 
 const UNITS = { native: 'in', lengths: ['toleranceWidth', 'zValues'], perLength: ['zScale'],
     nice: { mm: { toleranceWidth: 0.25, zScale: 200 } } };
@@ -82,47 +83,52 @@ function project(x, y, z) {
 }
 
 function analyzeSurface() {
-    // Flatness is independent of location and orientation (Tilt).
-    // We must find the "Best Fit Plane" and calculate deviations from IT.
-    // Simplified: We calculate the Mean Plane and subtract it.
-    
-    // 1. Calculate Centroid
-    let sumZ = 0;
-    state.zValues.forEach(z => sumZ += z);
-    const meanZ = sumZ / state.zValues.length;
-    
-    // 2. Simple Tilt Removal (Planar Regression: z = ax + by + c)
-    // For a symmetrical grid centered at 0, this is simplified.
-    // Calculate slopes in X and Y roughly.
-    // (This is a simplified visual approximation of Least Squares)
-    
-    // We will visually just show the Peak-Valley range of the raw data 
-    // assuming the operator "Levels" the part physically (Resets tilt).
-    // For this simulation, we assume the user inputs are deviations from the mean plane.
-    
-    let peak = -Infinity;
-    let valley = Infinity;
-    
-    state.zValues.forEach(z => {
-        if(z > peak) peak = z;
-        if(z < valley) valley = z;
-    });
-    
-    const error = peak - valley;
-    
+    // Flatness does not care about tilt or height: the two parallel planes may
+    // tilt to fit the surface. Find the narrowest pair (minimum zone): the plane
+    // z = a·x + b·y that makes highest − lowest of the leftovers smallest.
+    // x, y are the grid positions mapped to −1…1.
+    const { gridSize, zValues } = state;
+    const map = i => (i / (gridSize - 1)) * 2 - 1;
+    const pts = zValues.map((z, i) => ({ x: map(i % gridSize), y: map(Math.floor(i / gridSize)), z }));
+    const spread = (a, b) => {
+        let hi = -Infinity, lo = Infinity;
+        for (const p of pts) { const r = p.z - a * p.x - b * p.y; if (r > hi) hi = r; if (r < lo) lo = r; }
+        return { hi, lo, w: hi - lo };
+    };
+    // Convex in (a, b): a simple pattern search finds the minimum
+    let a = 0, b = 0, best = spread(0, 0).w;
+    let stepAB = Math.max(best, 1e-12);
+    for (let it = 0; it < 200 && stepAB > best * 1e-7 + 1e-15; it++) {
+        let moved = false;
+        for (const [da, db] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+            const w = spread(a + da * stepAB, b + db * stepAB).w;
+            if (w < best - 1e-15) { best = w; a += da * stepAB; b += db * stepAB; moved = true; break; }
+        }
+        if (!moved) stepAB /= 2;
+    }
+    const { hi, lo, w } = spread(a, b);
+    const mid = (hi + lo) / 2;
     state.stats = {
-        peak,
-        valley,
-        error,
-        isPass: error <= state.toleranceWidth
+        a, b, mid,
+        peak: hi - mid,                 // highest point above the middle of the zone
+        valley: lo - mid,               // lowest point below it
+        error: w,
+        tilted: Math.abs(a) + Math.abs(b) > w * 1e-3 + 1e-12,
+        isPass: w <= state.toleranceWidth + 1e-12
     };
 }
 
+/** Height of the middle of the fitted zone at grid position (x, y), plus an offset. */
+const zoneZ = (x, y, off = 0) => state.stats.a * x + state.stats.b * y + state.stats.mid + off;
+
 // --- RENDERING ORCHESTRATION ---
+
+let refreshMeasured = null;        // shows the current heights in the Measured points box
 
 function renderScene() {
     if (!svgContainer) return;
-    svgContainer.innerHTML = ''; 
+    svgContainer.innerHTML = '';
+    refreshMeasured?.(state.zValues);
     
     analyzeSurface();
     
@@ -177,35 +183,22 @@ function drawToleranceSandwich() {
     // We visually center the tolerance zone around the Midrange of the error.
     
     const { toleranceWidth, gridSize } = state;
-    const { peak, valley } = state.stats;
-    const midZ = (peak + valley) / 2;
-    
     const halfTol = toleranceWidth / 2;
-    const topZ = midZ + halfTol;
-    const botZ = midZ - halfTol;
-    
     const group = createSVG('g', {});
-    
-    const drawPlane = (z, color) => {
-        const offset = (gridSize-1)/2 * 0.5; // Grid spacing is 0.5 visual units
-        // Corners: (-1, -1) to (1, 1) roughly
-        // We map grid indices 0..4 to -1..1
+
+    // The two planes follow the fitted tilt (they may tilt to fit the surface)
+    const drawPlane = (off, color) => {
         const map = (i) => (i / (gridSize-1)) * 2 - 1;
-        
-        const c1 = project(map(0), map(0), z);
-        const c2 = project(map(4), map(0), z);
-        const c3 = project(map(4), map(4), z);
-        const c4 = project(map(0), map(4), z);
-        
+        const corner = (c, r) => project(map(c), map(r), zoneZ(map(c), map(r), off));
+        const c1 = corner(0, 0), c2 = corner(gridSize - 1, 0), c3 = corner(gridSize - 1, gridSize - 1), c4 = corner(0, gridSize - 1);
         const d = `M ${c1.x},${c1.y} L ${c2.x},${c2.y} L ${c3.x},${c3.y} L ${c4.x},${c4.y} Z`;
-        
         group.appendChild(createSVG('path', {
             d: d, fill: 'url(#planeGrad)', stroke: color, 'stroke-width': 1, 'stroke-dasharray': '5,5'
         }));
     };
-    
-    drawPlane(topZ, '#3b82f6');
-    drawPlane(botZ, '#3b82f6');
+
+    drawPlane(halfTol, '#3b82f6');
+    drawPlane(-halfTol, '#3b82f6');
     
     svgContainer.appendChild(group);
 }
@@ -243,11 +236,7 @@ function drawSurfaceMesh() {
 }
 
 function drawErrorVectors() {
-    const { gridSize, zValues, stats, toleranceWidth } = state;
-    const { peak, valley } = stats;
-    const midZ = (peak + valley) / 2;
-    const limitTop = midZ + (toleranceWidth/2);
-    const limitBot = midZ - (toleranceWidth/2);
+    const { gridSize, zValues, toleranceWidth } = state;
     
     const group = createSVG('g', {});
     const map = (i) => (i / (gridSize-1)) * 2 - 1;
@@ -257,11 +246,12 @@ function drawErrorVectors() {
         const c = i % gridSize;
         const z = zValues[i];
         
-        // Check if out of bounds
-        let isFail = false;
-        if (z > limitTop + 0.00001) isFail = true; // epsilon
-        if (z < limitBot - 0.00001) isFail = true;
-        
+        // Outside the (tilted) zone?
+        const limitTop = zoneZ(map(c), map(r), toleranceWidth / 2);
+        const limitBot = zoneZ(map(c), map(r), -toleranceWidth / 2);
+        const eps = toleranceWidth * 1e-6;
+        const isFail = z > limitTop + eps || z < limitBot - eps;
+
         if (isFail) {
             const ptSurf = project(map(c), map(r), z);
             // Draw line to the nearest limit
@@ -317,15 +307,16 @@ function drawHandles() {
 }
 
 function drawResultsCard() {
-    const { peak, valley, error, isPass } = state.stats;
+    const { peak, valley, error, isPass, tilted } = state.stats;
     const tol = state.toleranceWidth;
     svgContainer.appendChild(resultsCard({
         title: 'Flatness', pass: isPass,
-        rows: [['Highest point', f4(peak)], ['Lowest point', f4(valley)],
-            ['Highest − lowest', f4(error), { strong: true, color: isPass ? COLORS.pass : COLORS.fail }], ['Allowed', f4(tol)]],
+        rows: [['Highest (above zone middle)', f4(peak)], ['Lowest (below zone middle)', f4(valley)],
+            ['Zone needed', f4(error), { strong: true, color: isPass ? COLORS.pass : COLORS.fail }], ['Allowed', f4(tol)]],
         measured: error, allowed: tol,
         sentence: isPass ? `The whole surface fits between two parallel planes ${f4(tol)} apart: it passes.`
-            : `The surface needs ${f4(error)} between the planes, more than the ${f4(tol)} allowed: it fails.`
+            : `The surface needs ${f4(error)} between the planes, more than the ${f4(tol)} allowed: it fails.`,
+        note: tilted ? 'Tilt removed: the planes tilt to fit (minimum zone)' : 'Minimum zone: the narrowest pair of parallel planes'
     }).g);
 }
 
@@ -401,6 +392,7 @@ function renderControls() {
                 <button id="btn-hill" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Hill (convex)</button>
                 <button id="btn-twist" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Twist (saddle)</button>
                 <button id="btn-random" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Random</button>
+                <button id="btn-tilt" class="preset-btn px-3 py-2 bg-slate-100 hover:bg-blue-50 text-xs font-bold rounded border">Tilted only (still flat)</button>
             </div>
             
             <div class="p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 leading-relaxed">
@@ -408,6 +400,9 @@ function renderControls() {
             </div>
         </div>
         
+        ${measuredCard({ id: 'fm', count: 25, cols: 5, values: state.zValues,
+            order: 'row by row (5 rows of 5), back row first, left to right', sign: 'Heights of the points; tilt and a common offset do not matter' })}
+
         <div class="bg-white p-4 rounded shadow-sm border border-slate-200">
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-3">View Zoom</h4>
             <input type="range" id="ctrl-zoom" min="${perFromIn(2000)}" max="${perFromIn(8000)}" step="${perFromIn(100)}" value="${state.zScale}" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
@@ -447,6 +442,17 @@ function bindControlEvents() {
         return fromIn(0.002) * (r-2) * (c-2);
     });
     document.getElementById('btn-random').onclick = () => setGrid(() => fromIn((Math.random() * 0.01) - 0.005));
+    // A flat plate that is only tilted: flatness ignores tilt, so it passes
+    document.getElementById('btn-tilt').onclick = () => setGrid((r, c) => fromIn(0.004) * (c - 2) / 2 + fromIn(0.003) * (r - 2) / 2);
+
+    // Typed / pasted readings: use them, and zoom so they fill the view
+    refreshMeasured = bindMeasured(controlsContainer, { id: 'fm', count: 25, cols: 5, onApply: v => {
+        state.zValues = v;
+        const range = Math.max(...v) - Math.min(...v);
+        state.zScale = 50 / Math.max(range, state.toleranceWidth, 1e-9);
+        if (inputZoom) inputZoom.value = state.zScale;
+        renderScene();
+    } });
 }
 
 // What a shared link carries (see js/share.js)
