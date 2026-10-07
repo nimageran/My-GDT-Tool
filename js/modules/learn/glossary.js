@@ -100,7 +100,7 @@ function renderControls() {
                 ${letters.map(l => `<button data-letter="${l}" class="w-8 h-8 rounded bg-slate-100 hover:bg-blue-100 text-sm font-bold text-slate-700">${l}</button>`).join('')}
             </div>
         </div>
-        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900" data-nogloss>
+        <div data-tip class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900" data-nogloss>
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> Tip</div>
             <div class="text-xs opacity-90">Words with a dotted underline anywhere in the tool are in this glossary. Hover over them (or tap on a phone) for a quick meaning.</div>
         </div>`;

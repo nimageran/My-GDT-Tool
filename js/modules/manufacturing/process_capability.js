@@ -165,7 +165,7 @@ function renderControls() {
                 <input id="pc-ra" type="number" step="0.1" min="0" value="${state.ra ?? ''}" placeholder="e.g. 1.6" class="${UI.input}">
             </div>
         </div>
-        <div class="${UI.warn}">
+        <div data-tip class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Read these as a guide</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
                 <li>Typical figures for features about 25–100 mm (1–4"). Bigger parts, thin walls, hard or soft materials and heat all widen them.</li>

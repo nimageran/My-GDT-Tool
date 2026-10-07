@@ -194,7 +194,7 @@ function renderControls() {
                 <li>No symbol? A US drawing is almost always third angle; a European one is usually first angle. Ask if unsure.</li>
             </ol>
         </div>
-        <div class="${UI.warn}">
+        <div data-tip class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Why it matters</div>
             <div class="text-xs leading-relaxed">If you read a first-angle drawing as third angle, the "right" view is really the left view. You would make a mirror image of the part: holes and steps end up on the wrong side.</div>
         </div>

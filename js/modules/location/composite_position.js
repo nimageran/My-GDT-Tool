@@ -325,7 +325,7 @@ function renderControls() {
                 <button data-p="zero" class="${smallBtn}">All holes perfect</button>
             </div>
         </div>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+        <div data-tip class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> Composite or two frames?</div>
             <div class="text-xs leading-relaxed">Composite: ONE ⌖ symbol shared by both rows. The lower row's datums only orient. Two separate frames (each with its own ⌖) are two independent requirements, and the lower frame's datums also locate. Check the symbol box.</div>
         </div>`;

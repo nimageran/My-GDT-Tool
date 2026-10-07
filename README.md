@@ -33,7 +33,7 @@ The tool opens on a **Home** page ("What do you need to do?" start points and a 
 
 ```
 index.html, styles.css     Shell page
-js/main.js                 Module loading
+js/main.js                 Module loading; the "Tips" switch (Controls header) hides the beginner tip / warning boxes, which tools mark with data-tip
 js/menu.js                 Menu bar, drop-down menus and path bar
 js/config.js               Tabs and tools (the only place tools are registered)
 js/theme.js                Shared visual language: colours, fonts, legend, frame, results strip

@@ -295,7 +295,7 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Show methods</h4>
             <div class="flex flex-wrap gap-1.5">${seg('level', 'all', 'All')}${Object.entries(LEVELS).map(([k, v]) => seg('level', k, v.label)).join('')}</div>
         </div>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+        <div data-tip class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Before you reject a part</div>
             <div class="text-xs leading-relaxed">Check the method first: datums set up in frame order, bonus and datum shift included, a fine enough tool, a clean part at room temperature. Most "bad" parts that turn out good fail one of these.</div>
         </div>`;

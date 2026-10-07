@@ -327,7 +327,7 @@ function renderControls() {
                 ${state.scheme === 'bore' ? `<button data-p="shift" class="${UI.smallBtn} text-left">Whole pattern off, datum shift saves it</button>` : ''}
             </div>
         </div>
-        <div class="${UI.warn}">
+        <div data-tip class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> How a functional gauge works</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
                 <li>Pins are the worst mating part: virtual condition, at true position.</li>

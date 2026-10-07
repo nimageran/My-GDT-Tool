@@ -221,7 +221,7 @@ function renderControls() {
             <h4 class="font-bold text-xs text-slate-500 uppercase mb-2">Try these</h4>
             <div class="flex flex-col gap-1.5">${presets().map((p, i) => `<button data-preset="${i}" class="${smallBtn}">${p.label}</button>`).join('')}</div>
         </div>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+        <div data-tip class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> How to use the numbers</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
                 <li><b>Virtual condition</b> (VC) at MMC: hole = MMC − tolerance, pin = MMC + tolerance. Use it for assembly and for the size of a fixed gauge pin.</li>

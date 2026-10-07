@@ -170,7 +170,7 @@ function renderControls() {
                 <button data-p="out" class="${UI.smallBtn} text-left">Outside both</button>
             </div>
         </div>
-        <div class="${UI.warn}">
+        <div data-tip class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-lightbulb"></i> Why engineers prefer position</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
                 <li>57% more zone for the same fit (square ± to round position).</li>

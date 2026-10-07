@@ -279,7 +279,7 @@ function renderControls() {
                 <li>A frame referencing "A" means: set the part on all the A targets together.</li>
             </ol>
         </div>
-        <div class="${UI.warn}">
+        <div data-tip class="${UI.warn}">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Watch out</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
                 <li>Measure and machine from the same targets. Using a different face moves every result.</li>

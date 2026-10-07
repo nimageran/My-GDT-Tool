@@ -367,7 +367,7 @@ function renderControls() {
                     class="w-24 px-2 py-1 border border-slate-300 rounded text-right font-mono">
             </div>
 
-            <div class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
+            <div data-tip class="p-3 bg-indigo-50 border border-indigo-200 rounded text-sm text-indigo-900">
                 <div class="font-bold mb-1"><i class="fa-solid fa-scale-balanced"></i> Where it is used</div>
                 <div class="text-xs opacity-90 leading-relaxed">
                     Symmetry keeps a slot, tab or keyway centred on a datum centre plane. Removed in 2018: on new drawings, position does this job.

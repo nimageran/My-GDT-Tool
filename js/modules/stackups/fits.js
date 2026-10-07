@@ -221,7 +221,7 @@ function renderControls() {
                     <span class="font-mono">${p.hole}/${p.shaft}</span> · ${p.name}</button>`).join('')}
             </div>
         </div>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+        <div data-tip class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Watch out</div>
             <ul class="text-xs list-disc pl-4 space-y-1">
                 <li>Capital letters are holes, small letters are shafts. H7 and h7 are different things.</li>

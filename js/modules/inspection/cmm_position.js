@@ -349,7 +349,7 @@ function renderControls() {
             <p id="cmm-copy-msg" class="text-xs text-slate-400 mt-2 hidden">Copied. Paste into Excel or a report.</p>
         </div>
 
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+        <div data-tip class="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Reading CMM reports</div>
             <ul class="text-xs leading-relaxed list-disc pl-4 space-y-1">
                 <li>Position is the <b>diameter</b>: 2 × the radial offset. Some reports print the radial value; double it before comparing.</li>
